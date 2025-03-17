@@ -1,0 +1,527 @@
+/* CSS для сторінки створення/редагування історії */
+
+:root {
+    /* Основні кольори */
+    --bg-color: #0f0a0c;
+    --card-color: #1a1114;
+    --text-color: #ffffff;
+    --secondary-text: rgba(255, 255, 255, 0.7);
+    
+    /* Градієнти */
+    --primary-gradient: linear-gradient(135deg, #800020 0%, #cc0033 100%);
+    --button-gradient: linear-gradient(135deg, #990000 0%, #cc0033 70%, #e30043 100%);
+    --card-gradient: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(25, 17, 20, 0.2) 100%);
+    
+    /* Акцентні кольори */
+    --accent-red: #cc0033;
+    --accent-burgundy: #800020;
+    --accent-gold: #d9a45b;
+    
+    /* Розміри */
+    --container-width: 1240px;
+    --border-radius: 12px;
+    --button-radius: 30px;
+}
+
+.editor-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.editor-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.editor-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+}
+
+.editor-subtitle {
+    color: var(--secondary-text);
+    max-width: 800px;
+    margin: 0 auto 2rem;
+}
+
+.editor-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
+}
+
+.editor-tab {
+    padding: 1rem 2rem;
+    cursor: pointer;
+    color: var(--secondary-text);
+    font-weight: 500;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.editor-tab.active {
+    color: var(--text-color);
+}
+
+.editor-tab.active:after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent-red);
+}
+
+.editor-form {
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    flex: 1;
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: rgba(153, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.form-help {
+    font-size: 0.85rem;
+    color: var(--secondary-text);
+    margin-top: 0.5rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.image-upload {
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.image-upload:hover {
+    border-color: var(--accent-red);
+}
+
+.image-upload-icon {
+    font-size: 2.5rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 1rem;
+}
+
+.image-upload-text {
+    color: var(--secondary-text);
+    margin-bottom: 0.5rem;
+}
+
+.image-upload-subtext {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.image-preview {
+    margin-top: 1.5rem;
+    display: none;
+    position: relative;
+}
+
+.image-preview img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+}
+
+.image-preview-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.image-preview-remove:hover {
+    background-color: var(--accent-red);
+}
+
+.editor-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 2rem;
+}
+
+.action-left {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-right {
+    display: flex;
+    gap: 1rem;
+}
+
+.editor-tips {
+    background-color: rgba(153, 0, 0, 0.1);
+    border: 1px solid rgba(153, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.editor-tips-title {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.editor-tips-title i {
+    margin-right: 0.5rem;
+    color: var(--accent-red);
+}
+
+.editor-tips-list {
+    list-style-type: none;
+}
+
+.editor-tips-list li {
+    margin-bottom: 0.5rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.editor-tips-list li:before {
+    content: '•';
+    color: var(--accent-red);
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Стилі для попереднього перегляду */
+.preview-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+}
+
+.preview-title {
+    font-size: 2.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    margin-bottom: 1rem;
+}
+
+.preview-meta {
+    display: flex;
+    color: var(--secondary-text);
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.preview-meta > div {
+    display: flex;
+    align-items: center;
+}
+
+.preview-meta i {
+    margin-right: 0.5rem;
+}
+
+.preview-featured-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+}
+
+.preview-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+}
+
+.preview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 2rem;
+}
+
+.preview-tag {
+    display: inline-block;
+    padding: 0.5rem 1.2rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+}
+
+/* Стилізація Select2 */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--multiple {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    min-height: 3.4rem;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: rgba(153, 0, 0, 0.2);
+    border: 1px solid rgba(153, 0, 0, 0.3);
+    border-radius: 20px;
+    padding: 5px 10px;
+    color: var(--text-color);
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: var(--secondary-text);
+    margin-right: 5px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: var(--text-color);
+}
+
+.select2-dropdown {
+    background-color: var(--card-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color);
+}
+
+.select2-container--default .select2-results__option {
+    color: var(--text-color);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: rgba(153, 0, 0, 0.2);
+}
+
+/* Стилізація TinyMCE */
+.tox-tinymce {
+    border-radius: var(--border-radius) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.tox .tox-menubar {
+    background-color: var(--card-color) !important;
+}
+
+.tox .tox-toolbar__group {
+    background-color: var(--card-color) !important;
+}
+
+.tox .tox-toolbar,
+.tox .tox-toolbar__overflow,
+.tox .tox-toolbar__primary {
+    background-color: var(--card-color) !important;
+}
+
+.tox .tox-edit-area__iframe {
+    background-color: var(--card-color) !important;
+}
+
+.tox .tox-statusbar {
+    background-color: var(--card-color) !important;
+}
+
+/* Анімація завантаження */
+.loading-indicator {
+    display: inline-block;
+    position: relative;
+    width: 30px;
+    height: 30px;
+}
+
+.loading-indicator:after {
+    content: " ";
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin: 5px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-red);
+    border-color: var(--accent-red) transparent var(--accent-red) transparent;
+    animation: loading-indicator 1.2s linear infinite;
+}
+
+@keyframes loading-indicator {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .editor-actions {
+        flex-direction: column-reverse;
+        gap: 1rem;
+    }
+    
+    .action-left,
+    .action-right {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .preview-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Темна тема для TinyMCE */
+.mce-content-body {
+    color: var(--text-color);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.mce-content-body p {
+    margin-bottom: 1.5rem;
+}
+
+.mce-content-body h1,
+.mce-content-body h2,
+.mce-content-body h3,
+.mce-content-body h4,
+.mce-content-body h5,
+.mce-content-body h6 {
+    font-family: 'Cormorant Garamond', serif;
+    margin-bottom: 1rem;
+}
+
+.mce-content-body a {
+    color: var(--accent-red);
+    text-decoration: none;
+}
+
+.mce-content-body a:hover {
+    text-decoration: underline;
+}
+
+.mce-content-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius);
+}
+
+.mce-content-body blockquote {
+    border-left: 3px solid var(--accent-red);
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 1.5rem;
+    font-style: italic;
+}
+
+.mce-content-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.mce-content-body table th,
+.mce-content-body table td {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.5rem;
+}
+
+.mce-content-body table th {
+    background-color: rgba(153, 0, 0, 0.2);
+    font-weight: 600;
+}
+
+/* Додаткові класи для красивих кольорових блоків у редакторі */
+.sexy-block {
+    background-color: rgba(153, 0, 0, 0.1);
+    border-left: 3px solid var(--accent-red);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: var(--border-radius);
+}
+
+.sexy-highlight {
+    background-color: rgba(217, 164, 91, 0.2);
+    color: var(--accent-gold);
+    padding: 0 5px;
+    border-radius: 3px;
+}

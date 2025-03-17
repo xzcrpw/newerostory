@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Категорії еротичних історій — Таємний Світ</title>
+
+  <link rel="stylesheet" href="css/categories.css">
+
+  <!-- Шрифти -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome для іконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Alpine.js для інтерактивності -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+</head>
+<body x-data="{
+    searchQuery: '',
+
+    submitSearch() {
+        if (!this.searchQuery) {
+            return;
+        }
+
+        // Тут буде логіка пошуку категорій
+        console.log('Пошук категорій:', this.searchQuery);
+
+        // В реальному додатку перенаправлення на сторінку з результатами
+        // window.location.href = `search-results.html?q=${encodeURIComponent(this.searchQuery)}`;
+    },
+
+    subscribeNewsletter() {
+        const email = document.getElementById('newsletterEmail').value;
+        if (!email) {
+            alert('Будь ласка, введіть електронну пошту');
+            return;
+        }
+
+        // Тут буде AJAX запит для підписки
+        console.log('Підписка на розсилку:', email);
+
+        // Імітація успішної підписки
+        alert('Дякуємо за підписку!');
+        document.getElementById('newsletterEmail').value = '';
+    }
+}">
+
+<!-- Хедер -->
+<header>
+  <div class="container">
+    <nav class="navbar">
+      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Головна</a></li>
+        <li><a href="new-stories.html">Нові історії</a></li>
+        <li><a href="top-stories.html">Топ рейтинг</a></li>
+        <li><a href="categories.html" class="active">Категорії</a></li>
+        <li><a href="authors.html">Автори</a></li>
+      </ul>
+
+      <div class="auth-buttons">
+        <div class="lang-dropdown">
+          <span>UA</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
+        <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- Основний контент -->
+<main class="container">
+  <!-- Хлібні крихти -->
+  <div class="breadcrumbs">
+    <a href="index.html">Головна</a>
+    <span class="separator">/</span>
+    <span class="current">Категорії</span>
+  </div>
+
+  <!-- Заголовок сторінки -->
+  <div class="page-header">
+    <h1 class="page-title">Категорії</h1>
+    <p class="page-description">Знайдіть історії за вашими улюбленими темами та жанрами. Від романтичних зустрічей до гарячих фантазій — у нас є все для втілення ваших еротичних мрій.</p>
+  </div>
+
+  <!-- Пошук категорій -->
+  <div class="category-search">
+    <div class="search-container">
+      <form class="search-form" @submit.prevent="submitSearch()">
+        <div class="search-input-container">
+          <i class="fas fa-search search-icon"></i>
+          <input
+                  type="text"
+                  class="search-input"
+                  placeholder="Пошук категорій та тегів..."
+                  x-model="searchQuery"
+          >
+        </div>
+        <button type="submit" class="search-button">Знайти</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Сітка категорій -->
+  <div class="categories-grid">
+    <!-- Категорія 1 -->
+    <div class="category-card">
+      <div class="category-count">156 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?couple,romantic" alt="Романтика">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-romance.html">Романтика</a></h3>
+        <div class="category-description">
+          Чуттєві історії про кохання, пристрасть та романтичні зустрічі, які залишають незабутні враження.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 25.3k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 12.1k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 2 -->
+    <div class="category-card">
+      <div class="category-count">89 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?fantasy,dark" alt="Фантазії">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-fantasy.html">Фантазії</a></h3>
+        <div class="category-description">
+          Еротичні фантазії і мрії, які виходять за межі реальності та дозволяють зануритися у світ бажань.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 18.6k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 9.5k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 3 -->
+    <div class="category-card">
+      <div class="category-count">72 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?beach,vacation" alt="Курортний роман">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-vacation.html">Курортний роман</a></h3>
+        <div class="category-description">
+          Гарячі зустрічі під палючим сонцем на екзотичних пляжах та у розкішних готелях. Відпустка, яку неможливо забути.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 14.2k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 7.8k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 4 -->
+    <div class="category-card">
+      <div class="category-count">105 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?train,travel" alt="Випадкові зустрічі">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-chance.html">Випадкові зустрічі</a></h3>
+        <div class="category-description">
+          Несподівані знайомства з незнайомцями, які переростають у пристрасні пригоди. Коли доля зводить двох людей разом.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 20.9k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 11.3k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 5 -->
+    <div class="category-card">
+      <div class="category-count">64 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?office,work" alt="Службовий роман">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-office.html">Службовий роман</a></h3>
+        <div class="category-description">
+          Гарячі історії про заборонені стосунки на робочому місці: між колегами, босом і підлеглою, клієнтами і обслуговуючим персоналом.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 16.4k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 8.2k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 6 -->
+    <div class="category-card">
+      <div class="category-count">53 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?dark,shadow" alt="БДСМ">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-bdsm.html">БДСМ</a></h3>
+        <div class="category-description">
+          Історії про домінування, підкорення, обмеження і особливі відчуття. Коли задоволення переплітається з грою влади.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 13.8k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 7.5k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 7 -->
+    <div class="category-card">
+      <div class="category-count">78 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?youth,young" alt="Перший досвід">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-first.html">Перший досвід</a></h3>
+        <div class="category-description">
+          Зворушливі та відверті історії про перші інтимні дослідження, перший раз і нові незвідані відчуття.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 19.7k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 10.2k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 8 -->
+    <div class="category-card">
+      <div class="category-count">61 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?group,party" alt="Групові історії">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-group.html">Групові історії</a></h3>
+        <div class="category-description">
+          Спекотні розповіді про пристрасть між більш ніж двома партнерами. Вечірки, знайомства і нові горизонти насолоди.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 15.3k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 8.9k вподобань</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Категорія 9 -->
+    <div class="category-card">
+      <div class="category-count">47 історій</div>
+      <div class="category-card-image">
+        <img src="https://source.unsplash.com/random/600x400/?secret,mystery" alt="Зрада">
+      </div>
+      <div class="category-card-content">
+        <h3 class="category-name"><a href="category-cheating.html">Зрада</a></h3>
+        <div class="category-description">
+          Історії про заборонені пристрасті, таємні побачення і спокуси, яким неможливо протистояти, незважаючи на все.
+        </div>
+        <div class="category-meta">
+          <div class="category-meta-item"><i class="far fa-eye"></i> 12.6k переглядів</div>
+          <div class="category-meta-item"><i class="far fa-heart"></i> 6.3k вподобань</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Популярні теги -->
+  <div class="tags-section">
+    <h2 class="section-title">Популярні теги</h2>
+    <div class="tags-cloud">
+      <a href="#" class="tag-item">Спонтанний секс <span class="tag-count">(128)</span></a>
+      <a href="#" class="tag-item">У літаку <span class="tag-count">(75)</span></a>
+      <a href="#" class="tag-item">Ніч у готелі <span class="tag-count">(103)</span></a>
+      <a href="#" class="tag-item">Масаж <span class="tag-count">(94)</span></a>
+      <a href="#" class="tag-item">На пляжі <span class="tag-count">(82)</span></a>
+      <a href="#" class="tag-item">З незнайомцем <span class="tag-count">(144)</span></a>
+      <a href="#" class="tag-item">Колишні <span class="tag-count">(67)</span></a>
+      <a href="#" class="tag-item">Друзі <span class="tag-count">(91)</span></a>
+      <a href="#" class="tag-item">Рольові ігри <span class="tag-count">(86)</span></a>
+      <a href="#" class="tag-item">Домінування <span class="tag-count">(72)</span></a>
+      <a href="#" class="tag-item">У потязі <span class="tag-count">(58)</span></a>
+      <a href="#" class="tag-item">Вечірка <span class="tag-count">(114)</span></a>
+      <a href="#" class="tag-item">Спокуса <span class="tag-count">(137)</span></a>
+      <a href="#" class="tag-item">Секс втрьох <span class="tag-count">(83)</span></a>
+      <a href="#" class="tag-item">Подруга <span class="tag-count">(95)</span></a>
+    </div>
+  </div>
+
+  <!-- Підписка на розсилку -->
+  <div class="newsletter-section">
+    <h2 class="newsletter-title">Підпишіться на ексклюзивні історії</h2>
+    <p class="newsletter-description">Отримуйте найкращі історії прямо на вашу електронну пошту. Ми не розсилаємо спам, тільки найгарячіші новинки.</p>
+    <div class="newsletter-form">
+      <input type="email" id="newsletterEmail" class="newsletter-input" placeholder="Ваша електронна пошта">
+      <button @click="subscribeNewsletter()" class="btn btn-primary">Підписатися</button>
+    </div>
+  </div>
+</main>
+
+<!-- JavaScript для додаткової функціональності -->
+<script>
+  // Додаткові функції, які можуть знадобитися поза Alpine.js
+
+  // Анімація завантаження сторінки
+  document.addEventListener('DOMContentLoaded', function() {
+    // Можна додати анімації появи категорій при прокрутці
+    const categoryCards = document.querySelectorAll('.category-card');
+
+    function checkVisibility() {
+      categoryCards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const isVisible = (rect.top <= window.innerHeight * 0.8);
+
+        if (isVisible) {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }
+      });
+    }
+
+    // Ініціалізація стилів
+    categoryCards.forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      card.style.transition = 'opacity 0.5s, transform 0.5s';
+    });
+
+    // Запуск перевірки при завантаженні і при скролі
+    checkVisibility();
+    window.addEventListener('scroll', checkVisibility);
+  });
+</script>
+</body>
+</html>

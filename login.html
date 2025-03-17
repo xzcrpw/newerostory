@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вхід та реєстрація — Таємний Світ</title>
+
+  <link rel="stylesheet" href="css/login.css">
+
+  <!-- Шрифти -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome для іконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Alpine.js для інтерактивності -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Скрипт для автентифікації -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Заглушка для імітації серверного API (в реальному проекті тут буде справжній API)
+      const mockAPI = {
+        login: function(email, password) {
+          return new Promise((resolve, reject) => {
+            // Імітація часу відповіді сервера
+            setTimeout(() => {
+              // Проста перевірка для демонстрації
+              if (email === "demo@example.com" && password === "password") {
+                resolve({success: true, user: {name: "Демо Користувач", email: email}});
+              } else {
+                reject({success: false, message: "Невірна електронна пошта або пароль"});
+              }
+            }, 1000);
+          });
+        },
+        register: function(name, email, password) {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              // Проста перевірка для демонстрації
+              if (email.includes('@') && password.length >= 6) {
+                resolve({success: true, message: "Реєстрація успішна"});
+              } else {
+                reject({success: false, message: "Помилка реєстрації. Перевірте дані."});
+              }
+            }, 1500);
+          });
+        },
+        resetPassword: function(email) {
+          return new Promise((resolve, reject) => {
+            setTimeout(() => {
+              if (email.includes('@')) {
+                resolve({success: true, message: "Інструкції надіслані на вашу пошту"});
+              } else {
+                reject({success: false, message: "Неправильний формат електронної пошти"});
+              }
+            }, 1000);
+          });
+        }
+      };
+
+      // Функції для збереження і отримання токенів аутентифікації
+      function saveAuthToken(token) {
+        localStorage.setItem('authToken', token);
+      }
+
+      function getAuthToken() {
+        return localStorage.getItem('authToken');
+      }
+
+      function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+      }
+
+      function validatePassword(password) {
+        return password.length >= 6;
+      }
+
+      // Alpine.js кастомні функції для форм
+      window.loginFormFunctions = {
+        async submitLogin() {
+          this.errorMessage = '';
+          this.successMessage = '';
+
+          if (!this.loginEmail || !this.loginPassword) {
+            this.errorMessage = 'Будь ласка, заповніть всі поля';
+            return;
+          }
+
+          if (!validateEmail(this.loginEmail)) {
+            this.errorMessage = 'Некоректний формат електронної пошти';
+            return;
+          }
+
+          this.isSubmitting = true;
+
+          try {
+            const response = await mockAPI.login(this.loginEmail, this.loginPassword);
+            this.successMessage = 'Успішний вхід! Перенаправлення...';
+
+            // Зберігаємо токен (в цьому випадку просто імітація)
+            saveAuthToken('demo_token_' + Date.now());
+
+            // Перенаправлення на головну сторінку
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1500);
+          } catch (error) {
+            this.errorMessage = error.message || 'Помилка входу. Спробуйте ще раз.';
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+
+        async submitRegister() {
+          this.errorMessage = '';
+          this.successMessage = '';
+
+          if (!this.registerName || !this.registerEmail || !this.registerPassword || !this.registerPasswordConfirm) {
+            this.errorMessage = 'Будь ласка, заповніть всі поля';
+            return;
+          }
+
+          if (!validateEmail(this.registerEmail)) {
+            this.errorMessage = 'Некоректний формат електронної пошти';
+            return;
+          }
+
+          if (!validatePassword(this.registerPassword)) {
+            this.errorMessage = 'Пароль має бути не менше 6 символів';
+            return;
+          }
+
+          if (this.registerPassword !== this.registerPasswordConfirm) {
+            this.errorMessage = 'Паролі не співпадають';
+            return;
+          }
+
+          if (!document.getElementById('agreeTerms').checked) {
+            this.errorMessage = 'Ви повинні погодитись з умовами використання';
+            return;
+          }
+
+          this.isSubmitting = true;
+
+          try {
+            const response = await mockAPI.register(
+                    this.registerName,
+                    this.registerEmail,
+                    this.registerPassword
+            );
+            this.successMessage = 'Реєстрація успішна! Перевірте вашу електронну пошту для підтвердження.';
+
+            // Очищення форми
+            this.registerName = '';
+            this.registerEmail = '';
+            this.registerPassword = '';
+            this.registerPasswordConfirm = '';
+
+            // Перехід на вкладку логіну
+            setTimeout(() => {
+              this.activeTab = 'login';
+              this.successMessage = '';
+            }, 3000);
+          } catch (error) {
+            this.errorMessage = error.message || 'Помилка реєстрації. Спробуйте ще раз.';
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+
+        async submitResetPassword() {
+          this.errorMessage = '';
+          this.successMessage = '';
+
+          if (!this.resetEmail) {
+            this.errorMessage = 'Будь ласка, введіть електронну пошту';
+            return;
+          }
+
+          if (!validateEmail(this.resetEmail)) {
+            this.errorMessage = 'Некоректний формат електронної пошти';
+            return;
+          }
+
+          this.isSubmitting = true;
+
+          try {
+            const response = await mockAPI.resetPassword(this.resetEmail);
+            this.successMessage = 'Інструкції для відновлення паролю надіслані на вашу електронну пошту.';
+            this.resetEmail = '';
+          } catch (error) {
+            this.errorMessage = error.message || 'Помилка відправки запиту. Спробуйте ще раз.';
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+
+        // Функції для соціальних мереж
+        loginWithGoogle() {
+          this.errorMessage = '';
+          this.successMessage = 'Авторизація через Google...';
+
+          // Імітація OAuth процесу
+          setTimeout(() => {
+            saveAuthToken('google_token_' + Date.now());
+            window.location.href = 'index.html';
+          }, 2000);
+        },
+
+        loginWithFacebook() {
+          this.errorMessage = '';
+          this.successMessage = 'Авторизація через Facebook...';
+
+          // Імітація OAuth процесу
+          setTimeout(() => {
+            saveAuthToken('facebook_token_' + Date.now());
+            window.location.href = 'index.html';
+          }, 2000);
+        }
+      };
+
+      // Перевірка, чи користувач вже увійшов
+      if (getAuthToken()) {
+        // Якщо є токен, перенаправляємо на головну сторінку
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</head>
+<body x-data="{
+    activeTab: 'login',
+    showResetPassword: false,
+    loginEmail: '',
+    loginPassword: '',
+    registerName: '',
+    registerEmail: '',
+    registerPassword: '',
+    registerPasswordConfirm: '',
+    resetEmail: '',
+    errorMessage: '',
+    successMessage: '',
+    isSubmitting: false,
+
+    // Використовуємо функції, визначені в скрипті
+    ...window.loginFormFunctions
+}">
+
+<!-- Хедер -->
+<header>
+  <div class="container">
+    <nav class="navbar">
+      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Головна</a></li>
+        <li><a href="new-stories.html">Нові історії</a></li>
+        <li><a href="top-stories.html">Топ рейтинг</a></li>
+        <li><a href="categories.html">Категорії</a></li>
+        <li><a href="authors.html">Автори</a></li>
+      </ul>
+
+      <div class="lang-dropdown">
+        <span>UA</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- Основний контент -->
+<main class="auth-page">
+  <div class="auth-container">
+    <!-- Ліва частина з зображенням -->
+    <div class="auth-image">
+      <div class="auth-quote">
+        <div class="auth-quote-text">"Вхід у світ таємних фантазій, де історії такі ж гарячі, як ваша уява."</div>
+        <div class="auth-quote-author">Таємний Світ</div>
+      </div>
+    </div>
+
+    <!-- Права частина з формами -->
+    <div class="auth-forms">
+      <!-- Перемикач між формами логіну та реєстрації -->
+      <div x-show="!showResetPassword">
+        <div class="auth-tabs">
+          <div
+                  class="auth-tab"
+                  :class="{ 'active': activeTab === 'login' }"
+                  @click="activeTab = 'login'"
+          >
+            Вхід
+          </div>
+          <div
+                  class="auth-tab"
+                  :class="{ 'active': activeTab === 'register' }"
+                  @click="activeTab = 'register'"
+          >
+            Реєстрація
+          </div>
+        </div>
+      </div>
+
+      <!-- Повідомлення про помилку -->
+      <div x-show="errorMessage" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        <span x-text="errorMessage"></span>
+      </div>
+
+      <!-- Повідомлення про успіх -->
+      <div x-show="successMessage" class="success-message">
+        <i class="fas fa-check-circle"></i>
+        <span x-text="successMessage"></span>
+      </div>
+
+      <!-- Форма входу -->
+      <div x-show="activeTab === 'login' && !showResetPassword" class="auth-form">
+        <form @submit.prevent="submitLogin()">
+          <div class="form-group">
+            <label for="loginEmail" class="form-label">Електронна пошта</label>
+            <input
+                    type="email"
+                    id="loginEmail"
+                    class="form-input"
+                    placeholder="Введіть вашу електронну пошту"
+                    x-model="loginEmail"
+                    required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword" class="form-label">Пароль</label>
+            <input
+                    type="password"
+                    id="loginPassword"
+                    class="form-input"
+                    placeholder="Введіть ваш пароль"
+                    x-model="loginPassword"
+                    required
+            >
+            <div class="form-help">
+              <div>
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">Запам'ятати мене</label>
+              </div>
+              <a href="#" @click.prevent="showResetPassword = true">Забули пароль?</a>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary form-submit" :disabled="isSubmitting">
+            <span x-show="!isSubmitting">Увійти</span>
+            <span x-show="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i> Обробка...
+            </span>
+          </button>
+        </form>
+
+        <div class="auth-divider">або</div>
+
+        <div class="social-login">
+          <button class="social-btn google-btn" @click="loginWithGoogle()" :disabled="isSubmitting">
+            <i class="fab fa-google"></i> Google
+          </button>
+          <button class="social-btn facebook-btn" @click="loginWithFacebook()" :disabled="isSubmitting">
+            <i class="fab fa-facebook-f"></i> Facebook
+          </button>
+        </div>
+      </div>
+
+      <!-- Форма реєстрації -->
+      <div x-show="activeTab === 'register' && !showResetPassword" class="auth-form">
+        <form @submit.prevent="submitRegister()">
+          <div class="form-group">
+            <label for="registerName" class="form-label">Ім'я</label>
+            <input
+                    type="text"
+                    id="registerName"
+                    class="form-input"
+                    placeholder="Введіть ваше ім'я"
+                    x-model="registerName"
+                    required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail" class="form-label">Електронна пошта</label>
+            <input
+                    type="email"
+                    id="registerEmail"
+                    class="form-input"
+                    placeholder="Введіть вашу електронну пошту"
+                    x-model="registerEmail"
+                    required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword" class="form-label">Пароль</label>
+            <input
+                    type="password"
+                    id="registerPassword"
+                    class="form-input"
+                    placeholder="Створіть пароль (мінімум 6 символів)"
+                    x-model="registerPassword"
+                    required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="registerPasswordConfirm" class="form-label">Підтвердження паролю</label>
+            <input
+                    type="password"
+                    id="registerPasswordConfirm"
+                    class="form-input"
+                    placeholder="Повторіть пароль"
+                    x-model="registerPasswordConfirm"
+                    required
+            >
+          </div>
+
+          <div class="form-group">
+            <input type="checkbox" id="agreeTerms" required>
+            <label for="agreeTerms">Я погоджуюсь з <a href="terms.html">умовами використання</a> та <a href="privacy.html">політикою конфіденційності</a>.</label>
+          </div>
+
+          <button type="submit" class="btn btn-primary form-submit" :disabled="isSubmitting">
+            <span x-show="!isSubmitting">Зареєструватися</span>
+            <span x-show="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i> Обробка...
+            </span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Форма відновлення паролю -->
+      <div x-show="showResetPassword" class="reset-password-form">
+        <div class="reset-icon">
+          <i class="fas fa-key"></i>
+        </div>
+
+        <h2 class="reset-title">Відновлення паролю</h2>
+        <p class="reset-description">Введіть вашу електронну пошту, і ми надішлемо вам інструкції для відновлення паролю.</p>
+
+        <form @submit.prevent="submitResetPassword()">
+          <div class="form-group">
+            <input
+                    type="email"
+                    class="form-input"
+                    placeholder="Введіть вашу електронну пошту"
+                    x-model="resetEmail"
+                    required
+            >
+          </div>
+
+          <button type="submit" class="btn btn-primary form-submit" :disabled="isSubmitting">
+            <span x-show="!isSubmitting">Відновити пароль</span>
+            <span x-show="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i> Обробка...
+            </span>
+          </button>
+        </form>
+
+        <a href="#" class="back-link" @click.prevent="showResetPassword = false">
+          <i class="fas fa-arrow-left"></i> Повернутися до входу
+        </a>
+      </div>
+
+      <!-- Футер авторизації -->
+      <div class="auth-footer">
+        <div x-show="activeTab === 'login' && !showResetPassword">
+          Не маєте облікового запису? <a href="#" @click.prevent="activeTab = 'register'">Зареєструйтеся</a>
+        </div>
+        <div x-show="activeTab === 'register' && !showResetPassword">
+          Вже маєте обліковий запис? <a href="#" @click.prevent="activeTab = 'login'">Увійдіть</a>
+        </div>
+        <div class="copyright">
+          &copy; 2023 Таємний Світ. Всі права захищені. 18+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- JavaScript для додаткової функціональності -->
+<script>
+  // Додаткові функції, які можуть знадобитися поза Alpine.js
+
+  // Функція для обробки соціальних мереж
+  function oauthSignIn(provider) {
+    // В реальному проекті ця функція буде ініціювати OAuth потік
+    console.log(`Ініціювання OAuth потоку для ${provider}`);
+
+    // Це була б реальна URL для OAuth провайдера
+    // const oauthUrl = `https://yourdomain.com/auth/${provider}`;
+    // window.location.href = oauthUrl;
+
+    // Імітація
+    alert(`Авторизація через ${provider} буде доступна після налаштування OAuth.`);
+  }
+
+  // Додаємо індикатори стану для полів форми
+  document.addEventListener('DOMContentLoaded', function() {
+    // Валідація полів e-mail при втраті фокусу
+    const emailInputs = document.querySelectorAll('input[type="email"]');
+    emailInputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        if (this.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value)) {
+          this.style.borderColor = '#ff6b6b';
+        } else {
+          this.style.borderColor = '';
+        }
+      });
+    });
+
+    // Валідація пароля при втраті фокусу
+    const passwordInputs = document.querySelectorAll('input[id="registerPassword"]');
+    passwordInputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        if (this.value && this.value.length < 6) {
+          this.style.borderColor = '#ff6b6b';
+        } else {
+          this.style.borderColor = '';
+        }
+      });
+    });
+
+    // Перевірка паролів на співпадіння
+    const confirmPasswordInputs = document.querySelectorAll('input[id="registerPasswordConfirm"]');
+    confirmPasswordInputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        const password = document.getElementById('registerPassword').value;
+        if (this.value && this.value !== password) {
+          this.style.borderColor = '#ff6b6b';
+        } else {
+          this.style.borderColor = '';
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

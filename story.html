@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Несподівана зустріч у нічному потязі — Таємний Світ</title>
+
+  <link rel="stylesheet" href="css/story.css">
+
+  <!-- Мета-теги для SEO і соцмереж -->
+  <meta name="description" content="Еротична історія про несподівану зустріч у нічному потязі, яка змінила життя двох незнайомців.">
+  <meta property="og:title" content="Несподівана зустріч у нічному потязі — Таємний Світ">
+  <meta property="og:description" content="Еротична історія про несподівану зустріч у нічному потязі, яка змінила життя двох незнайомців.">
+  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?silhouette">
+  <meta property="og:type" content="article">
+
+  <!-- Шрифти -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome для іконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Alpine.js для інтерактивності -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+</head>
+<body x-data="{
+    isLoggedIn: false,
+    isPremiumUser: false,
+    userRating: 0,
+    bookmarked: false,
+    followed: false,
+    currentLikes: 24,
+    liked: false,
+    premiumContent: true,
+    toggleLike() {
+        this.liked = !this.liked;
+        this.currentLikes = this.liked ? this.currentLikes + 1 : this.currentLikes - 1;
+    },
+    setRating(rating) {
+        if (this.isLoggedIn) {
+            this.userRating = rating;
+        } else {
+            window.location.href = 'login.html';
+        }
+    },
+    toggleBookmark() {
+        if (this.isLoggedIn) {
+            this.bookmarked = !this.bookmarked;
+        } else {
+            window.location.href = 'login.html';
+        }
+    },
+    toggleFollow() {
+        if (this.isLoggedIn) {
+            this.followed = !this.followed;
+        } else {
+            window.location.href = 'login.html';
+        }
+    },
+    submitComment() {
+        if (!this.isLoggedIn) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const comment = document.getElementById('commentInput').value;
+        if (comment.trim() === '') {
+            return;
+        }
+        // В реальному додатку тут буде AJAX запит для збереження коментаря
+        // Наразі просто очистимо поле
+        document.getElementById('commentInput').value = '';
+        alert('Коментар додано!');
+    },
+    copyLink() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Посилання скопійовано!');
+        });
+    }
+}">
+
+<!-- Хедер -->
+<header>
+  <div class="container">
+    <nav class="navbar">
+      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Головна</a></li>
+        <li><a href="new-stories.html">Нові історії</a></li>
+        <li><a href="top-stories.html">Топ рейтинг</a></li>
+        <li><a href="categories.html">Категорії</a></li>
+        <li><a href="authors.html">Автори</a></li>
+      </ul>
+
+      <div class="auth-buttons">
+        <div class="lang-dropdown">
+          <span>UA</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <template x-if="!isLoggedIn">
+          <div>
+            <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
+            <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+          </div>
+        </template>
+        <template x-if="isLoggedIn">
+          <div>
+            <a href="profile.html" class="btn btn-outline"><i class="fas fa-user"></i> Профіль</a>
+            <a href="#" @click.prevent="isLoggedIn = false" class="btn btn-primary"><i class="fas fa-sign-out-alt"></i> Вийти</a>
+          </div>
+        </template>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- Основний контент -->
+<main class="container">
+  <!-- Хлібні крихти -->
+  <div class="breadcrumbs">
+    <a href="index.html">Головна</a>
+    <span class="separator">/</span>
+    <a href="categories.html">Категорії</a>
+    <span class="separator">/</span>
+    <a href="category-romance.html">Романтика</a>
+    <span class="separator">/</span>
+    <span class="current">Несподівана зустріч у нічному потязі</span>
+  </div>
+
+  <!-- Структура сторінки: основний контент + сайдбар -->
+  <div class="story-page">
+    <!-- Основний контент -->
+    <div class="story-main">
+      <!-- Заголовок історії -->
+      <div class="story-header">
+        <div class="story-category">Романтика</div>
+        <h1 class="story-title-main">Несподівана зустріч у нічному потязі</h1>
+        <div class="story-meta-info">
+          <div><i class="far fa-calendar-alt"></i> 15 жовтня 2023</div>
+          <div><i class="far fa-eye"></i> 2,583 переглядів</div>
+          <div><i class="far fa-clock"></i> 12 хв. читання</div>
+          <div><i class="far fa-comments"></i> 18 коментарів</div>
+        </div>
+
+        <div class="story-author">
+          <div class="author-avatar"></div>
+          <div class="author-info">
+            <div class="author-name">Олександра Романенко</div>
+            <div class="author-bio">Автор еротичних історій, 28 публікацій</div>
+          </div>
+          <button @click="toggleFollow()" class="btn btn-outline follow-btn" x-text="followed ? 'Відписатися' : 'Стежити'"></button>
+        </div>
+      </div>
+
+      <!-- Головне зображення -->
+      <div class="story-featured-image">
+        <div class="story-badge-large">18+</div>
+      </div>
+
+      <!-- Оцінка і дії -->
+      <div class="story-actions">
+        <div class="story-rating">
+          <div class="rating-score">4.8</div>
+          <div class="rating-stars">
+            <template x-for="i in 5">
+              <i class="rating-star" :class="i <= userRating ? 'fas fa-star' : 'far fa-star'" @click="setRating(i)"></i>
+            </template>
+          </div>
+          <div class="rating-count">(96 оцінок)</div>
+        </div>
+        <div class="story-buttons">
+          <div class="action-btn" @click="toggleLike()" :title="liked ? 'Вже подобається' : 'Подобається'">
+            <i :class="liked ? 'fas fa-heart' : 'far fa-heart'" style="color: #cc0033;"></i>
+          </div>
+          <div class="action-btn" @click="toggleBookmark()" :title="bookmarked ? 'Видалити з закладок' : 'Додати в закладки'">
+            <i :class="bookmarked ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
+          </div>
+          <div class="action-btn" title="Поділитися">
+            <i class="fas fa-share-alt"></i>
+          </div>
+          <div class="action-btn" title="Повідомити про проблему">
+            <i class="fas fa-flag"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Контент історії -->
+      <div class="story-content">
+        <p>Я сидів у напівпорожньому вагоні потяга, прямуючи до Києва. Дорога обіцяла бути довгою та нудною, але все змінилося, коли на одній із станцій зайшла вона. Висока блондинка у елегантній сукні, що ідеально підкреслювала її фігуру. Наші погляди зустрілися, і я відчув, як щось промайнуло між нами.</p>
+
+        <p>Вона сіла навпроти мене, і між нами зависла електризуюча тиша. Я намагався непомітно розглядати її, коли вона дивилася у вікно. Її профіль був бездоганним, а губи, здавалося, кликали поцілувати їх. Несподівано, вона повернулася до мене та усміхнулася.</p>
+
+        <p>— Хочеш щось запитати? — спитала вона, заскочивши мене зненацька. Її голос був м'яким, але впевненим, з легкою хрипотою, яка лише додавала їй шарму.</p>
+
+        <p>— Пробачте, я не хотів виглядати нав'язливим, — відповів я, відчуваючи, як моє обличчя червоніє.</p>
+
+        <p>— Все гаразд, — усміхнулася вона. — Нічого поганого в тому, що ти розглядаєш мене, немає. Я теж тебе помітила.</p>
+
+        <!-- Блок для преміум-користувачів -->
+        <template x-if="premiumContent && !isPremiumUser">
+          <div class="story-premium-notice">
+            <h3>Продовження доступне для преміум-користувачів</h3>
+            <p>Підпишіться на преміум доступ, щоб прочитати історію повністю і отримати доступ до найгарячіших моментів та ексклюзивного контенту.</p>
+            <a href="premium.html" class="btn btn-primary">Отримати преміум</a>
+          </div>
+        </template>
+
+        <!-- Прихований преміум-контент -->
+        <template x-if="isPremiumUser || !premiumContent">
+          <div>
+            <p>Наша розмова потекла легко і невимушено. Вікторія, так її звали, розповіла, що їде до Києва на конференцію. Я поділився, що повертаюся додому після відрядження. З кожною хвилиною напруга між нами зростала.</p>
+
+            <p>Коли провідниця пройшла коридором, оголошуючи, що скоро гаситимуть світло, Вікторія несподівано запропонувала: — А давай вип'ємо за нашу зустріч? У мене є пляшка хорошого вина.</p>
+
+            <p>Я погодився, і вона дістала з сумки пляшку червоного та два складних пластикових келиха. Вино було терпким і солодким, як її погляд.</p>
+
+            <p>Після другого келиха вона пересіла до мене, і я відчув аромат її парфумів — щось екзотичне з нотками жасмину та ванілі. Наші руки торкнулися, і по тілу пробігли електричні імпульси.</p>
+
+            <p>— Знаєш, я зазвичай не буваю такою відвертою з незнайомцями, — прошепотіла вона, нахилившись до мого вуха. — Але є щось у цьому потязі... у темряві... у тобі...</p>
+
+            <p>Я не встиг відповісти, бо вона поцілувала мене. Її губи були м'якими та вимогливими водночас. Моє серце шалено калатало, коли її рука ковзнула по моїй шиї і зупинилась на плечі.</p>
+
+            <p>— Тут надто мало місця, — сказала вона, відірвавшись від моїх губ. — Давай знайдемо щось затишніше.</p>
+
+            <p>Коли більшість пасажирів вже спали, ми знайшли порожнє купе у сусідньому вагоні. Зачинивши двері, ми віддалися пристрасті, якої я не відчував ніколи раніше. Її руки були всюди, досліджуючи моє тіло, а я губився в її шовковистому волоссі.</p>
+
+            <p>Ми кохалися під стукіт коліс, намагаючись бути тихими, але іноді не стримуючи стогони задоволення. Кожен дотик, кожен поцілунок були насичені пристрастю та жагою. Коли ми досягли піку разом, я відчув, ніби весь світ зупинився на мить.</p>
+
+            <p>Ранок застав нас обіймаючими один одного. Ми обмінялися номерами, але обидва розуміли, що це була випадкова зустріч, яка навряд чи повториться. Проте, коли я вийшов з потяга у Києві, телефон завібрував. Повідомлення від Вікторії: "Сьогодні о 8 вечора, готель 'Прем'єр'. Кімната 512. Не запізнюйся."</p>
+
+            <p>Виявляється, наша пригода лише починалася...</p>
+          </div>
+        </template>
+      </div>
+
+      <!-- Теги історії -->
+      <div class="story-tags-section">
+        <h3 class="story-tags-title">Теги:</h3>
+        <div class="story-tags-list">
+          <a href="#" class="story-tag-link">Потяг</a>
+          <a href="#" class="story-tag-link">Незнайомці</a>
+          <a href="#" class="story-tag-link">Спонтанний секс</a>
+          <a href="#" class="story-tag-link">Пристрасть</a>
+          <a href="#" class="story-tag-link">Нічна пригода</a>
+        </div>
+      </div>
+
+      <!-- Навігація між історіями -->
+      <div class="story-navigation">
+        <a href="#" class="prev-story">
+          <div class="prev-story-icon">
+            <i class="fas fa-chevron-left"></i>
+          </div>
+          <div>
+            <span class="nav-direction">Попередня історія</span>
+            <h4 class="nav-title">Таємнича незнайомка</h4>
+          </div>
+        </a>
+
+        <a href="#" class="next-story">
+          <div>
+            <span class="nav-direction">Наступна історія</span>
+            <h4 class="nav-title">П'ять днів у райському куточку</h4>
+          </div>
+          <div class="next-story-icon">
+            <i class="fas fa-chevron-right"></i>
+          </div>
+        </a>
+      </div>
+
+      <!-- Коментарі -->
+      <div class="comments-section">
+        <h2 class="comments-title">Коментарі (18)</h2>
+
+        <div class="comment-form">
+          <textarea id="commentInput" class="comment-input" placeholder="Залиште свій коментар..."></textarea>
+          <div class="comment-submit">
+            <button @click="submitComment()" class="btn btn-primary">Додати коментар</button>
+          </div>
+        </div>
+
+        <div class="comments-list">
+          <!-- Коментар 1 -->
+          <div class="comment">
+            <div class="comment-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?woman')"></div>
+            <div class="comment-body">
+              <div class="comment-author">Марія Т.</div>
+              <div class="comment-date">14 жовтня 2023, 18:45</div>
+              <div class="comment-text">
+                Дуже чуттєва історія! Просто уявляю себе на місці Вікторії. Автор чудово передає атмосферу і відчуття героїв!
+              </div>
+              <div class="comment-actions">
+                <a href="#"><i class="far fa-thumbs-up"></i> Подобається (5)</a>
+                <a href="#"><i class="far fa-comment"></i> Відповісти</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Коментар 2 -->
+          <div class="comment">
+            <div class="comment-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?man')"></div>
+            <div class="comment-body">
+              <div class="comment-author">Андрій К.</div>
+              <div class="comment-date">13 жовтня 2023, 21:12</div>
+              <div class="comment-text">
+                Шкода, що такі зустрічі бувають тільки в історіях... Або мені просто не щастить у потягах 😄 Але читати було дуже приємно, автор знає, як захопити увагу читача!
+              </div>
+              <div class="comment-actions">
+                <a href="#"><i class="far fa-thumbs-up"></i> Подобається (12)</a>
+                <a href="#"><i class="far fa-comment"></i> Відповісти</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Коментар 3 -->
+          <div class="comment">
+            <div class="comment-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?girl')"></div>
+            <div class="comment-body">
+              <div class="comment-author">Олена В.</div>
+              <div class="comment-date">12 жовтня 2023, 15:30</div>
+              <div class="comment-text">
+                Чекаю продовження! Цікаво, чим закінчилася їхня зустріч у готелі... Автор, не залишай нас у невідомості!
+              </div>
+              <div class="comment-actions">
+                <a href="#"><i class="far fa-thumbs-up"></i> Подобається (8)</a>
+                <a href="#"><i class="far fa-comment"></i> Відповісти</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Сайдбар -->
+    <div class="story-sidebar">
+      <!-- Віджет автора -->
+      <div class="sidebar-widget author-widget">
+        <div class="author-avatar-large"></div>
+        <h3 class="author-name-large">Олександра Романенко</h3>
+        <div class="author-stats">
+          <div class="author-stat">
+            <div class="stat-value">28</div>
+            <div class="stat-label">Історій</div>
+          </div>
+          <div class="author-stat">
+            <div class="stat-value">4.9</div>
+            <div class="stat-label">Рейтинг</div>
+          </div>
+          <div class="author-stat">
+            <div class="stat-value">1.2k</div>
+            <div class="stat-label">Читачів</div>
+          </div>
+        </div>
+        <button @click="toggleFollow()" class="btn btn-primary" style="width: 100%;" x-text="followed ? 'Ви стежите' : 'Стежити за автором'"></button>
+      </div>
+
+      <!-- Віджет підписки (для неавторизованих або не-преміум користувачів) -->
+      <template x-if="!isPremiumUser">
+        <div class="sidebar-widget premium-widget">
+          <div class="premium-icon">
+            <i class="fas fa-crown"></i>
+          </div>
+          <h3 class="premium-title">Преміум доступ</h3>
+          <p class="premium-description">Відкрийте для себе найгарячіші моменти історій та ексклюзивний контент</p>
+          <div class="premium-price">199 ₴</div>
+          <span class="price-period">на місяць</span>
+          <div class="premium-features">
+            <div class="premium-feature">
+              <i class="fas fa-check"></i>
+              <div>Повний доступ до всіх історій без обмежень</div>
+            </div>
+            <div class="premium-feature">
+              <i class="fas fa-check"></i>
+              <div>Ексклюзивний преміум-контент</div>
+            </div>
+            <div class="premium-feature">
+              <i class="fas fa-check"></i>
+              <div>Без реклами</div>
+            </div>
+            <div class="premium-feature">
+              <i class="fas fa-check"></i>
+              <div>Переклад історій на інші мови</div>
+            </div>
+          </div>
+          <a href="premium.html" class="btn btn-primary" style="width: 100%;">Спробувати преміум</a>
+        </div>
+      </template>
+
+      <!-- Віджет схожих історій -->
+      <div class="sidebar-widget">
+        <h3 class="widget-title">Схожі історії</h3>
+        <div class="related-stories-list">
+          <!-- Схожа історія 1 -->
+          <a href="#" class="related-story">
+            <div class="related-story-image" style="background-image: url('https://source.unsplash.com/random/160x160/?night')"></div>
+            <div class="related-story-info">
+              <h4 class="related-story-title">Одна ніч у Парижі</h4>
+              <div class="related-story-meta">
+                <div class="related-story-views"><i class="far fa-eye"></i> 3.4k</div>
+                <div class="related-story-rating"><i class="fas fa-star"></i> 4.7</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Схожа історія 2 -->
+          <a href="#" class="related-story">
+            <div class="related-story-image" style="background-image: url('https://source.unsplash.com/random/160x160/?hotel')"></div>
+            <div class="related-story-info">
+              <h4 class="related-story-title">Випадкова зустріч у ліфті</h4>
+              <div class="related-story-meta">
+                <div class="related-story-views"><i class="far fa-eye"></i> 2.1k</div>
+                <div class="related-story-rating"><i class="fas fa-star"></i> 4.5</div>
+              </div>
+            </div>
+          </a>
+
+          <!-- Схожа історія 3 -->
+          <a href="#" class="related-story">
+            <div class="related-story-image" style="background-image: url('https://source.unsplash.com/random/160x160/?beach')"></div>
+            <div class="related-story-info">
+              <h4 class="related-story-title">Пристрасть на березі моря</h4>
+              <div class="related-story-meta">
+                <div class="related-story-views"><i class="far fa-eye"></i> 4.8k</div>
+                <div class="related-story-rating"><i class="fas fa-star"></i> 4.9</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Віджет поділитися -->
+      <div class="sidebar-widget">
+        <h3 class="widget-title">Поділитися історією</h3>
+        <p>Сподобалася історія? Поділіться нею з друзями!</p>
+        <div class="share-buttons">
+          <a href="#" class="share-button share-facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="share-button share-twitter"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="share-button share-telegram"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="share-button share-whatsapp"><i class="fab fa-whatsapp"></i></a>
+          <a href="#" @click.prevent="copyLink()" class="share-button share-link"><i class="fas fa-link"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- JavaScript для динамічної взаємодії -->
+<script>
+  // Функція для обробки "ліниве" завантаження зображень
+  document.addEventListener('DOMContentLoaded', function() {
+    // Перевірка чи був користувач перевірений за віком (в реальному проекті)
+    const ageVerified = localStorage.getItem('ageVerified');
+    if (!ageVerified) {
+      // Тут буде показ модального вікна перевірки віку
+    }
+
+    // Додаємо функціональність для копіювання посилання
+    const copyLinkButton = document.querySelector('.share-link');
+    if (copyLinkButton) {
+      copyLinkButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = window.location.href;
+
+        // Сучасний API для копіювання в буфер обміну
+        navigator.clipboard.writeText(url).then(function() {
+          alert('Посилання скопійовано!');
+        }, function() {
+          // Запасний варіант для старих браузерів
+          const textarea = document.createElement('textarea');
+          textarea.textContent = url;
+          textarea.style.position = 'fixed';
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            alert('Посилання скопійовано!');
+          } catch (ex) {
+            console.warn('Не вдалося скопіювати посилання', ex);
+            alert('Не вдалося скопіювати посилання. Спробуйте вручну.');
+          } finally {
+            document.body.removeChild(textarea);
+          }
+        });
+      });
+    }
+  });
+
+  // Функція для відправки оцінки на сервер (в реальному проекті)
+  function submitRating(rating) {
+    // Тут буде AJAX запит для збереження оцінки
+    console.log('Відправка оцінки:', rating);
+    // Після успішного збереження, оновлюємо інтерфейс
+    updateRatingUI(rating);
+  }
+
+  // Оновлення інтерфейсу після оцінки
+  function updateRatingUI(rating) {
+    const stars = document.querySelectorAll('.rating-star');
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.remove('far');
+        star.classList.add('fas');
+      } else {
+        star.classList.remove('fas');
+        star.classList.add('far');
+      }
+    });
+  }
+
+  // Функція для обробки подобається/не подобається
+  function toggleLike(element) {
+    const isLiked = element.classList.contains('liked');
+    if (isLiked) {
+      element.classList.remove('liked');
+      // Відправка запиту на видалення лайку
+    } else {
+      element.classList.add('liked');
+      // Відправка запиту на додавання лайку
+    }
+  }
+</script>
+</body>
+</html>

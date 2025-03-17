@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Особистий профіль — Таємний Світ</title>
+    
+    <!-- Шрифти -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome для іконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    
+    <!-- Alpine.js для інтерактивності -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Підключення CSS стилів -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/profile_styles.css">
+</head>
+<body x-data="{
+    activeTab: 'saved',
+    showEditProfile: false,
+    showChangePassword: false,
+    showSubscriptionSettings: false,
+    isPremiumUser: false,
+    
+    userName: 'Олександр Петренко',
+    userEmail: 'alex.petrenko@gmail.com',
+    userBio: 'Любитель еротичних історій та книг. Віддаю перевагу романтичним та фантазійним жанрам.',
+    userAvatar: 'https://source.unsplash.com/random/200x200/?portrait,man',
+    
+    setTab(tab) {
+        this.activeTab = tab;
+    },
+    
+    toggleEditProfile() {
+        this.showEditProfile = !this.showEditProfile;
+        this.showChangePassword = false;
+        this.showSubscriptionSettings = false;
+    },
+    
+    toggleChangePassword() {
+        this.showChangePassword = !this.showChangePassword;
+        this.showEditProfile = false;
+        this.showSubscriptionSettings = false;
+    },
+    
+    toggleSubscriptionSettings() {
+        this.showSubscriptionSettings = !this.showSubscriptionSettings;
+        this.showEditProfile = false;
+        this.showChangePassword = false;
+    },
+    
+    saveProfile() {
+        // Тут буде AJAX запит для збереження даних профілю
+        alert('Профіль збережено успішно!');
+        this.showEditProfile = false;
+    },
+    
+    changePassword() {
+        // Тут буде AJAX запит для зміни пароля
+        alert('Пароль змінено успішно!');
+        this.showChangePassword = false;
+    },
+    
+    upgradeAccount() {
+        // Перенаправлення на сторінку оплати
+        window.location.href = 'premium.html';
+    },
+    
+    cancelSubscription() {
+        if (confirm('Ви впевнені, що хочете скасувати підписку? Ви втратите доступ до преміум-контенту.')) {
+            // Тут буде AJAX запит для скасування підписки
+            this.isPremiumUser = false;
+            alert('Підписку скасовано. Вона діятиме до кінця оплаченого періоду.');
+        }
+    },
+    
+    removeFromSaved(itemId) {
+        if (confirm('Ви впевнені, що хочете видалити цей елемент із збережених?')) {
+            // Тут буде AJAX запит для видалення елемента з збережених
+            console.log('Видалено елемент із збережених:', itemId);
+            
+            // Тут можна додати логіку видалення елемента з DOM
+            const element = document.getElementById('saved-item-' + itemId);
+            if (element) {
+                element.remove();
+            }
+        }
+    }
+}">
+
+    <!-- Хедер -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+                
+                <ul class="nav-links">
+                    <li><a href="index.html">Головна</a></li>
+                    <li><a href="new-stories.html">Нові історії</a></li>
+                    <li><a href="top-stories.html">Топ рейтинг</a></li>
+                    <li><a href="categories.html">Категорії</a></li>
+                    <li><a href="authors.html">Автори</a></li>
+                </ul>
+                
+                <div class="auth-buttons">
+                    <div class="lang-dropdown">
+                        <span>UA</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <a href="#" class="btn btn-outline active">
+                        <i class="fas fa-user"></i> Профіль
+                    </a>
+                    <a href="index.html" class="btn btn-primary">
+                        <i class="fas fa-sign-out-alt"></i> Вийти
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Основний контент -->
+    <main class="container">
+        <!-- Хлібні крихти -->
+        <div class="breadcrumbs">
+            <a href="index.html">Головна</a>
+            <span class="separator">/</span>
+            <span class="current">Профіль</span>
+        </div>
+        
+        <!-- Секція профілю -->
+        <div class="profile-section">
+            <!-- Сайдбар профілю -->
+            <aside class="profile-sidebar">
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar" :style="{ backgroundImage: `url(${userAvatar})` }"></div>
+                        <div class="profile-status" :class="{ 'premium-status': isPremiumUser }">
+                            <i :class="isPremiumUser ? 'fas fa-crown' : 'fas fa-user'"></i>
+                            <span x-text="isPremiumUser ? 'Преміум' : 'Базовий'"></span>
+                        </div>
+                    </div>
+                    <div class="profile-info">
+                        <h1 class="profile-name" x-text="userName"></h1>
+                        <div class="profile-email" x-text="userEmail"></div>
+                        <div class="profile-bio" x-text="userBio"></div>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <div class="stat-value">42</div>
+                            <div class="stat-label">Збережено</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="stat-value">126</div>
+                            <div class="stat-label">Прочитано</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="stat-value">18</div>
+                            <div class="stat-label">Коментарів</div>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button @click="toggleEditProfile()" class="btn-action">
+                            <i class="fas fa-edit"></i> Редагувати профіль
+                        </button>
+                        <button @click="toggleChangePassword()" class="btn-action">
+                            <i class="fas fa-key"></i> Змінити пароль
+                        </button>
+                        <template x-if="!isPremiumUser">
+                            <button @click="upgradeAccount()" class="btn-action premium-action">
+                                <i class="fas fa-crown"></i> Отримати преміум
+                            </button>
+                        </template>
+                        <template x-if="isPremiumUser">
+                            <button @click="toggleSubscriptionSettings()" class="btn-action premium-action">
+                                <i class="fas fa-cog"></i> Налаштування підписки
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="profile-menu">
+                    <button @click="setTab('saved')" :class="{ 'active': activeTab === 'saved' }" class="menu-item">
+                        <i class="fas fa-bookmark"></i> Збережені історії
+                    </button>
+                    <button @click="setTab('history')" :class="{ 'active': activeTab === 'history' }" class="menu-item">
+                        <i class="fas fa-history"></i> Історія переглядів
+                    </button>
+                    <button @click="setTab('likes')" :class="{ 'active': activeTab === 'likes' }" class="menu-item">
+                        <i class="fas fa-heart"></i> Вподобані історії
+                    </button>
+                    <button @click="setTab('comments')" :class="{ 'active': activeTab === 'comments' }" class="menu-item">
+                        <i class="fas fa-comments"></i> Мої коментарі
+                    </button>
+                    <button @click="setTab('following')" :class="{ 'active': activeTab === 'following' }" class="menu-item">
+                        <i class="fas fa-users"></i> Мої підписки
+                    </button>
+                </div>
+            </aside>
+            
+            <!-- Вміст профілю -->
+            <div class="profile-content">
+                <!-- Форма редагування профілю -->
+                <div x-show="showEditProfile" class="profile-form-container">
+                    <div class="form-card">
+                        <h2 class="form-title">Редагування профілю</h2>
+                        <form @submit.prevent="saveProfile()" class="profile-form">
+                            <div class="form-group">
+                                <label for="userName" class="form-label">Ім'я користувача</label>
+                                <input type="text" id="userName" class="form-input" x-model="userName" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="userEmail" class="form-label">Електронна пошта</label>
+                                <input type="email" id="userEmail" class="form-input" x-model="userEmail" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="userBio" class="form-label">Про себе</label>
+                                <textarea id="userBio" class="form-textarea" x-model="userBio" rows="4"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="userAvatar" class="form-label">URL аватару</label>
+                                <input type="url" id="userAvatar" class="form-input" x-model="userAvatar">
+                                <div class="form-help">Залиште порожнім для використання аватару за замовчуванням</div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" @click="showEditProfile = false" class="btn btn-outline">Скасувати</button>
+                                <button type="submit" class="btn btn-primary">Зберегти зміни</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Форма зміни пароля -->
+                <div x-show="showChangePassword" class="profile-form-container">
+                    <div class="form-card">
+                        <h2 class="form-title">Зміна пароля</h2>
+                        <form @submit.prevent="changePassword()" class="profile-form">
+                            <div class="form-group">
+                                <label for="currentPassword" class="form-label">Поточний пароль</label>
+                                <input type="password" id="currentPassword" class="form-input" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="newPassword" class="form-label">Новий пароль</label>
+                                <input type="password" id="newPassword" class="form-input" required>
+                                <div class="form-help">Мінімум 8 символів, хоча б одна цифра та одна велика літера</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirmPassword" class="form-label">Підтвердження нового пароля</label>
+                                <input type="password" id="confirmPassword" class="form-input" required>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" @click="showChangePassword = false" class="btn btn-outline">Скасувати</button>
+                                <button type="submit" class="btn btn-primary">Змінити пароль</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Налаштування підписки -->
+                <div x-show="showSubscriptionSettings" class="profile-form-container">
+                    <div class="form-card subscription-card">
+                        <h2 class="form-title">Налаштування підписки</h2>
+                        <div class="subscription-details">
+                            <div class="subscription-status">
+                                <i class="fas fa-crown"></i>
+                                <div class="status-text">
+                                    <h3>Преміум план</h3>
+                                    <p>Активний до: 15 грудня 2023</p>
+                                </div>
+                            </div>
+                            
+                            <div class="subscription-info">
+                                <p>Ваша підписка буде автоматично продовжена 15 грудня 2023 року.</p>
+                                <p>Спосіб оплати: Visa **** 1234</p>
+                            </div>
+                            
+                            <div class="subscription-actions">
+                                <button class="btn btn-outline" @click="showSubscriptionSettings = false">Закрити</button>
+                                <button class="btn btn-primary" @click="upgradeAccount()">Змінити план</button>
+                                <button class="btn btn-danger" @click="cancelSubscription()">Скасувати підписку</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Збережені історії -->
+                <div x-show="activeTab === 'saved' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
+                    <h2 class="content-title">Збережені історії</h2>
+                    
+                    <!-- Історія 1 -->
+                    <div id="saved-item-1" class="saved-item">
+                        <div class="saved-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?train,night')"></div>
+                        <div class="saved-item-content">
+                            <div class="saved-item-category">Романтика</div>
+                            <h3 class="saved-item-title">
+                                <a href="story.html">Несподівана зустріч у нічному потязі</a>
+                            </h3>
+                            <div class="saved-item-meta">
+                                <div class="saved-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,woman')"></div>
+                                    <div class="author-name">Олександра Романенко</div>
+                                </div>
+                                <div class="saved-item-date">Збережено: 18 жовтня 2023</div>
+                            </div>
+                        </div>
+                        <div class="saved-item-actions">
+                            <button class="action-btn" title="Видалити із збережених" @click="removeFromSaved(1)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Історія 2 -->
+                    <div id="saved-item-2" class="saved-item">
+                        <div class="saved-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?paris,night')"></div>
+                        <div class="saved-item-content">
+                            <div class="saved-item-category">Романтика</div>
+                            <h3 class="saved-item-title">
+                                <a href="story-paris.html">Одна ніч у Парижі</a>
+                            </h3>
+                            <div class="saved-item-meta">
+                                <div class="saved-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,girl')"></div>
+                                    <div class="author-name">Марія Ковальчук</div>
+                                </div>
+                                <div class="saved-item-date">Збережено: 15 жовтня 2023</div>
+                            </div>
+                        </div>
+                        <div class="saved-item-actions">
+                            <button class="action-btn" title="Видалити із збережених" @click="removeFromSaved(2)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Історія 3 -->
+                    <div id="saved-item-3" class="saved-item">
+                        <div class="saved-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?hotel,luxury')"></div>
+                        <div class="saved-item-content">
+                            <div class="saved-item-category">Романтика</div>
+                            <h3 class="saved-item-title">
+                                <a href="story-hotel.html">Таємниця кімнати 512</a>
+                            </h3>
+                            <div class="saved-item-meta">
+                                <div class="saved-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,woman')"></div>
+                                    <div class="author-name">Олена Вознюк</div>
+                                </div>
+                                <div class="saved-item-date">Збережено: 10 жовтня 2023</div>
+                            </div>
+                        </div>
+                        <div class="saved-item-actions">
+                            <button class="action-btn" title="Видалити із збережених" @click="removeFromSaved(3)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Історія переглядів -->
+                <div x-show="activeTab === 'history' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
+                    <h2 class="content-title">Історія переглядів</h2>
+                    
+                    <div class="history-section">
+                        <div class="history-date">Сьогодні</div>
+                        
+                        <div class="history-item">
+                            <div class="history-time">15:42</div>
+                            <div class="history-content">
+                                <div class="history-title">
+                                    <a href="story.html">Несподівана зустріч у нічному потязі</a>
+                                </div>
+                                <div class="history-category">Романтика</div>
+                            </div>
+                        </div>
+                        
+                        <div class="history-item">
+                            <div class="history-time">14:23</div>
+                            <div class="history-content">
+                                <div class="history-title">
+                                    <a href="story-paris.html">Одна ніч у Парижі</a>
+                                </div>
+                                <div class="history-category">Романтика</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-section">
+                        <div class="history-date">Вчора</div>
+                        
+                        <div class="history-item">
+                            <div class="history-time">21:15</div>
+                            <div class="history-content">
+                                <div class="history-title">
+                                    <a href="story-dance.html">Танець з незнайомцем</a>
+                                </div>
+                                <div class="history-category">Романтика</div>
+                            </div>
+                        </div>
+                        
+                        <div class="history-item">
+                            <div class="history-time">18:50</div>
+                            <div class="history-content">
+                                <div class="history-title">
+                                    <a href="story-hotel.html">Таємниця кімнати 512</a>
+                                </div>
+                                <div class="history-category">Романтика</div>
+                            </div>
+                        </div>
+                        
+                        <div class="history-item">
+                            <div class="history-time">16:30</div>
+                            <div class="history-content">
+                                <div class="history-title">
+                                    <a href="story-beach.html">Спекотний літній день</a>
+                                </div>
+                                <div class="history-category">Романтика</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Вподобані історії -->
+                <div x-show="activeTab === 'likes' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
+                    <h2 class="content-title">Вподобані історії</h2>
+                    
+                    <div class="likes-grid">
+                        <!-- Вподобана історія 1 -->
+                        <div class="liked-item">
+                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?beach,sunset')"></div>
+                            <div class="liked-item-content">
+                                <div class="liked-item-category">Романтика</div>
+                                <h3 class="liked-item-title">
+                                    <a href="story-beach.html">Спекотний літній день</a>
+                                </h3>
+                                <div class="liked-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,man')"></div>
+                                    <div class="author-name">Андрій Лисенко</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Вподобана історія 2 -->
+                        <div class="liked-item">
+                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?night,couple')"></div>
+                            <div class="liked-item-content">
+                                <div class="liked-item-category">Романтика</div>
+                                <h3 class="liked-item-title">
+                                    <a href="story-paris.html">Одна ніч у Парижі</a>
+                                </h3>
+                                <div class="liked-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,girl')"></div>
+                                    <div class="author-name">Марія Ковальчук</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Вподобана історія 3 -->
+                        <div class="liked-item">
+                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?hotel,luxury')"></div>
+                            <div class="liked-item-content">
+                                <div class="liked-item-category">Романтика</div>
+                                <h3 class="liked-item-title">
+                                    <a href="story-hotel.html">Таємниця кімнати 512</a>
+                                </h3>
+                                <div class="liked-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,woman')"></div>
+                                    <div class="author-name">Олена Вознюк</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Вподобана історія 4 -->
+                        <div class="liked-item">
+                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?dance,party')"></div>
+                            <div class="liked-item-content">
+                                <div class="liked-item-category">Романтика</div>
+                                <h3 class="liked-item-title">
+                                    <a href="story-dance.html">Танець з незнайомцем</a>
+                                </h3>
+                                <div class="liked-item-author">
+                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,girl')"></div>
+                                    <div class="author-name">Юлія Петренко</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Мої коментарі -->
+                <div x-show="activeTab === 'comments' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
+                    <h2 class="content-title">Мої коментарі</h2>
+                    
+                    <div class="comments-list">
+                        <!-- Коментар 1 -->
+                        <div class="comment-item">
+                            <div class="comment-story">
+                                <a href="story.html">Несподівана зустріч у нічному потязі</a>
+                            </div>
+                            <div class="comment-text">
+                                Дуже атмосферна історія! Автор чудово передав відчуття спонтанної зустрічі і тієї іскри, що виникає між незнайомцями. Хотілося б продовження!
+                            </div>
+                            <div class="comment-meta">
+                                <div class="comment-date">18 жовтня 2023, 15:45</div>
+                                <div class="comment-likes">12 людям подобається</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Коментар 2 -->
+                        <div class="comment-item">
+                            <div class="comment-story">
+                                <a href="story-paris.html">Одна ніч у Парижі</a>
+                            </div>
+                            <div class="comment-text">
+                                Париж дійсно місто кохання! Опис нічного Парижу з видом на Ейфелеву вежу дуже романтичний. Власні спогади нахлинули, дякую за таку чудову історію!
+                            </div>
+                            <div class="comment-meta">
+                                <div class="comment-date">15 жовтня 2023, 20:30</div>
+                                <div class="comment-likes">8 людям подобається</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Коментар 3 -->
+                        <div class="comment-item">
+                            <div class="comment-story">
+                                <a href="story-hotel.html">Таємниця кімнати 512</a>
+                            </div>
+                            <div class="comment-text">
+                                Містика і еротика - чудове поєднання! Весь час було відчуття, що щось незвичайне станеться, і розв'язка не розчарувала. Чекаю на нові історії від цього автора.
+                            </div>
+                            <div class="comment-meta">
+                                <div class="comment-date">10 жовтня 2023, 19:15</div>
+                                <div class="comment-likes">15 людям подобається</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Мої підписки -->
+                <div x-show="activeTab === 'following' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
+                    <h2 class="content-title">Мої підписки</h2>
+                    
+                    <div class="following-list">
+                        <!-- Автор 1 -->
+                        <div class="following-item">
+                            <div class="following-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,woman')"></div>
+                            <div class="following-info">
+                                <div class="following-name">Олександра Романенко</div>
+                                <div class="following-stats">
+                                    <div class="following-stat">28 історій</div>
+                                    <div class="following-stat">4.9 <i class="fas fa-star"></i></div>
+                                </div>
+                                <div class="following-bio">Автор еротичних історій, пише в жанрі романтика та фантазії.</div>
+                            </div>
+                            <div class="following-actions">
+                                <button class="btn btn-outline">Відписатися</button>
+                                <a href="author-profile.html" class="btn btn-primary">Профіль</a>
+                            </div>
+                        </div>
+                        
+                        <!-- Автор 2 -->
+                        <div class="following-item">
+                            <div class="following-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,girl')"></div>
+                            <div class="following-info">
+                                <div class="following-name">Марія Ковальчук</div>
+                                <div class="following-stats">
+                                    <div class="following-stat">19 історій</div>
+                                    <div class="following-stat">4.8 <i class="fas fa-star"></i></div>
+                                </div>
+                                <div class="following-bio">Спеціалізується на романтичних історіях у великих містах.</div>
+                            </div>
+                            <div class="following-actions">
+                                <button class="btn btn-outline">Відписатися</button>
+                                <a href="author-profile.html" class="btn btn-primary">Профіль</a>
+                            </div>
+                        </div>
+                        
+                        <!-- Автор 3 -->
+                        <div class="following-item">
+                            <div class="following-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,man')"></div>
+                            <div class="following-info">
+                                <div class="following-name">Андрій Лисенко</div>
+                                <div class="following-stats">
+                                    <div class="following-stat">15 історій</div>
+                                    <div class="following-stat">4.7 <i class="fas fa-star"></i></div>
+                                </div>
+                                <div class="following-bio">Автор захоплюючих історій про відпочинок і спонтанні зустрічі.</div>
+                            </div>
+                            <div class="following-actions">
+                                <button class="btn btn-outline">Відписатися</button>
+                                <a href="author-profile.html" class="btn btn-primary">Профіль</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Підказка для преміум-акаунту -->
+    <template x-if="!isPremiumUser">
+        <div class="premium-notification">
+            <div class="premium-notification-content">
+                <div class="premium-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="premium-message">
+                    <h3>Розкрийте повний потенціал сайту!</h3>
+                    <p>Отримайте необмежений доступ до всіх історій та унікальних функцій з преміум-акаунтом.</p>
+                </div>
+                <button @click="upgradeAccount()" class="btn btn-premium">Отримати преміум</button>
+                <button class="close-notification"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </template>
+
+    <!-- JavaScript для додаткової функціональності -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Закриття преміум-підказки
+            const closeNotification = document.querySelector('.close-notification');
+            const premiumNotification = document.querySelector('.premium-notification');
+            
+            if (closeNotification && premiumNotification) {
+                closeNotification.addEventListener('click', function() {
+                    premiumNotification.style.display = 'none';
+                    
+                    // Зберігаємо інформацію, що користувач закрив повідомлення
+                    localStorage.setItem('premiumNotificationClosed', 'true');
+                });
+                
+                // Перевіряємо, чи користувач вже закривав повідомлення
+                if (localStorage.getItem('premiumNotificationClosed') === 'true') {
+                    premiumNotification.style.display = 'none';
+                }
+            }
+            
+            // Обробка зміни аватару (можна додати реальну функціональність завантаження)
+            const avatarInput = document.getElementById('userAvatar');
+            if (avatarInput) {
+                avatarInput.addEventListener('change', function() {
+                    // Тут може бути логіка для зміни аватару
+                    console.log('Змінено URL аватару:', this.value);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

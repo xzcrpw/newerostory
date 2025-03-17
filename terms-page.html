@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Правила та умови використання — Таємний Світ</title>
+
+  <!-- Мета-теги для SEO і соцмереж -->
+  <meta name="description" content="Правила та умови використання сайту Таємний Світ. Ознайомтеся з вимогами до контенту, правами та обов'язками користувачів нашої платформи.">
+  <meta property="og:title" content="Правила та умови використання — Таємний Світ">
+  <meta property="og:description" content="Правила та умови використання сайту Таємний Світ. Ознайомтеся з вимогами до контенту, правами та обов'язками користувачів нашої платформи.">
+  <meta property="og:type" content="website">
+
+  <!-- Стилі -->
+  <link rel="stylesheet" href="css/main.css">
+
+  <!-- Шрифти -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome для іконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Alpine.js для інтерактивності -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* Специфічні стилі для сторінки правил */
+    .terms-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+    }
+    
+    .terms-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .terms-title {
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .terms-title:after {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 3px;
+      background: var(--accent-red);
+    }
+    
+    .terms-description {
+      color: var(--secondary-text);
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .last-updated {
+      display: block;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--secondary-text);
+      font-style: italic;
+    }
+    
+    .terms-navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .terms-navigation a {
+      color: var(--secondary-text);
+      text-decoration: none;
+      transition: all 0.3s;
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius);
+      font-size: 0.9rem;
+    }
+    
+    .terms-navigation a:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-color);
+    }
+    
+    .terms-content {
+      margin-bottom: 3rem;
+    }
+    
+    .section {
+      margin-bottom: 2.5rem;
+    }
+    
+    .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      color: var(--accent-gold);
+    }
+    
+    .section-title:after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 50px;
+      height: 2px;
+      background: var(--accent-red);
+    }
+    
+    .subsection {
+      margin-bottom: 1.5rem;
+    }
+    
+    .subsection-title {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+    }
+    
+    .terms-content p, .terms-content ul, .terms-content ol {
+      margin-bottom: 1rem;
+      color: var(--secondary-text);
+      line-height: 1.7;
+    }
+    
+    .terms-content ul, .terms-content ol {
+      padding-left: 1.5rem;
+    }
+    
+    .terms-content li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .terms-content a {
+      color: var(--accent-red);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    
+    .terms-content a:hover {
+      text-decoration: underline;
+    }
+    
+    .terms-footer {
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .terms-footer p {
+      color: var(--secondary-text);
+      margin-bottom: 1.5rem;
+    }
+    
+    /* Стилі для таблиці контенту */
+    .table-of-contents {
+      background-color: var(--card-color);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+      border: 1px solid rgba(153, 0, 0, 0.1);
+    }
+    
+    .toc-title {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    .toc-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    
+    .toc-list li {
+      margin-bottom: 0.5rem;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    
+    .toc-list li:before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--accent-red);
+    }
+    
+    .toc-list a {
+      color: var(--secondary-text);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    
+    .toc-list a:hover {
+      color: var(--accent-red);
+    }
+    
+    /* Специфічний стиль для попередження */
+    .warning-box {
+      background-color: rgba(153, 0, 0, 0.1);
+      border: 1px solid rgba(153, 0, 0, 0.2);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      display: flex;
+      align-items: flex-start;
+    }
+    
+    .warning-icon {
+      font-size: 1.5rem;
+      color: var(--accent-red);
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+    
+    .warning-content {
+      flex: 1;
+    }
+    
+    .warning-content p {
+      margin-bottom: 0;
+    }
+
+    /* Респонсивність */
+    @media (max-width: 768px) {
+      .terms-navigation {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      
+      .terms-title {
+        font-size: 2.2rem;
+      }
+    }
+  </style>

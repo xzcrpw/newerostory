@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Романтика — еротичні історії | Таємний Світ</title>
+    
+    <!-- Мета-теги для SEO і соцмереж -->
+    <meta name="description" content="Найкращі еротичні історії у категорії Романтика. Чуттєві розповіді про кохання, пристрасть та незабутні моменти інтимної близькості.">
+    <meta property="og:title" content="Романтичні еротичні історії — Таємний Світ">
+    <meta property="og:description" content="Найкращі еротичні історії у категорії Романтика. Чуттєві розповіді про кохання, пристрасть та незабутні моменти інтимної близькості.">
+    <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?couple,romance">
+    <meta property="og:type" content="website">
+    
+    <!-- Шрифти -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome для іконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    
+    <!-- Alpine.js для інтерактивності -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Підключення CSS стилів -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/category_romance.css">
+</head>
+<body x-data="{
+    isLoggedIn: false,
+    isPremiumUser: false,
+    currentFilter: 'all',
+    currentSort: 'newest',
+    showFilters: false,
+    currentPage: 1,
+    
+    toggleFilters() {
+        this.showFilters = !this.showFilters;
+    },
+    
+    setFilter(filter) {
+        this.currentFilter = filter;
+        this.currentPage = 1;
+        // В реальному проєкті тут був би запит до API для фільтрації
+    },
+    
+    setSort(sort) {
+        this.currentSort = sort;
+        this.currentPage = 1;
+        // В реальному проєкті тут був би запит до API для сортування
+    },
+    
+    nextPage() {
+        this.currentPage++;
+        // В реальному проєкті тут був би запит до API для наступної сторінки
+        
+        // Плавний скрол вгору після зміни сторінки
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    
+    prevPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            // В реальному проєкті тут був би запит до API для попередньої сторінки
+            
+            // Плавний скрол вгору після зміни сторінки
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+}">
+
+    <!-- Хедер -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+                
+                <ul class="nav-links">
+                    <li><a href="index.html">Головна</a></li>
+                    <li><a href="new-stories.html">Нові історії</a></li>
+                    <li><a href="top-stories.html">Топ рейтинг</a></li>
+                    <li><a href="categories.html" class="active">Категорії</a></li>
+                    <li><a href="authors.html">Автори</a></li>
+                </ul>
+                
+                <div class="auth-buttons">
+                    <div class="lang-dropdown">
+                        <span>UA</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <template x-if="!isLoggedIn">
+                        <div>
+                            <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
+                            <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+                        </div>
+                    </template>
+                    <template x-if="isLoggedIn">
+                        <div>
+                            <a href="profile.html" class="btn btn-outline"><i class="fas fa-user"></i> Профіль</a>
+                            <a href="#" @click.prevent="isLoggedIn = false" class="btn btn-primary"><i class="fas fa-sign-out-alt"></i> Вийти</a>
+                        </div>
+                    </template>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Основний контент -->
+    <main class="container">
+        <!-- Хлібні крихти -->
+        <div class="breadcrumbs">
+            <a href="index.html">Головна</a>
+            <span class="separator">/</span>
+            <a href="categories.html">Категорії</a>
+            <span class="separator">/</span>
+            <span class="current">Романтика</span>
+        </div>
+        
+        <!-- Заголовок категорії -->
+        <div class="category-header">
+            <div class="category-background">
+                <div class="category-overlay"></div>
+            </div>
+            <div class="category-content">
+                <h1 class="category-title">Романтика</h1>
+                <div class="category-description">
+                    Чуттєві історії про кохання, пристрасть та романтичні зустрічі, які залишають незабутні враження. Відкрийте світ ніжності, пристрасті і романтичного еротизму.
+                </div>
+                <div class="category-meta">
+                    <div class="category-stats">
+                        <div class="category-stat"><i class="fas fa-book"></i> 156 історій</div>
+                        <div class="category-stat"><i class="far fa-eye"></i> 25.3k переглядів</div>
+                        <div class="category-stat"><i class="far fa-heart"></i> 12.1k вподобань</div>
+                    </div>
+                    <div class="category-actions">
+                        <button class="btn btn-outline btn-favorite">
+                            <i class="far fa-bookmark"></i> В обрані
+                        </button>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-rss"></i> Підписатися
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Фільтри і сортування -->
+        <div class="filters-section">
+            <div class="filters-container">
+                <div class="filters-header">
+                    <div class="filter-summary">
+                        <span x-show="currentFilter === 'all'">Всі історії</span>
+                        <span x-show="currentFilter === 'new'">Нові історії</span>
+                        <span x-show="currentFilter === 'top'">Популярні історії</span>
+                        <span x-show="currentFilter === 'premium'">Преміум історії</span>
+                        <span class="filter-count">156 історій</span>
+                    </div>
+                    <button @click="toggleFilters()" class="btn-filter-toggle">
+                        <i class="fas fa-sliders-h"></i> Фільтри
+                        <i :class="showFilters ? 'fa-chevron-up' : 'fa-chevron-down'" class="fas"></i>
+                    </button>
+                </div>
+                
+                <div x-show="showFilters" class="filters-body">
+                    <div class="filter-group">
+                        <div class="filter-label">Тип:</div>
+                        <div class="filter-options">
+                            <button @click="setFilter('all')" :class="{ 'active': currentFilter === 'all' }" class="filter-btn">Всі</button>
+                            <button @click="setFilter('new')" :class="{ 'active': currentFilter === 'new' }" class="filter-btn">Нові</button>
+                            <button @click="setFilter('top')" :class="{ 'active': currentFilter === 'top' }" class="filter-btn">Популярні</button>
+                            <button @click="setFilter('premium')" :class="{ 'active': currentFilter === 'premium' }" class="filter-btn">Преміум</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <div class="filter-label">Сортування:</div>
+                        <div class="filter-options">
+                            <button @click="setSort('newest')" :class="{ 'active': currentSort === 'newest' }" class="filter-btn">Найновіші</button>
+                            <button @click="setSort('popular')" :class="{ 'active': currentSort === 'popular' }" class="filter-btn">Найпопулярніші</button>
+                            <button @click="setSort('rating')" :class="{ 'active': currentSort === 'rating' }" class="filter-btn">За рейтингом</button>
+                            <button @click="setSort('commented')" :class="{ 'active': currentSort === 'commented' }" class="filter-btn">Обговорювані</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <div class="filter-label">Теги:</div>
+                        <div class="filter-tags">
+                            <div class="filter-tag">Спонтанний секс <i class="fas fa-times"></i></div>
+                            <div class="filter-tag">Ніч у готелі <i class="fas fa-times"></i></div>
+                            <div class="filter-tag">З незнайомцем <i class="fas fa-times"></i></div>
+                            <button class="btn-add-tag"><i class="fas fa-plus"></i> Додати тег</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Список історій -->
+        <div class="stories-list">
+            <!-- Історія 1 -->
+            <div class="story-item">
+                <div class="story-preview">
+                    <img src="https://source.unsplash.com/random/300x400/?couple,romance" alt="Несподівана зустріч у нічному потязі">
+                    <div class="story-badge">18+</div>
+                    <div class="story-rating">
+                        <i class="fas fa-star"></i> 4.8
+                    </div>
+                </div>
+                <div class="story-details">
+                    <div class="story-meta">
+                        <div class="story-category">Романтика</div>
+                        <div class="story-date">15 жовтня 2023</div>
+                    </div>
+                    <h3 class="story-title">
+                        <a href="story.html">Несподівана зустріч у нічному потязі</a>
+                    </h3>
+                    <div class="story-excerpt">
+                        Я сидів у напівпорожньому вагоні потяга, прямуючи до Києва. Дорога обіцяла бути довгою та нудною, але все змінилося, коли на одній із станцій зайшла вона. Висока блондинка у елегантній сукні, що ідеально підкреслювала її фігуру...
+                    </div>
+                    <div class="story-footer">
+                        <div class="story-stats">
+                            <div class="story-stat"><i class="far fa-eye"></i> 2.5k</div>
+                            <div class="story-stat"><i class="far fa-comment"></i> 18</div>
+                            <div class="story-stat"><i class="far fa-clock"></i> 12 хв.</div>
+                        </div>
+                        <div class="story-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,woman')"></div>
+                            <div class="author-name">Олександра Романенко</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Історія 2 -->
+            <div class="story-item">
+                <div class="story-preview">
+                    <img src="https://source.unsplash.com/random/300x400/?night,couple" alt="Одна ніч у Парижі">
+                    <div class="story-badge premium-badge">21+</div>
+                    <div class="story-rating">
+                        <i class="fas fa-star"></i> 4.9
+                    </div>
+                </div>
+                <div class="story-details">
+                    <div class="story-meta">
+                        <div class="story-category">Романтика</div>
+                        <div class="story-date">12 жовтня 2023</div>
+                    </div>
+                    <h3 class="story-title">
+                        <a href="story-paris.html">Одна ніч у Парижі</a>
+                    </h3>
+                    <div class="story-excerpt">
+                        Париж, місто кохання. Я приїхала сюди по роботі і не очікувала нічого особливого. Але доля підготувала мені сюрприз в особі французького фотографа Жана, який запросив мене на вечерю з видом на Ейфелеву вежу...
+                    </div>
+                    <div class="story-footer">
+                        <div class="story-stats">
+                            <div class="story-stat"><i class="far fa-eye"></i> 3.4k</div>
+                            <div class="story-stat"><i class="far fa-comment"></i> 24</div>
+                            <div class="story-stat"><i class="far fa-clock"></i> 15 хв.</div>
+                        </div>
+                        <div class="story-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,girl')"></div>
+                            <div class="author-name">Марія Ковальчук</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="premium-overlay">
+                    <div class="premium-content">
+                        <i class="fas fa-crown"></i>
+                        <div class="premium-text">Преміум</div>
+                        <a href="premium.html" class="btn btn-premium">Отримати доступ</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Історія 3 -->
+            <div class="story-item">
+                <div class="story-preview">
+                    <img src="https://source.unsplash.com/random/300x400/?beach,sunset" alt="Спекотний літній день">
+                    <div class="story-badge">18+</div>
+                    <div class="story-rating">
+                        <i class="fas fa-star"></i> 4.7
+                    </div>
+                </div>
+                <div class="story-details">
+                    <div class="story-meta">
+                        <div class="story-category">Романтика</div>
+                        <div class="story-date">8 жовтня 2023</div>
+                    </div>
+                    <h3 class="story-title">
+                        <a href="story-beach.html">Спекотний літній день</a>
+                    </h3>
+                    <div class="story-excerpt">
+                        День був неймовірно спекотним. Я вирішив провести його біля басейну у приватному маєтку мого друга, який поїхав у відрядження. Я розраховував бути сам, але несподівано біля басейну з'явилася вона...
+                    </div>
+                    <div class="story-footer">
+                        <div class="story-stats">
+                            <div class="story-stat"><i class="far fa-eye"></i> 1.7k</div>
+                            <div class="story-stat"><i class="far fa-comment"></i> 13</div>
+                            <div class="story-stat"><i class="far fa-clock"></i> 10 хв.</div>
+                        </div>
+                        <div class="story-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,man')"></div>
+                            <div class="author-name">Андрій Лисенко</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Історія 4 -->
+            <div class="story-item">
+                <div class="story-preview">
+                    <img src="https://source.unsplash.com/random/300x400/?hotel,luxury" alt="Таємниця кімнати 512">
+                    <div class="story-badge">18+</div>
+                    <div class="story-rating">
+                        <i class="fas fa-star"></i> 4.6
+                    </div>
+                </div>
+                <div class="story-details">
+                    <div class="story-meta">
+                        <div class="story-category">Романтика</div>
+                        <div class="story-date">3 жовтня 2023</div>
+                    </div>
+                    <h3 class="story-title">
+                        <a href="story-hotel.html">Таємниця кімнати 512</a>
+                    </h3>
+                    <div class="story-excerpt">
+                        Мене поселили в кімнаті 512. Звичайний номер у п'ятизірковому готелі. Але щоночі, рівно о другій годині ночі, я чула стукіт у двері. Коли я нарешті відкрила, там стояв він — найкрасивіший чоловік, якого я коли-небудь бачила...
+                    </div>
+                    <div class="story-footer">
+                        <div class="story-stats">
+                            <div class="story-stat"><i class="far fa-eye"></i> 2.1k</div>
+                            <div class="story-stat"><i class="far fa-comment"></i> 16</div>
+                            <div class="story-stat"><i class="far fa-clock"></i> 13 хв.</div>
+                        </div>
+                        <div class="story-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,woman')"></div>
+                            <div class="author-name">Олена Вознюк</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Історія 5 -->
+            <div class="story-item">
+                <div class="story-preview">
+                    <img src="https://source.unsplash.com/random/300x400/?rain,window" alt="Дощова зустріч">
+                    <div class="story-badge premium-badge">21+</div>
+                    <div class="story-rating">
+                        <i class="fas fa-star"></i> 4.8
+                    </div>
+                </div>
+                <div class="story-details">
+                    <div class="story-meta">
+                        <div class="story-category">Романтика</div>
+                        <div class="story-date">27 вересня 2023</div>
+                    </div>
+                    <h3 class="story-title">
+                        <a href="story-rain.html">Дощова зустріч</a>
+                    </h3>
+                    <div class="story-excerpt">
+                        Дощ йшов стіною. Я сховалася під навісом кав'ярні, повністю промокла. Раптом хтось накинув мені на плечі свій піджак. Озирнувшись, я побачила пару найглибших блакитних очей, які дивилися на мене з ніжністю...
+                    </div>
+                    <div class="story-footer">
+                        <div class="story-stats">
+                            <div class="story-stat"><i class="far fa-eye"></i> 2.8k</div>
+                            <div class="story-stat"><i class="far fa-comment"></i> 21</div>
+                            <div class="story-stat"><i class="far fa-clock"></i> 14 хв.</div>
+                        </div>
+                        <div class="story-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,woman')"></div>
+                            <div class="author-name">Катерина Шевченко</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="premium-overlay">
+                    <div class="premium-content">
+                        <i class="fas fa-crown"></i>
+                        <div class="premium-text">Преміум</div>
+                        <a href="premium.html" class="btn btn-premium">Отримати доступ</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Історія 6 -->
+            <div class="story-item">
+                <div class="story-preview">
+                    <img src="https://source.unsplash.com/random/300x400/?dance,party" alt="Танець з незнайомцем">
+                    <div class="story-badge">18+</div>
+                    <div class="story-rating">
+                        <i class="fas fa-star"></i> 4.5
+                    </div>
+                </div>
+                <div class="story-details">
+                    <div class="story-meta">
+                        <div class="story-category">Романтика</div>
+                        <div class="story-date">22 вересня 2023</div>
+                    </div>
+                    <h3 class="story-title">
+                        <a href="story-dance.html">Танець з незнайомцем</a>
+                    </h3>
+                    <div class="story-excerpt">
+                        Клуб був переповнений людьми. Я не планувала танцювати, але музика була надто спокусливою. Коли я вийшла на танцпол, відчула, як чиїсь руки обіймають мене за талію. Це був він — таємничий незнайомець...
+                    </div>
+                    <div class="story-footer">
+                        <div class="story-stats">
+                            <div class="story-stat"><i class="far fa-eye"></i> 1.9k</div>
+                            <div class="story-stat"><i class="far fa-comment"></i> 14</div>
+                            <div class="story-stat"><i class="far fa-clock"></i> 11 хв.</div>
+                        </div>
+                        <div class="story-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,girl')"></div>
+                            <div class="author-name">Юлія Петренко</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Пагінація -->
+        <div class="pagination">
+            <button @click="prevPage()" :disabled="currentPage === 1" class="pagination-button prev-button">
+                <i class="fas fa-chevron-left"></i> Попередня
+            </button>
+            
+            <div class="pagination-info">
+                Сторінка <span class="current-page" x-text="currentPage"></span> з <span class="total-pages">6</span>
+            </div>
+            
+            <button @click="nextPage()" class="pagination-button next-button">
+                Наступна <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        
+        <!-- Рекомендовані автори в цій категорії -->
+        <div class="recommended-authors">
+            <h2 class="section-title">Популярні автори в цій категорії</h2>
+            <div class="authors-list">
+                <div class="author-card">
+                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/200x200/?portrait,woman')"></div>
+                    <div class="author-info">
+                        <h3 class="author-name">Олександра Романенко</h3>
+                        <div class="author-stats">
+                            <div class="author-stat"><i class="fas fa-book"></i> 28 історій</div>
+                            <div class="author-stat"><i class="fas fa-star"></i> 4.9</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-follow">Стежити</button>
+                </div>
+                
+                <div class="author-card">
+                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/200x200/?portrait,girl')"></div>
+                    <div class="author-info">
+                        <h3 class="author-name">Марія Ковальчук</h3>
+                        <div class="author-stats">
+                            <div class="author-stat"><i class="fas fa-book"></i> 19 історій</div>
+                            <div class="author-stat"><i class="fas fa-star"></i> 4.8</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-follow">Стежити</button>
+                </div>
+                
+                <div class="author-card">
+                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/200x200/?portrait,man')"></div>
+                    <div class="author-info">
+                        <h3 class="author-name">Андрій Лисенко</h3>
+                        <div class="author-stats">
+                            <div class="author-stat"><i class="fas fa-book"></i> 15 історій</div>
+                            <div class="author-stat"><i class="fas fa-star"></i> 4.7</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-follow">Стежити</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Підписка на категорію -->
+        <div class="category-subscribe">
+            <div class="subscribe-content">
+                <h2 class="subscribe-title">Отримуйте нові історії категорії "Романтика"</h2>
+                <p class="subscribe-description">Підпишіться, щоб отримувати сповіщення про нові історії у цій категорії. Жодного спаму, тільки найгарячіші новинки.</p>
+                <div class="subscribe-form">
+                    <input type="email" class="subscribe-input" placeholder="Ваша електронна пошта">
+                    <button class="btn btn-primary">Підписатися</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Анімація появи елементів при прокрутці
+            function checkVisibility() {
+                const storyItems = document.querySelectorAll('.story-item');
+                
+                storyItems.forEach(item => {
+                    const rect = item.getBoundingClientRect();
+                    const isVisible = (rect.top <= window.innerHeight * 0.9 && rect.top >= 0);
+                    
+                    if (isVisible) {
+                        item.classList.add('visible');
+                    }
+                });
+            }
+            
+            // Ініціалізація
+            window.addEventListener('scroll', checkVisibility);
+            checkVisibility();
+            
+            // Обробка кліків по кнопці "В обрані" та "Підписатися"
+            const favoriteBtn = document.querySelector('.btn-favorite');
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('click', function() {
+                    // Перевірка авторизації (в реальному проєкті)
+                    const isLoggedIn = false; // В Alpine.js це buде змінна
+                    
+                    if (!isLoggedIn) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    // Логіка додавання/видалення з обраних
+                    this.innerHTML = this.innerHTML.includes('В обрані') 
+                        ? '<i class="fas fa-bookmark"></i> В обраних' 
+                        : '<i class="far fa-bookmark"></i> В обрані';
+                    
+                    // Можна додати сповіщення про успішне додавання/видалення
+                });
+            }
+        });
+    </script>
+</body>
+</html>

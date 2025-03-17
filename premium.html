@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Преміум-підписка — Таємний Світ</title>
+    
+    <!-- Мета-теги для SEO і соцмереж -->
+    <meta name="description" content="Отримайте повний доступ до ексклюзивного преміум-контенту та додаткових функцій з преміум-підпискою на сайті Таємний Світ.">
+    <meta property="og:title" content="Преміум-підписка — Таємний Світ">
+    <meta property="og:description" content="Отримайте повний доступ до ексклюзивного преміум-контенту та додаткових функцій з преміум-підпискою.">
+    <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?gold,luxury">
+    <meta property="og:type" content="website">
+    
+    <!-- Шрифти -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome для іконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    
+    <!-- Alpine.js для інтерактивності -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Підключення CSS стилів -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/premium_page.css">
+</head>
+<body x-data="{
+    selectedPlan: 'premium',
+    isYearly: false,
+    showPaymentForm: false,
+    paymentMethod: 'card',
+    cardNumber: '',
+    cardName: '',
+    cardExpiry: '',
+    cardCVC: '',
+    couponCode: '',
+    processingPayment: false,
+    paymentSuccess: false,
+    paymentError: false,
+    currentStep: 1, // 1: вибір плану, 2: оплата, 3: підтвердження
+    
+    get planPrice() {
+        if (this.selectedPlan === 'basic') {
+            return this.isYearly ? 1188 : 119;
+        } else if (this.selectedPlan === 'premium') {
+            return this.isYearly ? 1980 : 199;
+        } else {
+            return this.isYearly ? 2980 : 299;
+        }
+    },
+    
+    get discountAmount() {
+        // Знижка 20% при річній підписці
+        if (!this.isYearly) return 0;
+        
+        const monthlyPrice = this.selectedPlan === 'basic' ? 119 : (this.selectedPlan === 'premium' ? 199 : 299);
+        const yearlyTotal = monthlyPrice * 12;
+        return Math.round(yearlyTotal - this.planPrice);
+    },
+    
+    get planName() {
+        if (this.selectedPlan === 'basic') {
+            return 'Базовий';
+        } else if (this.selectedPlan === 'premium') {
+            return 'Преміум';
+        } else {
+            return 'VIP';
+        }
+    },
+    
+    formatCardNumber() {
+        // Форматування номера картки: XXXX XXXX XXXX XXXX
+        this.cardNumber = this.cardNumber.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
+    },
+    
+    formatExpiryDate() {
+        // Форматування дати закінчення картки: MM/YY
+        this.cardExpiry = this.cardExpiry.replace(/\D/g, '');
+        if (this.cardExpiry.length > 2) {
+            this.cardExpiry = this.cardExpiry.substring(0, 2) + '/' + this.cardExpiry.substring(2, 4);
+        }
+    },
+    
+    selectPlan(plan) {
+        this.selectedPlan = plan;
+    },
+    
+    toggleBillingCycle() {
+        this.isYearly = !this.isYearly;
+    },
+    
+    proceedToPayment() {
+        this.showPaymentForm = true;
+        this.currentStep = 2;
+        
+        // Прокрутіть сторінку до форми оплати
+        setTimeout(() => {
+            document.getElementById('payment-form-section').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    },
+    
+    submitPayment() {
+        this.processingPayment = true;
+        
+        // Симуляція обробки платежу
+        setTimeout(() => {
+            this.processingPayment = false;
+            // Симуляція успішної оплати (в реальному додатку тут буде перевірка)
+            this.paymentSuccess = true;
+            this.currentStep = 3;
+            
+            // Прокрутіть сторінку до підтвердження
+            setTimeout(() => {
+                document.getElementById('confirmation-section').scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }, 2000);
+    },
+    
+    applyCoupon() {
+        // Симуляція застосування купона
+        if (this.couponCode.trim() !== '') {
+            alert('Купон застосовано: знижка 10%');
+        }
+    },
+    
+    restartProcess() {
+        this.showPaymentForm = false;
+        this.paymentSuccess = false;
+        this.paymentError = false;
+        this.currentStep = 1;
+        this.cardNumber = '';
+        this.cardName = '';
+        this.cardExpiry = '';
+        this.cardCVC = '';
+        this.couponCode = '';
+        
+        // Прокрутіть сторінку до верху
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}">
+
+    <!-- Хедер -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+                
+                <ul class="nav-links">
+                    <li><a href="index.html">Головна</a></li>
+                    <li><a href="new-stories.html">Нові історії</a></li>
+                    <li><a href="top-stories.html">Топ рейтинг</a></li>
+                    <li><a href="categories.html">Категорії</a></li>
+                    <li><a href="authors.html">Автори</a></li>
+                </ul>
+                
+                <div class="auth-buttons">
+                    <div class="lang-dropdown">
+                        <span>UA</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
+                    <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Основний контент -->
+    <main>
+        <!-- Хлібні крихти -->
+        <div class="container">
+            <div class="breadcrumbs">
+                <a href="index.html">Головна</a>
+                <span class="separator">/</span>
+                <span class="current">Преміум-підписка</span>
+            </div>
+        </div>
+        
+        <!-- Hero секція -->
+        <section class="premium-hero">
+            <div class="container">
+                <div class="premium-hero-content">
+                    <div class="premium-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h1 class="premium-title">Розкрий повний потенціал Таємного Світу</h1>
+                    <p class="premium-subtitle">Отримай доступ до ексклюзивного контенту та преміум-функцій</p>
+                    <div class="hero-features">
+                        <div class="hero-feature">
+                            <i class="fas fa-lock-open"></i> Повний доступ до всіх історій
+                        </div>
+                        <div class="hero-feature">
+                            <i class="fas fa-language"></i> Автоматичний переклад на інші мови
+                        </div>
+                        <div class="hero-feature">
+                            <i class="fas fa-ad"></i> Без реклами та спливаючих вікон
+                        </div>
+                        <div class="hero-feature">
+                            <i class="fas fa-star"></i> Ексклюзивний преміум-контент
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Інструкція зі статусною панеллю -->
+        <section class="container steps-section">
+            <div class="steps-container">
+                <div class="step" :class="{ 'active': currentStep >= 1, 'completed': currentStep > 1 }">
+                    <div class="step-indicator">
+                        <template x-if="currentStep > 1">
+                            <i class="fas fa-check"></i>
+                        </template>
+                        <template x-if="currentStep <= 1">
+                            <span>1</span>
+                        </template>
+                    </div>
+                    <div class="step-details">
+                        <h3 class="step-title">Вибір плану</h3>
+                        <p class="step-description">Оберіть план, який найкраще відповідає вашим потребам</p>
+                    </div>
+                </div>
+                <div class="step-connector" :class="{ 'active': currentStep > 1 }"></div>
+                <div class="step" :class="{ 'active': currentStep >= 2, 'completed': currentStep > 2 }">
+                    <div class="step-indicator">
+                        <template x-if="currentStep > 2">
+                            <i class="fas fa-check"></i>
+                        </template>
+                        <template x-if="currentStep <= 2">
+                            <span>2</span>
+                        </template>
+                    </div>
+                    <div class="step-details">
+                        <h3 class="step-title">Оплата</h3>
+                        <p class="step-description">Введіть платіжні дані для оформлення підписки</p>
+                    </div>
+                </div>
+                <div class="step-connector" :class="{ 'active': currentStep > 2 }"></div>
+                <div class="step" :class="{ 'active': currentStep >= 3 }">
+                    <div class="step-indicator">
+                        <template x-if="currentStep > 3">
+                            <i class="fas fa-check"></i>
+                        </template>
+                        <template x-if="currentStep <= 3">
+                            <span>3</span>
+                        </template>
+                    </div>
+                    <div class="step-details">
+                        <h3 class="step-title">Підтвердження</h3>
+                        <p class="step-description">Ваша підписка активована й готова до використання</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Плани підписки -->
+        <section class="plans-section" x-show="currentStep === 1">
+            <div class="container">
+                <h2 class="section-title">Оберіть ваш план</h2>
+                
+                <div class="billing-toggle">
+                    <span :class="{ 'active': !isYearly }">Щомісячно</span>
+                    <div class="toggle-switch" @click="toggleBillingCycle()">
+                        <div class="toggle-slider" :class="{ 'yearly': isYearly }"></div>
+                    </div>
+                    <span :class="{ 'active': isYearly }">Щорічно</span>
+                    <div class="discount-badge" x-show="isYearly">Економія 20%</div>
+                </div>
+                
+                <div class="plans-grid">
+                    <!-- Базовий план -->
+                    <div class="plan-card" :class="{ 'selected': selectedPlan === 'basic' }" @click="selectPlan('basic')">
+                        <div class="plan-header">
+                            <h3 class="plan-name">Базовий</h3>
+                            <div class="plan-price">
+                                <span class="currency">₴</span>
+                                <span class="amount" x-text="isYearly ? '1,188' : '119'"></span>
+                                <span class="period" x-text="isYearly ? '/рік' : '/місяць'"></span>
+                            </div>
+                            <div class="price-detail" x-show="isYearly">≈ 99 ₴/місяць</div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Доступ до всіх звичайних історій
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Базовий переклад (англійська, російська)
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Без реклами
+                            </div>
+                            <div class="plan-feature inactive">
+                                <i class="fas fa-times"></i> Преміум-історії
+                            </div>
+                            <div class="plan-feature inactive">
+                                <i class="fas fa-times"></i> Розширений переклад
+                            </div>
+                            <div class="plan-feature inactive">
+                                <i class="fas fa-times"></i> VIP-підтримка
+                            </div>
+                        </div>
+                        <div class="plan-action">
+                            <button class="btn" :class="selectedPlan === 'basic' ? 'btn-primary' : 'btn-outline'" @click.stop="selectPlan('basic')">
+                                <span x-show="selectedPlan !== 'basic'">Обрати</span>
+                                <span x-show="selectedPlan === 'basic'">Обрано</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Преміум план -->
+                    <div class="plan-card popular" :class="{ 'selected': selectedPlan === 'premium' }" @click="selectPlan('premium')">
+                        <div class="popular-badge">Рекомендовано</div>
+                        <div class="plan-header">
+                            <h3 class="plan-name">Преміум</h3>
+                            <div class="plan-price">
+                                <span class="currency">₴</span>
+                                <span class="amount" x-text="isYearly ? '1,980' : '199'"></span>
+                                <span class="period" x-text="isYearly ? '/рік' : '/місяць'"></span>
+                            </div>
+                            <div class="price-detail" x-show="isYearly">≈ 165 ₴/місяць</div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Доступ до всіх звичайних історій
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> <strong>Преміум-історії включно</strong>
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Розширений переклад (6 мов)
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Без реклами
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Пріоритетний доступ до новинок
+                            </div>
+                            <div class="plan-feature inactive">
+                                <i class="fas fa-times"></i> VIP-підтримка
+                            </div>
+                        </div>
+                        <div class="plan-action">
+                            <button class="btn" :class="selectedPlan === 'premium' ? 'btn-primary' : 'btn-outline'" @click.stop="selectPlan('premium')">
+                                <span x-show="selectedPlan !== 'premium'">Обрати</span>
+                                <span x-show="selectedPlan === 'premium'">Обрано</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- VIP план -->
+                    <div class="plan-card" :class="{ 'selected': selectedPlan === 'vip' }" @click="selectPlan('vip')">
+                        <div class="plan-header">
+                            <h3 class="plan-name">VIP</h3>
+                            <div class="plan-price">
+                                <span class="currency">₴</span>
+                                <span class="amount" x-text="isYearly ? '2,980' : '299'"></span>
+                                <span class="period" x-text="isYearly ? '/рік' : '/місяць'"></span>
+                            </div>
+                            <div class="price-detail" x-show="isYearly">≈ 248 ₴/місяць</div>
+                        </div>
+                        <div class="plan-features">
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Усе включено з Преміум-плану
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> <strong>Персоналізовані історії</strong>
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Переклад на всі доступні мови
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Раннє прочитання (на 7 днів раніше)
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Збережені історії офлайн
+                            </div>
+                            <div class="plan-feature">
+                                <i class="fas fa-check"></i> Цілодобова VIP-підтримка
+                            </div>
+                        </div>
+                        <div class="plan-action">
+                            <button class="btn" :class="selectedPlan === 'vip' ? 'btn-primary' : 'btn-outline'" @click.stop="selectPlan('vip')">
+                                <span x-show="selectedPlan !== 'vip'">Обрати</span>
+                                <span x-show="selectedPlan === 'vip'">Обрано</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="selected-plan-info">
+                    <div class="selected-plan-details">
+                        <h3>Обрано: <span x-text="planName"></span></h3>
+                        <p>
+                            <strong x-text="isYearly ? 'Річна підписка' : 'Місячна підписка'"></strong> - 
+                            <span x-text="planPrice"></span> ₴<span x-text="isYearly ? '/рік' : '/місяць'"></span>
+                            <template x-if="isYearly && discountAmount > 0">
+                                <span class="discount-info">Економія: <span x-text="discountAmount"></span> ₴</span>
+                            </template>
+                        </p>
+                    </div>
+                    <button class="btn btn-primary continue-btn" @click="proceedToPayment()">
+                        Продовжити <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                
+                <div class="plan-guarantee">
+                    <i class="fas fa-shield-alt"></i>
+                    <p>Гарантія повернення коштів протягом 7 днів. Ви можете скасувати підписку в будь-який момент.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Форма оплати -->
+        <section id="payment-form-section" class="payment-section" x-show="showPaymentForm && !paymentSuccess" x-transition>
+            <div class="container">
+                <h2 class="section-title">Оплата підписки</h2>
+                
+                <div class="payment-summary">
+                    <div class="summary-details">
+                        <div class="summary-plan">
+                            <h4>План "<span x-text="planName"></span>"</h4>
+                            <p x-text="isYearly ? 'Річна підписка' : 'Місячна підписка'"></p>
+                        </div>
+                        <div class="summary-price">
+                            <span x-text="planPrice"></span> ₴
+                        </div>
+                    </div>
+                    <div class="coupon-section">
+                        <div class="coupon-form">
+                            <input type="text" x-model="couponCode" placeholder="Промокод" class="coupon-input">
+                            <button @click.prevent="applyCoupon()" class="btn btn-outline coupon-btn">Застосувати</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="payment-form">
+                    <div class="form-tabs">
+                        <button 
+                            @click="paymentMethod = 'card'" 
+                            class="form-tab" 
+                            :class="{ 'active': paymentMethod === 'card' }"
+                        >
+                            <i class="fas fa-credit-card"></i> Банківська картка
+                        </button>
+                        <button 
+                            @click="paymentMethod = 'crypto'" 
+                            class="form-tab" 
+                            :class="{ 'active': paymentMethod === 'crypto' }"
+                        >
+                            <i class="fab fa-bitcoin"></i> Криптовалюта
+                        </button>
+                    </div>
+                    
+                    <!-- Форма оплати карткою -->
+                    <div x-show="paymentMethod === 'card'" x-transition>
+                        <form class="card-form" @submit.prevent="submitPayment()">
+                            <div class="form-group">
+                                <label for="cardNumber">Номер картки</label>
+                                <div class="card-input-group">
+                                    <input 
+                                        type="text" 
+                                        id="cardNumber" 
+                                        x-model="cardNumber" 
+                                        @input="formatCardNumber()" 
+                                        maxlength="19" 
+                                        placeholder="1234 5678 9012 3456" 
+                                        required
+                                    >
+                                    <div class="card-icons">
+                                        <i class="fab fa-cc-visa"></i>
+                                        <i class="fab fa-cc-mastercard"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cardName">Ім'я власника картки</label>
+                                <input 
+                                    type="text" 
+                                    id="cardName" 
+                                    x-model="cardName" 
+                                    placeholder="IVAN PETRENKO" 
+                                    required
+                                >
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cardExpiry">Термін дії</label>
+                                    <input 
+                                        type="text" 
+                                        id="cardExpiry" 
+                                        x-model="cardExpiry" 
+                                        @input="formatExpiryDate()" 
+                                        maxlength="5" 
+                                        placeholder="MM/YY" 
+                                        required
+                                    >
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="cardCVC">CVC/CVV</label>
+                                    <input 
+                                        type="password" 
+                                        id="cardCVC" 
+                                        x-model="cardCVC" 
+                                        maxlength="3" 
+                                        placeholder="123" 
+                                        required
+                                    >
+                                </div>
+                            </div>
+                            
+                            <div class="form-agreement">
+                                <input type="checkbox" id="termsAgreement" required>
+                                <label for="termsAgreement">
+                                    Я погоджуюсь з <a href="terms.html">умовами використання</a> та <a href="privacy.html">політикою конфіденційності</a>
+                                </label>
+                            </div>
+                            
+                            <div class="form-action">
+                                <button 
+                                    type="submit" 
+                                    class="btn btn-primary pay-btn" 
+                                    :disabled="processingPayment"
+                                >
+                                    <span x-show="!processingPayment">Оплатити <span x-text="planPrice"></span> ₴</span>
+                                    <span x-show="processingPayment">
+                                        <i class="fas fa-spinner fa-spin"></i> Обробка...
+                                    </span>
+                                </button>
+                            </div>
+                            
+                            <div class="form-security">
+                                <div class="security-item">
+                                    <i class="fas fa-lock"></i> Захищена оплата
+                                </div>
+                                <div class="security-item">
+                                    <i class="fas fa-shield-alt"></i> 256-бітне шифрування
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Форма оплати криптовалютою -->
+                    <div x-show="paymentMethod === 'crypto'" x-transition>
+                        <div class="crypto-payment">
+                            <div class="crypto-options">
+                                <div class="crypto-option">
+                                    <input type="radio" id="bitcoin" name="cryptoType" checked>
+                                    <label for="bitcoin">
+                                        <i class="fab fa-bitcoin"></i> Bitcoin
+                                    </label>
+                                </div>
+                                <div class="crypto-option">
+                                    <input type="radio" id="ethereum" name="cryptoType">
+                                    <label for="ethereum">
+                                        <i class="fab fa-ethereum"></i> Ethereum
+                                    </label>
+                                </div>
+                                <div class="crypto-option">
+                                    <input type="radio" id="usdt" name="cryptoType">
+                                    <label for="usdt">
+                                        <i class="fa-solid fa-dollar-sign"></i> USDT
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="crypto-info">
+                                <div class="qr-code">
+                                    <div class="qr-placeholder"></div>
+                                </div>
+                                <div class="wallet-address">
+                                    <p>Надішліть еквівалент <strong><span x-text="planPrice"></span> ₴</strong> на адресу:</p>
+                                    <div class="address-box">
+                                        <code>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</code>
+                                        <button class="copy-btn">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    <p class="crypto-note">Після підтвердження транзакції в блокчейні, ваша підписка буде активована автоматично.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-agreement">
+                                <input type="checkbox" id="cryptoTermsAgreement" required>
+                                <label for="cryptoTermsAgreement">
+                                    Я погоджуюсь з <a href="terms.html">умовами використання</a> та <a href="privacy.html">політикою конфіденційності</a>
+                                </label>
+                            </div>
+                            
+                            <div class="form-action">
+                                <button 
+                                    type="button" 
+                                    class="btn btn-primary crypto-confirm-btn"
+                                    @click="submitPayment()"
+                                >
+                                    Я сплатив криптовалюту
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Підтвердження оплати -->
+        <section id="confirmation-section" class="confirmation-section" x-show="paymentSuccess" x-transition>
+            <div class="container">
+                <div class="confirmation-card">
+                    <div class="confirmation-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="confirmation-title">Дякуємо за вашу підписку!</h2>
+                    <p class="confirmation-message">
+                        Ваша <span x-text="isYearly ? 'річна' : 'місячна'"></span> підписка на план "<span x-text="planName"></span>" 
+                        успішно активована. Насолоджуйтесь преміум-контентом та розширеними можливостями!
+                    </p>
+                    <div class="confirmation-details">
+                        <div class="confirmation-detail">
+                            <span class="detail-label">Тип підписки:</span>
+                            <span class="detail-value" x-text="planName"></span>
+                        </div>
+                        <div class="confirmation-detail">
+                            <span class="detail-label">Період:</span>
+                            <span class="detail-value" x-text="isYearly ? 'Річна' : 'Місячна'"></span>
+                        </div>
+                        <div class="confirmation-detail">
+                            <span class="detail-label">Сума оплати:</span>
+                            <span class="detail-value"><span x-text="planPrice"></span> ₴</span>
+                        </div>
+                        <div class="confirmation-detail">
+                            <span class="detail-label">Статус:</span>
+                            <span class="detail-value success">Активна</span>
+                        </div>
+                        <div class="confirmation-detail">
+                            <span class="detail-label">Наступне списання:</span>
+                            <span class="detail-value" x-text="isYearly ? '12 березня 2026' : '12 квітня 2025'"></span>
+                        </div>
+                    </div>
+                    <div class="confirmation-actions">
+                        <a href="index.html" class="btn btn-primary">Перейти на головну</a>
+                        <a href="profile.html" class="btn btn-outline">Перейти до профілю</a>
+                    </div>
+                    <div class="confirmation-help">
+                        <p>Маєте питання щодо своєї підписки? <a href="contact.html">Зв'яжіться з нами</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Переваги преміум-підписки -->
+        <section class="benefits-section" x-show="!paymentSuccess">
+            <div class="container">
+                <h2 class="section-title">Переваги преміум-підписки</h2>
+                
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-lock-open"></i>
+                        </div>
+                        <h3 class="benefit-title">Ексклюзивний контент</h3>
+                        <p class="benefit-description">
+                            Отримайте доступ до преміум-історій, які доступні тільки для підписників. Найгарячіші та найякісніші історії чекають на вас.
+                        </p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3 class="benefit-title">Автоматичний переклад</h3>
+                        <p class="benefit-description">
+                            Читайте улюблені історії на різних мовах завдяки вбудованому перекладачу. Доступно більше 6 мов для преміум-користувачів.
+                        </p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-ad"></i>
+                        </div>
+                        <h3 class="benefit-title">Відсутність реклами</h3>
+                        <p class="benefit-description">
+                            Насолоджуйтесь читанням без жодних рекламних банерів, спливаючих вікон та інших відволікаючих елементів.
+                        </p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <h3 class="benefit-title">Офлайн-читання</h3>
+                        <p class="benefit-description">
+                            Завантажуйте улюблені історії для читання в офлайн-режимі. Ідеально для подорожей та місць без інтернету.
+                        </p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h3 class="benefit-title">Ранній доступ</h3>
+                        <p class="benefit-description">
+                            Читайте нові історії на тиждень раніше за звичайних користувачів. Будьте першими, хто дізнається про нові розділи.
+                        </p>
+                    </div>
+                    
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h3 class="benefit-title">Пріоритетна підтримка</h3>
+                        <p class="benefit-description">
+                            Отримуйте швидку та персоналізовану допомогу від нашої команди підтримки у будь-який час доби.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Відгуки користувачів -->
+        <section class="testimonials-section" x-show="!paymentSuccess && currentStep === 1">
+            <div class="container">
+                <h2 class="section-title">Відгуки наших преміум-користувачів</h2>
+                
+                <div class="testimonials-grid">
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="testimonial-text">
+                            "Історії просто неймовірні! Преміум-контент справді вартий кожної копійки. Особливо подобається можливість читати в офлайні під час поїздок."
+                        </div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?woman')"></div>
+                            <div class="author-info">
+                                <div class="author-name">Олена К.</div>
+                                <div class="subscription-type">Преміум, 6 місяців</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="testimonial-text">
+                            "Я професійний автор і просто у захваті від якості контенту. Купив VIP підписку, щоб замовляти персоналізовані історії, і це того варте!"
+                        </div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?man')"></div>
+                            <div class="author-info">
+                                <div class="author-name">Андрій П.</div>
+                                <div class="subscription-type">VIP, 1 рік</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <div class="testimonial-text">
+                            "Функція перекладу - це справжній прорив! Я нарешті можу насолоджуватись історіями різними мовами. Дуже зручно і якісно зроблено."
+                        </div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?girl')"></div>
+                            <div class="author-info">
+                                <div class="author-name">Марія В.</div>
+                                <div class="subscription-type">Преміум, 3 місяці</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- FAQ розділ -->
+        <section class="faq-section" x-show="!paymentSuccess">
+            <div class="container">
+                <h2 class="section-title">Часті запитання</h2>
+                
+                <div class="faq-list" x-data="{ 
+                    activeItem: null,
+                    toggleItem(item) {
+                        this.activeItem = this.activeItem === item ? null : item;
+                    }
+                }">
+                    <div class="faq-item" :class="{ 'active': activeItem === 1 }">
+                        <div class="faq-question" @click="toggleItem(1)">
+                            <h3>Як працює система підписки?</h3>
+                            <div class="faq-toggle">
+                                <i class="fas" :class="activeItem === 1 ? 'fa-minus' : 'fa-plus'"></i>
+                            </div>
+                        </div>
+                        <div class="faq-answer" x-show="activeItem === 1" x-transition>
+                            <p>Наша система підписки дуже проста. Ви обираєте один із трьох планів (Базовий, Преміум або VIP) та тип оплати (щомісячно або щорічно). Після оплати вам одразу надається доступ до всіх функцій вашого плану. Підписка автоматично продовжується, але ви можете скасувати її в будь-який момент у налаштуваннях свого профілю.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" :class="{ 'active': activeItem === 2 }">
+                        <div class="faq-question" @click="toggleItem(2)">
+                            <h3>Чи можу я змінити свій план після оплати?</h3>
+                            <div class="faq-toggle">
+                                <i class="fas" :class="activeItem === 2 ? 'fa-minus' : 'fa-plus'"></i>
+                            </div>
+                        </div>
+                        <div class="faq-answer" x-show="activeItem === 2" x-transition>
+                            <p>Так, ви можете оновити свій план у будь-який момент. При оновленні ви доплачуєте тільки різницю між планами, пропорційно до залишку підписки. Якщо ж ви хочете перейти на нижчий план, зміни відбудуться після закінчення поточного періоду підписки.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" :class="{ 'active': activeItem === 3 }">
+                        <div class="faq-question" @click="toggleItem(3)">
+                            <h3>Як працює функція автоматичного перекладу?</h3>
+                            <div class="faq-toggle">
+                                <i class="fas" :class="activeItem === 3 ? 'fa-minus' : 'fa-plus'"></i>
+                            </div>
+                        </div>
+                        <div class="faq-answer" x-show="activeItem === 3" x-transition>
+                            <p>Функція автоматичного перекладу дозволяє читати історії різними мовами. Базовий план включає переклад українською, російською та англійською мовами. Преміум-план додає ще 4 мови: німецьку, французьку, іспанську та італійську. VIP-план включає всі доступні мови, включаючи японську, китайську, корейську та інші.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" :class="{ 'active': activeItem === 4 }">
+                        <div class="faq-question" @click="toggleItem(4)">
+                            <h3>Як скасувати підписку?</h3>
+                            <div class="faq-toggle">
+                                <i class="fas" :class="activeItem === 4 ? 'fa-minus' : 'fa-plus'"></i>
+                            </div>
+                        </div>
+                        <div class="faq-answer" x-show="activeItem === 4" x-transition>
+                            <p>Скасувати підписку дуже просто. Просто перейдіть у розділ "Профіль" > "Налаштування підписки" та натисніть кнопку "Скасувати підписку". Після скасування ви зможете користуватися преміум-функціями до кінця оплаченого періоду, а потім ваш акаунт автоматично перейде на безкоштовний план.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" :class="{ 'active': activeItem === 5 }">
+                        <div class="faq-question" @click="toggleItem(5)">
+                            <h3>Чи є гарантія повернення коштів?</h3>
+                            <div class="faq-toggle">
+                                <i class="fas" :class="activeItem === 5 ? 'fa-minus' : 'fa-plus'"></i>
+                            </div>
+                        </div>
+                        <div class="faq-answer" x-show="activeItem === 5" x-transition>
+                            <p>Так, ми пропонуємо 7-денну гарантію повернення коштів. Якщо протягом перших 7 днів після оформлення підписки ви зрозумієте, що вона вам не підходить, ви можете запросити повне повернення коштів через форму зворотного зв'язку або написавши на нашу електронну пошту підтримки.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item" :class="{ 'active': activeItem === 6 }">
+                        <div class="faq-question" @click="toggleItem(6)">
+                            <h3>Що таке персоналізовані історії у VIP-плані?</h3>
+                            <div class="faq-toggle">
+                                <i class="fas" :class="activeItem === 6 ? 'fa-minus' : 'fa-plus'"></i>
+                            </div>
+                        </div>
+                        <div class="faq-answer" x-show="activeItem === 6" x-transition>
+                            <p>Персоналізовані історії — це унікальна функція VIP-плану, яка дозволяє вам замовляти історії за вашим власним сценарієм або ідеєю. Ви можете вказати персонажів, сюжет, жанр та інші деталі, а наші автори створять для вас ексклюзивну історію. VIP-користувачі можуть замовляти до 2 персоналізованих історій на місяць без додаткової плати.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Заклик до дії -->
+        <section class="cta-section" x-show="!paymentSuccess && !showPaymentForm">
+            <div class="container">
+                <div class="cta-content">
+                    <h2 class="cta-title">Готові розкрити повний потенціал "Таємного Світу"?</h2>
+                    <p class="cta-description">Не обмежуйте себе безкоштовним контентом. Зануртеся в світ найгарячіших історій з преміум-підпискою!</p>
+                    <button class="btn btn-primary cta-button" @click="proceedToPayment()">
+                        Отримати преміум <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- JavaScript для додаткової функціональності -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Функція для копіювання крипто-адреси в буфер обміну
+            const copyButton = document.querySelector('.copy-btn');
+            if (copyButton) {
+                copyButton.addEventListener('click', function() {
+                    const addressText = document.querySelector('.address-box code').textContent;
+                    
+                    // Копіюємо текст у буфер обміну
+                    navigator.clipboard.writeText(addressText).then(function() {
+                        // Змінюємо іконку та додаємо клас для анімації
+                        copyButton.innerHTML = '<i class="fas fa-check"></i>';
+                        copyButton.classList.add('copied');
+                        
+                        // Повертаємо оригінальну іконку через 2 секунди
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+                            copyButton.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+            }
+            
+            // Додаємо аналітику переходів між вкладками оплати (в реальному проекті)
+            const paymentTabs = document.querySelectorAll('.form-tab');
+            paymentTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const method = this.textContent.includes('картка') ? 'card' : 'crypto';
+                    console.log('Вибрано метод оплати:', method);
+                    // Тут можна додати аналітику Google Analytics або іншої системи
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Часті запитання — Таємний Світ</title>
+
+  <!-- Мета-теги для SEO і соцмереж -->
+  <meta name="description" content="Відповіді на часті запитання користувачів сайту Таємний Світ. Дізнайтеся більше про правила публікації, преміум-підписку та інші особливості платформи.">
+  <meta property="og:title" content="Часті запитання — Таємний Світ">
+  <meta property="og:description" content="Відповіді на часті запитання користувачів сайту Таємний Світ. Дізнайтеся більше про правила публікації, преміум-підписку та інші особливості платформи.">
+  <meta property="og:type" content="website">
+
+  <!-- Стилі -->
+  <link rel="stylesheet" href="css/main.css">
+
+  <!-- Шрифти -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome для іконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Alpine.js для інтерактивності -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* Специфічні стилі для сторінки FAQ */
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+    }
+    
+    .faq-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .faq-title {
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .faq-title:after {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 3px;
+      background: var(--accent-red);
+    }
+    
+    .faq-description {
+      color: var(--secondary-text);
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    
+    .faq-categories {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+    
+    .faq-category {
+      padding: 0.8rem 1.5rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 30px;
+      color: var(--secondary-text);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .faq-category:hover {
+      background-color: rgba(153, 0, 0, 0.1);
+      border-color: rgba(153, 0, 0, 0.2);
+      color: var(--text-color);
+    }
+    
+    .faq-category.active {
+      background-color: rgba(153, 0, 0, 0.2);
+      border-color: rgba(153, 0, 0, 0.3);
+      color: var(--text-color);
+    }
+    
+    .faq-list {
+      margin-bottom: 3rem;
+    }
+    
+    .faq-section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      color: var(--accent-gold);
+    }
+    
+    .faq-item {
+      background-color: var(--card-color);
+      border-radius: var(--border-radius);
+      margin-bottom: 1rem;
+      border: 1px solid rgba(153, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .faq-question {
+      padding: 1.2rem 1.5rem;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s;
+    }
+    
+    .faq-question:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+    
+    .faq-toggle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--secondary-text);
+      transition: all 0.3s;
+    }
+    
+    .faq-item.active .faq-toggle {
+      background-color: var(--accent-red);
+      color: white;
+    }
+    
+    .faq-answer {
+      padding: 0 1.5rem 1.2rem;
+      color: var(--secondary-text);
+      line-height: 1.6;
+    }
+    
+    .more-questions {
+      background-color: var(--card-color);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      text-align: center;
+      border: 1px solid rgba(153, 0, 0, 0.1);
+    }
+    
+    .more-questions-title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .more-questions-text {
+      color: var(--secondary-text);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Респонсивність */
+    @media (max-width: 768px) {
+      .faq-categories {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .faq-category {
+        width: 45%;
+        text-align: center;
+      }
+      
+      .faq-title {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body x-data="{
+    activeCategory: 'all',
+    faqItems: {
+      account: [
+        { 
+          question: 'Як зареєструватися на сайті?', 
+          answer: 'Для реєстрації на сайті натисніть кнопку «Реєстрація» у верхньому правому куті екрана. Заповніть необхідні поля: ім\'я користувача, електронну пошту та пароль. Підтвердіть свою згоду з правилами сайту, після чого на вашу пошту надійде лист із посиланням для активації облікового запису.'
+        },
+        { 
+          question: 'Як відновити забутий пароль?', 
+          answer: 'Якщо ви забули пароль, натисніть посилання «Забули пароль?» на сторінці входу. Введіть свою електронну пошту, і ми надішлемо вам інструкції для відновлення доступу до облікового запису.'
+        },
+        { 
+          question: 'Чи можна змінити нікнейм після реєстрації?', 
+          answer: 'Так, ви можете змінити нікнейм у налаштуваннях профілю. Зверніть увагу, що змінювати нікнейм можна не частіше одного разу на 30 днів.'
+        },
+        { 
+          question: 'Як видалити обліковий запис?', 
+          answer: 'Для видалення облікового запису перейдіть до налаштувань профілю та натисніть опцію «Видалити обліковий запис». Вам буде запропоновано ввести пароль для підтвердження дії. Зверніть увагу, що видалення облікового запису є незворотною операцією, і всі ваші публікації та коментарі будуть видалені.'
+        }
+      ],
+      content: [
+        { 
+          question: 'Які обмеження щодо контенту існують на сайті?', 
+          answer: 'На нашому сайті заборонено публікацію контенту, який містить опис протизаконних дій, насильства, контенту за участю неповнолітніх, а також контенту, що розпалює міжнаціональну ворожнечу. Детальніше з правилами можна ознайомитися на сторінці «Правила сайту».'
+        },
+        { 
+          question: 'Як я можу опублікувати свою історію?', 
+          answer: 'Для публікації історії натисніть на «+» в правому нижньому куті екрана або перейдіть у розділ «Створити історію» у своєму профілі. Заповніть необхідні поля: назву, категорію, теги, виберіть зображення для історії та напишіть текст. Після перевірки модераторами ваша історія з\'явиться на сайті.'
+        },
+        { 
+          question: 'Чи можу я редагувати опубліковану історію?', 
+          answer: 'Так, ви можете редагувати свої історії після публікації. Для цього перейдіть до розділу «Мої історії» у своєму профілі, оберіть потрібну історію та натисніть «Редагувати». Зверніть увагу, що після значних змін історія може бути відправлена на повторну модерацію.'
+        },
+        { 
+          question: 'Як довго триває модерація?', 
+          answer: 'Зазвичай модерація триває до 24 годин. У періоди високої активності цей термін може збільшуватися до 48 годин. Якщо модерація тривала більше 48 годин, будь ласка, зв\'яжіться з нами через форму зворотного зв\'язку.'
+        }
+      ],
+      premium: [
+        { 
+          question: 'Які переваги дає преміум-підписка?', 
+          answer: 'Преміум-підписка надає доступ до ексклюзивного контенту, дозволяє читати без реклами, отримати пріоритетну підтримку та ранній доступ до нових функцій. Крім того, преміум-користувачі можуть завантажувати історії для офлайн-читання та мають доступ до розширених функцій перекладу.'
+        },
+        { 
+          question: 'Як оформити преміум-підписку?', 
+          answer: 'Для оформлення преміум-підписки натисніть кнопку «Отримати преміум» у своєму профілі або в преміум-блоці на будь-якій сторінці сайту. Виберіть зручний для вас тарифний план, спосіб оплати та слідуйте інструкціям для завершення процесу.'
+        },
+        { 
+          question: 'Як скасувати преміум-підписку?', 
+          answer: 'Для скасування преміум-підписки перейдіть до розділу «Налаштування підписки» у своєму профілі та натисніть «Скасувати підписку». Ваша підписка діятиме до кінця оплаченого періоду, після чого автоматичне продовження буде скасовано.'
+        },
+        { 
+          question: 'Чи є пробний період для преміум-підписки?', 
+          answer: 'Так, новим користувачам доступний 7-денний пробний період преміум-підписки. Для його активації необхідно ввести платіжні дані, але плата буде знята тільки після закінчення пробного періоду, якщо ви не скасуєте підписку.'
+        }
+      ],
+      technical: [
+        { 
+          question: 'Як змінити мову інтерфейсу?', 
+          answer: 'Для зміни мови інтерфейсу натисніть на поточну мову у верхньому правому куті екрана та виберіть бажану мову з випадаючого списку. Сайт підтримує українську, англійську та російську мови інтерфейсу.'
+        },
+        { 
+          question: 'Чому я не можу завантажити зображення для історії?', 
+          answer: 'Можливі причини: розмір файлу перевищує обмеження (5 МБ), формат файлу не підтримується (підтримуються JPG, PNG) або тимчасові технічні проблеми. Спробуйте зменшити розмір зображення або змінити його формат. Якщо проблема не вирішується, зверніться до служби підтримки.'
+        },
+        { 
+          question: 'Як налаштувати сповіщення?', 
+          answer: 'Для налаштування сповіщень перейдіть до розділу «Налаштування» у своєму профілі та виберіть вкладку «Сповіщення». Тут ви можете вибрати, які типи сповіщень ви хочете отримувати (коментарі до ваших історій, нові історії в обраних категоріях тощо) і спосіб їх отримання (на сайті, електронною поштою).'
+        },
+        { 
+          question: 'Що робити, якщо сайт не працює належним чином?', 
+          answer: 'Спробуйте очистити кеш браузера, оновити сторінку або використати інший браузер. Якщо проблема залишається, напишіть нам через форму зворотного зв\'язку, вказавши: ваш браузер, операційну систему, опис проблеми та скріншот помилки (якщо є).'
+        }
+      ]
+    },
+    
+    setCategory(category) {
+      this.activeCategory = category;
+    },
+    
+    toggleFaq(event, index, category) {
+      const item = event.target.closest('.faq-item');
+      
+      if (item) {
+        const isActive = item.classList.contains('active');
+        
+        // Закрити всі інші відкриті FAQ
+        const allItems = document.querySelectorAll('.faq-item');
+        allItems.forEach(i => i.classList.remove('active'));
+        
+        // Якщо елемент не був активним, відкрити його
+        if (!isActive) {
+          item.classList.add('active');
+        }
+      }
+    }
+}">
+
+<!-- Хедер -->
+<header>
+  <div class="container">
+    <nav class="navbar">
+      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Головна</a></li>
+        <li><a href="new-stories.html">Нові історії</a></li>
+        <li><a href="top-stories.html">Топ рейтинг</a></li>
+        <li><a href="categories.html">Категорії</a></li>
+        <li><a href="authors.html">Автори</a></li>
+      </ul>
+
+      <div class="auth-buttons">
+        <div class="lang-dropdown">
+          <span>UA</span>
+          <i class="fas fa-chevron-down"></i>
+        </div>
+        <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
+        <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- Основний контент -->
+<main>
+  <div class="container">
+    <!-- Хлібні крихти -->
+    <div class="breadcrumbs">
+      <a href="index.html">Головна</a>
+      <span class="separator">/</span>
+      <span class="current">Часті запитання</span>
+    </div>
+    
+    <div class="faq-container">
+      <!-- Заголовок -->
+      <div class="faq-header">
+        <h1 class="faq-title">Часті запитання</h1>
+        <p class="faq-description">Знайдіть відповіді на найпоширеніші запитання про наш сайт, правила публікації контенту, функції та можливості платформи.</p>
+      </div>
+      
+      <!-- Категорії FAQ -->
+      <div class="faq-categories">
+        <div 
+          @click="setCategory('all')" 
+          class="faq-category" 
+          :class="{ 'active': activeCategory === 'all' }"
+        >
+          Усі питання
+        </div>
+        <div 
+          @click="setCategory('account')" 
+          class="faq-category" 
+          :class="{ 'active': activeCategory === 'account' }"
+        >
+          Обліковий запис
+        </div>
+        <div 
+          @click="setCategory('content')" 
+          class="faq-category" 
+          :class="{ 'active': activeCategory === 'content' }"
+        >
+          Контент і публікації
+        </div>
+        <div 
+          @click="setCategory('premium')" 
+          class="faq-category" 
+          :class="{ 'active': activeCategory === 'premium' }"
+        >
+          Преміум-підписка
+        </div>
+        <div 
+          @click="setCategory('technical')" 
+          class="faq-category" 
+          :class="{ 'active': activeCategory === 'technical' }"
+        >
+          Технічні питання
+        </div>
+      </div>
+      
+      <!-- Список FAQ: Обліковий запис -->
+      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'account'">
+        <h2 class="faq-section-title">Обліковий запис</h2>
+        
+        <template x-for="(item, index) in faqItems.account" :key="index">
+          <div class="faq-item" @click="toggleFaq($event, index, 'account')">
+            <div class="faq-question">
+              <span x-text="item.question"></span>
+              <div class="faq-toggle">
+                <i class="fas fa-plus"></i>
+              </div>
+            </div>
+            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
+          </div>
+        </template>
+      </div>
+      
+      <!-- Список FAQ: Контент і публікації -->
+      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'content'">
+        <h2 class="faq-section-title" x-show="activeCategory === 'all'">Контент і публікації</h2>
+        
+        <template x-for="(item, index) in faqItems.content" :key="index">
+          <div class="faq-item" @click="toggleFaq($event, index, 'content')">
+            <div class="faq-question">
+              <span x-text="item.question"></span>
+              <div class="faq-toggle">
+                <i class="fas fa-plus"></i>
+              </div>
+            </div>
+            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
+          </div>
+        </template>
+      </div>
+      
+      <!-- Список FAQ: Преміум-підписка -->
+      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'premium'">
+        <h2 class="faq-section-title" x-show="activeCategory === 'all'">Преміум-підписка</h2>
+        
+        <template x-for="(item, index) in faqItems.premium" :key="index">
+          <div class="faq-item" @click="toggleFaq($event, index, 'premium')">
+            <div class="faq-question">
+              <span x-text="item.question"></span>
+              <div class="faq-toggle">
+                <i class="fas fa-plus"></i>
+              </div>
+            </div>
+            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
+          </div>
+        </template>
+      </div>
+      
+      <!-- Список FAQ: Технічні питання -->
+      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'technical'">
+        <h2 class="faq-section-title" x-show="activeCategory === 'all'">Технічні питання</h2>
+        
+        <template x-for="(item, index) in faqItems.technical" :key="index">
+          <div class="faq-item" @click="toggleFaq($event, index, 'technical')">
+            <div class="faq-question">
+              <span x-text="item.question"></span>
+              <div class="faq-toggle">
+                <i class="fas fa-plus"></i>
+              </div>
+            </div>
+            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
+          </div>
+        </template>
+      </div>
+      
+      <!-- Блок для додаткових питань -->
+      <div class="more-questions">
+        <h3 class="more-questions-title">Не знайшли відповідь на своє запитання?</h3>
+        <p class="more-questions-text">Зв'яжіться з нами через форму зворотного зв'язку, і ми відповімо на ваше запитання якомога швидше.</p>
+        <a href="contact.html" class="btn btn-primary">Зв'язатися з нами</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Функція для відображення/приховування відповідей
+    const questions = document.querySelectorAll('.faq-question');
+    
+    questions.forEach(question => {
+      question.addEventListener('click', function() {
+        // Отримуємо батьківський елемент (faq-item)
+        const item = this.parentElement;
+        
+        // Отримуємо відповідь
+        const answer = this.nextElementSibling;
+        
+        // Змінюємо іконку
+        const icon = this.querySelector('.faq-toggle i');
+        
+        // Перевіряємо, чи відкритий цей елемент
+        const isActive = item.classList.contains('active');
+        
+        // Закриваємо всі відкриті елементи
+        document.querySelectorAll('.faq-item.active').forEach(activeItem => {
+          if (activeItem !== item) {
+            activeItem.classList.remove('active');
+            activeItem.querySelector('.faq-answer').style.display = 'none';
+            activeItem.querySelector('.faq-toggle i').className = 'fas fa-plus';
+          }
+        });
+        
+        // Перемикаємо стан поточного елемента
+        if (isActive) {
+          item.classList.remove('active');
+          answer.style.display = 'none';
+          icon.className = 'fas fa-plus';
+        } else {
+          item.classList.add('active');
+          answer.style.display = 'block';
+          icon.className = 'fas fa-minus';
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

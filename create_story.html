@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Створення нової історії — Таємний Світ</title>
+    
+    <!-- Мета-теги для SEO і соцмереж -->
+    <meta name="description" content="Створіть та опублікуйте свою еротичну історію на сайті Таємний Світ.">
+    <meta property="og:title" content="Створення нової історії — Таємний Світ">
+    <meta property="og:description" content="Створіть та опублікуйте свою еротичну історію на сайті Таємний Світ.">
+    <meta property="og:type" content="website">
+    
+    <!-- Шрифти -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome для іконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    
+    <!-- TinyMCE - WYSIWYG редактор -->
+    <script src="https://cdn.tiny.cloud/1/2oamkbiq851e2jpkcqs0mheqt3kyqq75g2e7svahf9hdxyhn/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    
+    <!-- Select2 для красивих селектів з тегами -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Alpine.js для інтерактивності -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Підключення CSS стилів -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/create_story.css">
+    
+    <style>
+        /* Основні стилі для сторінки створення історії */
+        .editor-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .editor-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .editor-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-family: 'Cormorant Garamond', serif;
+        }
+        
+        .editor-subtitle {
+            color: var(--secondary-text);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+        
+        .editor-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .editor-tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            color: var(--secondary-text);
+            font-weight: 500;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .editor-tab.active {
+            color: var(--text-color);
+        }
+        
+        .editor-tab.active:after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-red);
+        }
+        
+        .editor-form {
+            margin-bottom: 2rem;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            flex: 1;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: rgba(153, 0, 0, 0.3);
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+        
+        .form-help {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+        
+        .image-upload {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .image-upload:hover {
+            border-color: var(--accent-red);
+        }
+        
+        .image-upload-icon {
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-text {
+            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+        }
+        
+        .image-upload-subtext {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .image-preview {
+            margin-top: 1.5rem;
+            display: none;
+            position: relative;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: var(--border-radius);
+        }
+        
+        .image-preview-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .image-preview-remove:hover {
+            background-color: var(--accent-red);
+        }
+        
+        .editor-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+        }
+        
+        .action-left {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .action-right {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .editor-tips {
+            background-color: rgba(153, 0, 0, 0.1);
+            border: 1px solid rgba(153, 0, 0, 0.2);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .editor-tips-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .editor-tips-title i {
+            margin-right: 0.5rem;
+            color: var(--accent-red);
+        }
+        
+        .editor-tips-list {
+            list-style-type: none;
+        }
+        
+        .editor-tips-list li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        
+        .editor-tips-list li:before {
+            content: '•';
+            color: var(--accent-red);
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        
+        /* Стилі для попереднього перегляду */
+        .preview-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            border: 1px solid rgba(153, 0, 0, 0.1);
+        }
+        
+        .preview-title {
+            font-size: 2.5rem;
+            font-family: 'Cormorant Garamond', serif;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-meta {
+            display: flex;
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .preview-meta > div {
+            display: flex;
+            align-items: center;
+        }
+        
+        .preview-meta i {
+            margin-right: 0.5rem;
+        }
+        
+        .preview-featured-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+        }
+        
+        .preview-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+        
+        .preview-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+        
+        .preview-tag {
+            display: inline-block;
+            padding: 0.5rem 1.2rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+        }
+        
+        /* Стилізація Select2 */
+        .select2-container {
+            width: 100% !important;
+        }
+        
+        .select2-container--default .select2-selection--multiple {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            min-height: 3.4rem;
+        }
+        
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: rgba(153, 0, 0, 0.2);
+            border: 1px solid rgba(153, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 5px 10px;
+            color: var(--text-color);
+        }
+        
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: var(--secondary-text);
+            margin-right: 5px;
+        }
+        
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: var(--text-color);
+        }
+        
+        .select2-dropdown {
+            background-color: var(--card-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+        }
+        
+        .select2-container--default .select2-results__option {
+            color: var(--text-color);
+        }
+        
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: rgba(153, 0, 0, 0.2);
+        }
+        
+        /* Стилізація TinyMCE */
+        .tox-tinymce {
+            border-radius: var(--border-radius) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .tox .tox-menubar {
+            background-color: var(--card-color) !important;
+        }
+        
+        .tox .tox-toolbar__group {
+            background-color: var(--card-color) !important;
+        }
+        
+        .tox .tox-toolbar,
+        .tox .tox-toolbar__overflow,
+        .tox .tox-toolbar__primary {
+            background-color: var(--card-color) !important;
+        }
+        
+        .tox .tox-edit-area__iframe {
+            background-color: var(--card-color) !important;
+        }
+        
+        .tox .tox-statusbar {
+            background-color: var(--card-color) !important;
+        }
+        
+        /* Анімація завантаження */
+        .loading-indicator {
+            display: inline-block;
+            position: relative;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .loading-indicator:after {
+            content: " ";
+            display: block;
+            width: 20px;
+            height: 20px;
+            margin: 5px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-red);
+            border-color: var(--accent-red) transparent var(--accent-red) transparent;
+            animation: loading-indicator 1.2s linear infinite;
+        }
+        
+        @keyframes loading-indicator {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Responsiveness */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .editor-actions {
+                flex-direction: column-reverse;
+                gap: 1rem;
+            }
+            
+            .action-left,
+            .action-right {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body x-data="{
+    activeTab: 'editor',
+    editorContent: '',
+    storyTitle: '',
+    storyCategory: '',
+    storyAgeRestriction: '18+',
+    storyTags: [],
+    storyImage: null,
+    storyImagePreview: '',
+    isPremium: false,
+    isPublishing: false,
+    isDraft: false,
+    isAnonymous: false,
+    
+    setTab(tab) {
+        if (tab === 'preview' && this.storyTitle.trim() === '') {
+            alert('Будь ласка, заповніть назву історії перед попереднім переглядом.');
+            return;
+        }
+        
+        if (tab === 'preview') {
+            // Отримуємо вміст редактора TinyMCE
+            this.editorContent = tinymce.get('story-content').getContent();
+            
+            if (this.editorContent.trim() === '') {
+                alert('Будь ласка, напишіть текст історії перед попереднім переглядом.');
+                return;
+            }
+        }
+        
+        this.activeTab = tab;
+    },
+    
+    handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        if (file.type.indexOf('image/') !== 0) {
+            alert('Будь ласка, завантажте лише зображення.');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.storyImage = file;
+            this.storyImagePreview = e.target.result;
+            document.getElementById('image-preview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    },
+    
+    removeImage() {
+        this.storyImage = null;
+        this.storyImagePreview = '';
+        document.getElementById('image-preview').style.display = 'none';
+        document.getElementById('image-upload-input').value = '';
+    },
+    
+    saveDraft() {
+        this.editorContent = tinymce.get('story-content').getContent();
+        
+        if (this.storyTitle.trim() === '') {
+            alert('Будь ласка, заповніть назву історії перед збереженням.');
+            return;
+        }
+        
+        this.isDraft = true;
+        this.isPublishing = true;
+        
+        // Симуляція запиту до сервера
+        setTimeout(() => {
+            this.isPublishing = false;
+            alert('Чернетку успішно збережено!');
+        }, 1500);
+    },
+    
+    publishStory() {
+        this.editorContent = tinymce.get('story-content').getContent();
+        
+        // Валідація обов'язкових полів
+        if (this.storyTitle.trim() === '') {
+            alert('Будь ласка, заповніть назву історії.');
+            return;
+        }
+        
+        if (this.storyCategory === '') {
+            alert('Будь ласка, виберіть категорію історії.');
+            return;
+        }
+        
+        if (this.editorContent.trim() === '') {
+            alert('Будь ласка, напишіть текст історії.');
+            return;
+        }
+        
+        if (this.storyImage === null) {
+            alert('Будь ласка, завантажте зображення для історії.');
+            return;
+        }
+        
+        this.isDraft = false;
+        this.isPublishing = true;
+        
+        // Симуляція запиту до сервера
+        setTimeout(() => {
+            this.isPublishing = false;
+            alert('Історію успішно опубліковано!');
+            
+            // В реальному додатку тут було б перенаправлення на сторінку опублікованої історії
+            // window.location.href = 'story.html';
+        }, 2000);
+    }
+}">
+
+    <!-- Хедер -->
+    <header>
+        <div class="container">
+            <nav class="navbar">
+                <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+                
+                <ul class="nav-links">
+                    <li><a href="index.html">Головна</a></li>
+                    <li><a href="new-stories.html">Нові історії</a></li>
+                    <li><a href="top-stories.html">Топ рейтинг</a></li>
+                    <li><a href="categories.html">Категорії</a></li>
+                    <li><a href="authors.html">Автори</a></li>
+                </ul>
+                
+                <div class="auth-buttons">
+                    <div class="lang-dropdown">
+                        <span>UA</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <a href="profile.html" class="btn btn-outline"><i class="fas fa-user"></i> Профіль</a>
+                    <a href="index.html" class="btn btn-primary"><i class="fas fa-sign-out-alt"></i> Вийти</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Основний контент -->
+    <main>
+        <div class="editor-container">
+            <div class="editor-header">
+                <h1 class="editor-title">Створення нової історії</h1>
+                <p class="editor-subtitle">Поділіться своєю еротичною історією зі світом. Наша платформа допоможе вам створити захоплюючий контент і знайти свою аудиторію.</p>
+            </div>
+            
+            <div class="editor-tabs">
+                <div 
+                    class="editor-tab" 
+                    :class="{ 'active': activeTab === 'editor' }" 
+                    @click="setTab('editor')"
+                >
+                    Редактор
+                </div>
+                <div 
+                    class="editor-tab" 
+                    :class="{ 'active': activeTab === 'preview' }" 
+                    @click="setTab('preview')"
+                >
+                    Попередній перегляд
+                </div>
+            </div>
+            
+            <!-- Поради для авторів -->
+            <div class="editor-tips" x-show="activeTab === 'editor'">
+                <div class="editor-tips-title">
+                    <i class="fas fa-lightbulb"></i> Поради для успішної історії
+                </div>
+                <ul class="editor-tips-list">
+                    <li>Створіть захоплюючий заголовок, який привертає увагу</li>
+                    <li>Розпочніть з інтригуючого вступу, який змусить читача читати далі</li>
+                    <li>Використовуйте яскраві деталі для створення атмосфери та емоційного зв'язку</li>
+                    <li>Правильно підберіть категорію та теги для кращого охоплення аудиторії</li>
+                    <li>Привабливе зображення збільшить шанси привернути увагу читачів</li>
+                </ul>
+            </div>
+            
+            <!-- Редактор історії -->
+            <div x-show="activeTab === 'editor'">
+                <form class="editor-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="story-title" class="form-label">Назва історії *</label>
+                            <input 
+                                type="text" 
+                                id="story-title" 
+                                class="form-input" 
+                                placeholder="Введіть назву історії..." 
+                                x-model="storyTitle"
+                                required
+                            >
+                            <div class="form-help">Назва повинна бути унікальною та захоплюючою, до 100 символів</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="story-category" class="form-label">Категорія *</label>
+                            <select 
+                                id="story-category" 
+                                class="form-select" 
+                                x-model="storyCategory"
+                                required
+                            >
+                                <option value="" disabled selected>Виберіть категорію...</option>
+                                <option value="romance">Романтика</option>
+                                <option value="fantasy">Фантазії</option>
+                                <option value="bdsm">БДСМ</option>
+                                <option value="first-time">Перший досвід</option>
+                                <option value="vacation">Курортний роман</option>
+                                <option value="chance-encounters">Випадкові зустрічі</option>
+                                <option value="office">Службовий роман</option>
+                                <option value="group">Групові історії</option>
+                                <option value="cheating">Зрада</option>
+                                <option value="other">Інше</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="story-tags" class="form-label">Теги</label>
+                            <select 
+                                id="story-tags" 
+                                class="form-select" 
+                                multiple="multiple"
+                                x-model="storyTags"
+                            >
+                                <option value="train">Потяг</option>
+                                <option value="plane">Літак</option>
+                                <option value="hotel">Готель</option>
+                                <option value="beach">Пляж</option>
+                                <option value="office">Офіс</option>
+                                <option value="strangers">Незнайомці</option>
+                                <option value="massage">Масаж</option>
+                                <option value="roleplay">Рольові ігри</option>
+                                <option value="party">Вечірка</option>
+                                <option value="threesome">Секс утрьох</option>
+                                <option value="friends">Друзі</option>
+                                <option value="ex">Колишні</option>
+                                <option value="seduction">Спокуса</option>
+                                <option value="dominance">Домінування</option>
+                                <option value="submission">Підкорення</option>
+                            </select>
+                            <div class="form-help">Виберіть до 5 тегів, які найкраще описують вашу історію</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="story-age" class="form-label">Віковий рейтинг *</label>
+                            <select 
+                                id="story-age" 
+                                class="form-select" 
+                                x-model="storyAgeRestriction"
+                                required
+                            >
+                                <option value="18+">18+ (легка еротика)</option>
+                                <option value="21+">21+ (сильна еротика)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Зображення для історії *</label>
+                        <div 
+                            class="image-upload"
+                            @click="document.getElementById('image-upload-input').click()"
+                        >
+                            <input 
+                                type="file" 
+                                id="image-upload-input" 
+                                style="display: none;" 
+                                accept="image/*"
+                                @change="handleImageUpload"
+                            >
+                            <div class="image-upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="image-upload-text">Клацніть, щоб завантажити зображення</div>
+                            <div class="image-upload-subtext">Підтримуються формати JPG, PNG (макс. 5 МБ)</div>
+                        </div>
+                        <div id="image-preview" class="image-preview">
+                            <img :src="storyImagePreview" alt="Попередній перегляд">
+                            <div class="image-preview-remove" @click.stop="removeImage">
+                                <i class="fas fa-times"></i>
+                            </div>
+                        </div>
+                        <div class="form-help">Виберіть привабливе зображення для привернення уваги. Переконайтеся, що зображення не порушує авторські права.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="story-content" class="form-label">Текст історії *</label>
+                        <textarea id="story-content" placeholder="Почніть писати свою історію тут..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="premium-content" x-model="isPremium">
+                            <label for="premium-content">Позначити як преміум-контент</label>
+                        </div>
+                        <div class="form-help">Преміум-контент доступний тільки для користувачів з преміум-підпискою. Ви заробляєте більше з преміум-контентом.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="anonymous-publish" x-model="isAnonymous">
+                            <label for="anonymous-publish">Опублікувати анонімно</label>
+                        </div>
+                        <div class="form-help">Ваше ім'я не буде відображатися як автор цієї історії, якщо опубліковано анонімно.</div>
+                    </div>
+                    
+                    <div class="editor-actions">
+                        <div class="action-left">
+                            <button type="button" class="btn btn-outline" @click="saveDraft()" :disabled="isPublishing">
+                                <template x-if="!isPublishing || !isDraft">
+                                    <i class="fas fa-save"></i>
+                                </template>
+                                <template x-if="isPublishing && isDraft">
+                                    <span class="loading-indicator"></span>
+                                </template>
+                                Зберегти чернетку
+                            </button>
+                        </div>
+                        
+                        <div class="action-right">
+                            <button type="button" class="btn btn-outline" @click="window.location.href = 'profile.html'">
+                                Скасувати
+                            </button>
+                            <button type="button" class="btn btn-primary" @click="publishStory()" :disabled="isPublishing">
+                                <template x-if="!isPublishing || isDraft">
+                                    <i class="fas fa-paper-plane"></i>
+                                </template>
+                                <template x-if="isPublishing && !isDraft">
+                                    <span class="loading-indicator"></span>
+                                </template>
+                                Опублікувати
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Попередній перегляд історії -->
+            <div x-show="activeTab === 'preview'" class="preview-container">
+                <h1 class="preview-title" x-text="storyTitle || 'Назва історії'"></h1>
+                
+                <div class="preview-meta">
+                    <div><i class="fas fa-user"></i> <span x-text="isAnonymous ? 'Анонімний автор' : 'Олександр Петренко'"></span></div>
+                    <div><i class="fas fa-folder"></i> <span x-text="storyCategory ? (storyCategory === 'romance' ? 'Романтика' : (storyCategory === 'fantasy' ? 'Фантазії' : (storyCategory === 'bdsm' ? 'БДСМ' : (storyCategory === 'first-time' ? 'Перший досвід' : (storyCategory === 'vacation' ? 'Курортний роман' : (storyCategory === 'chance-encounters' ? 'Випадкові зустрічі' : (storyCategory === 'office' ? 'Службовий роман' : (storyCategory === 'group' ? 'Групові історії' : (storyCategory === 'cheating' ? 'Зрада' : 'Інше'))))))))) : 'Категорія'"></span></div>
+                    <div><i class="far fa-calendar-alt"></i> <span>12 березня 2025</span></div>
+                    <div><i class="fas fa-shield-alt"></i> <span x-text="storyAgeRestriction"></span></div>
+                    <template x-if="isPremium">
+                        <div><i class="fas fa-crown"></i> <span>Преміум</span></div>
+                    </template>
+                </div>
+                
+                <img x-show="storyImagePreview" :src="storyImagePreview" class="preview-featured-image" alt="Зображення історії">
+                
+                <div class="preview-content" x-html="editorContent || '<p>Текст історії буде відображений тут.</p>'"></div>
+                
+                <div class="preview-tags" x-show="storyTags && storyTags.length > 0">
+                    <template x-for="tag in storyTags">
+                        <div class="preview-tag" x-text="
+                            tag === 'train' ? 'Потяг' : 
+                            (tag === 'plane' ? 'Літак' : 
+                            (tag === 'hotel' ? 'Готель' : 
+                            (tag === 'beach' ? 'Пляж' : 
+                            (tag === 'office' ? 'Офіс' : 
+                            (tag === 'strangers' ? 'Незнайомці' : 
+                            (tag === 'massage' ? 'Масаж' : 
+                            (tag === 'roleplay' ? 'Рольові ігри' : 
+                            (tag === 'party' ? 'Вечірка' : 
+                            (tag === 'threesome' ? 'Секс утрьох' : 
+                            (tag === 'friends' ? 'Друзі' : 
+                            (tag === 'ex' ? 'Колишні' : 
+                            (tag === 'seduction' ? 'Спокуса' : 
+                            (tag === 'dominance' ? 'Домінування' : 
+                            (tag === 'submission' ? 'Підкорення' : tag))))))))))))))))"></div>
+                    </template>
+                </div>
+                
+                <div class="editor-actions">
+                    <div class="action-left">
+                        <button type="button" class="btn btn-outline" @click="setTab('editor')">
+                            <i class="fas fa-arrow-left"></i> Повернутися до редактора
+                        </button>
+                    </div>
+                    
+                    <div class="action-right">
+                        <button type="button" class="btn btn-outline" @click="saveDraft()" :disabled="isPublishing">
+                            <template x-if="!isPublishing || !isDraft">
+                                <i class="fas fa-save"></i>
+                            </template>
+                            <template x-if="isPublishing && isDraft">
+                                <span class="loading-indicator"></span>
+                            </template>
+                            Зберегти чернетку
+                        </button>
+                        <button type="button" class="btn btn-primary" @click="publishStory()" :disabled="isPublishing">
+                            <template x-if="!isPublishing || isDraft">
+                                <i class="fas fa-paper-plane"></i>
+                            </template>
+                            <template x-if="isPublishing && !isDraft">
+                                <span class="loading-indicator"></span>
+                            </template>
+                            Опублікувати
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript для ініціалізації TinyMCE і Select2 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ініціалізація TinyMCE
+            tinymce.init({
+                selector: '#story-content',
+                plugins: 'link image lists table code emoticons advlist autolink autosave wordcount fullscreen',
+                toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist outdent indent | link image | table | emoticons | code fullscreen',
+                menubar: 'file edit view insert format tools',
+                height: 500,
+                skin: 'oxide-dark',
+                content_css: 'dark',
+                entity_encoding: 'raw',
+                branding: false,
+                placeholder: 'Почніть писати свою історію тут...',
+                images_upload_handler: function (blobInfo, success, failure) {
+                    // В реальному додатку тут був би запит на сервер для завантаження зображення
+                    // Наразі просто симулюємо успішне завантаження із затримкою
+                    setTimeout(function () {
+                        const imageUrl = URL.createObjectURL(blobInfo.blob());
+                        success(imageUrl);
+                    }, 2000);
+                },
+                setup: function (editor) {
+                    // Автозбереження кожні 30 секунд
+                    editor.on('input change', debounce(function () {
+                        // В реальному додатку тут був би запит на сервер для автозбереження
+                        console.log('Автозбереження...');
+                    }, 30000));
+                }
+            });
+            
+            // Ініціалізація Select2 для тегів
+            $('#story-tags').select2({
+                placeholder: 'Виберіть теги...',
+                maximumSelectionLength: 5,
+                theme: 'classic',
+                language: {
+                    maximumSelected: function () {
+                        return 'Ви можете вибрати лише 5 тегів';
+                    }
+                }
+            });
+            
+            // Функція для дебаунсингу (обмеження частоти викликів функції)
+            function debounce(func, wait) {
+                let timeout;
+                return function() {
+                    const context = this, args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(function() {
+                        func.apply(context, args);
+                    }, wait);
+                };
+            }
+        });
+    </script>
+</body>
+</html>
