@@ -62,6 +62,11 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  // Додаємо поле для Google ID
+  googleId: {
+    type: String,
+    default: null
   }
 });
 

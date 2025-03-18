@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const session = require('express-session');
+const passport = require('./config/passport');
 
 // Завантаження змінних середовища
 dotenv.config();
@@ -52,3 +54,20 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => {
         console.error('Помилка підключення до MongoDB:', err.message);
     });
+
+// Налаштування сесій
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || 'your-secret-key',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production', // HTTPS тільки в продакшені
+            maxAge: 24 * 60 * 60 * 1000 // 24 години
+        }
+    })
+);
+
+// Ініціалізація Passport
+app.use(passport.initialize());
+app.use(passport.session());

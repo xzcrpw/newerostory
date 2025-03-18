@@ -1,45 +1,44 @@
 // routes/categories.js
 const express = require('express');
+const { check } = require('express-validator');
+const {
+  getCategories,
+  getCategory,
+  createCategory,
+  updateCategory,
+  deleteCategory
+} = require('../controllers/categoriesController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Контролери будуть додані пізніше
+router
+    .route('/')
+    .get(getCategories)
+    .post(
+        protect,
+        authorize('admin'),
+        [
+          check('name', 'Назва категорії обов\'язкова').not().isEmpty(),
+          check('name', 'Назва не може перевищувати 50 символів').isLength({ max: 50 }),
+          check('description', 'Опис категорії обов\'язковий').not().isEmpty(),
+          check('description', 'Опис не може перевищувати 500 символів').isLength({ max: 500 })
+        ],
+        createCategory
+    );
 
-// Заглушки для маршрутів, які буде реалізовано пізніше
-router.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Список категорій буде доступний пізніше'
-  });
-});
-
-router.get('/:id', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: `Інформація про категорію з ID: ${req.params.id} буде доступна пізніше`
-  });
-});
-
-router.post('/', protect, authorize('admin'), (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Створення категорії буде доступне пізніше'
-  });
-});
-
-router.put('/:id', protect, authorize('admin'), (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: `Оновлення категорії з ID: ${req.params.id} буде доступне пізніше`
-  });
-});
-
-router.delete('/:id', protect, authorize('admin'), (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: `Видалення категорії з ID: ${req.params.id} буде доступне пізніше`
-  });
-});
+router
+    .route('/:id')
+    .get(getCategory)
+    .put(
+        protect,
+        authorize('admin'),
+        updateCategory
+    )
+    .delete(
+        protect,
+        authorize('admin'),
+        deleteCategory
+    );
 
 module.exports = router;

@@ -33,3 +33,24 @@ router.get('/me', protect, getMe);
 router.get('/logout', protect, logout);
 
 module.exports = router;
+
+const passport = require('../config/passport');
+
+// Маршрут для ініціювання Google OAuth
+router.get(
+    '/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+// Callback маршрут, який Google викликає після автентифікації
+router.get(
+    '/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+        // Успішна автентифікація, генеруємо JWT токен
+        const token = req.user.getSignedJwtToken();
+
+        // Для веб-додатку: перенаправлення з токеном
+        res.redirect(`${process.env.FRONTEND_URL}/oauth-callback?token=${token}`);
+    }
+);

@@ -8,6 +8,28 @@ const StorySchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Назва не може бути довшою за 100 символів']
   },
+
+  // Додаємо поле для мови
+  language: {
+    type: String,
+    enum: ['uk', 'en', 'ru', 'de', 'it'],
+    default: 'uk'
+  },
+
+  // Додаємо поле для перекладів
+  translations: [{
+    language: {
+      type: String,
+      enum: ['uk', 'en', 'ru', 'de', 'it']
+    },
+    title: String,
+    content: String,
+    translationDate: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
   content: {
     type: String,
     required: [true, 'Будь ласка, додайте текст історії']
