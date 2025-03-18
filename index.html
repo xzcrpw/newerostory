@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" xmlns:x-on="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,9 +22,20 @@
 </head>
 <body x-data="{
     showAgeVerification: true,
+    searchQuery: '',
+
     verifyAge() {
         this.showAgeVerification = false;
         localStorage.setItem('ageVerified', 'true');
+    },
+
+    submitSearch() {
+        if (!this.searchQuery || this.searchQuery.trim() === '') {
+            return;
+        }
+
+        // Перенаправлення на сторінку результатів пошуку
+        window.location.href = `categories.html?search=${encodeURIComponent(this.searchQuery)}`;
     }
 }" x-init="
     showAgeVerification = localStorage.getItem('ageVerified') !== 'true';
@@ -40,7 +51,7 @@
     <p>Вміст сайту містить еротичний контент, призначений виключно для дорослої аудиторії. Продовжуючи, ви підтверджуєте, що вам виповнилося 18 років, і ви бажаєте переглядати матеріали для дорослих.</p>
     <div class="age-buttons">
       <a href="https://google.com" class="btn btn-outline">Мені менше 18</a>
-      <button class="btn btn-primary" @click="verifyAge">Мені 18+ років</button>
+      <button class="btn btn-primary" @click="verifyAge()">Мені 18+ років</button>
     </div>
   </div>
 </div>
@@ -92,10 +103,10 @@
   <section class="search-section">
     <div class="container">
       <div class="search-container">
-        <form class="search-form">
+        <form class="search-form" x-on:submit.prevent="submitSearch()">
           <div class="search-input-container">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" placeholder="Знайти історію або автора...">
+            <input type="text" class="search-input" x-model="searchQuery" placeholder="Знайти історію або автора...">
           </div>
           <button type="submit" class="search-button">Пошук</button>
         </form>
@@ -265,6 +276,35 @@
     // Додаємо функціонал для плаваючої кнопки
     document.querySelector('.floating-button').addEventListener('click', function() {
       window.location.href = 'create_story.html';
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Додаємо функціонал для плаваючої кнопки
+    document.querySelector('.floating-button').addEventListener('click', function() {
+      window.location.href = 'create_story.html';
+    });
+
+    // Фіксуємо посилання в меню, щоб вони вели на правильні сторінки
+    document.querySelectorAll('a[href="new-stories.html"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Сторінка "Нові історії" знаходиться в розробці');
+      });
+    });
+
+    document.querySelectorAll('a[href="top-stories.html"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Сторінка "Топ рейтинг" знаходиться в розробці');
+      });
+    });
+
+    document.querySelectorAll('a[href="authors.html"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Сторінка "Автори" знаходиться в розробці');
+      });
     });
   });
 </script>
