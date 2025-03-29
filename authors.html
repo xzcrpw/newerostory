@@ -68,11 +68,24 @@
       color: var(--text-color); /* Колір тексту при наведенні на "Стежу" */
     }
     /* Стиль для кнопки під час обробки */
-    button.removing { opacity: 0.7; pointer-events: none; }
-    button.removing i:not(.fa-spinner) { display: none; }
-    button.removing::after {
-      content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
-      display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
+    button.removing { 
+      opacity: 0.7; 
+      pointer-events: none; 
+      position: relative;
+    }
+    button.removing::before {
+      content: '\f110'; 
+      font-family: 'Font Awesome 6 Free'; 
+      font-weight: 900;
+      display: inline-block; 
+      animation: spin 1s linear infinite; 
+      margin-right: 5px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    button.removing > span {
+      visibility: hidden;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     /* Сповіщення */
@@ -122,10 +135,18 @@
         if (notificationElement) {
             notificationElement.classList.toggle('success', isSuccess);
             notificationElement.classList.toggle('error', !isSuccess);
+            notificationElement.classList.add('show'); // Додаємо клас show для відображення
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 3000);
+        this.notificationTimeout = setTimeout(() => { 
+            this.notificationVisible = false; 
+            // Забезпечуємо, що елемент ще існує, перед видаленням класу
+            const notificationEl = document.getElementById('global-notification');
+            if (notificationEl) {
+                notificationEl.classList.remove('show');
+            }
+        }, 3000);
     },
 
     // --- Завантаження авторів ---
@@ -185,6 +206,10 @@
             console.error('Authors fetch error:', error);
         } finally {
             this.isLoading = false;
+            // Перевіряємо чи елемент ще в DOM перед анімацією
+            if (this.$el && this.$el.isConnected) {
+                this.$nextTick(() => this.initCardAnimation());
+            }
         }
     },
 
@@ -232,50 +257,91 @@
 
     // --- Підписка/Відписка ---
     async toggleFollow(authorId, event) {
-        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        // Перевіряємо чи користувач авторизований і перенаправляємо на логін, якщо ні
+        if (!this.isLoggedIn) { 
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); 
+            return; 
+        }
         if (!authorId) return;
+        
+        // Знаходимо елемент кнопки і додаємо клас для індикації завантаження
         const button = event?.currentTarget;
         if (button) button.classList.add('removing');
+        
+        // Зберігаємо поточний стан підписки для відкочування у разі помилки
         const isCurrentlyFollowing = this.followedAuthorIds.includes(authorId);
         const authorIndex = this.authors.findIndex(a => a._id === authorId);
-        // Оптимістичне оновлення
+        const originalFollowersCount = authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined 
+            ? this.authors[authorIndex].stats.followersCount 
+            : 0;
+        
+        // Оптимістичне оновлення UI
         if (isCurrentlyFollowing) {
             this.followedAuthorIds = this.followedAuthorIds.filter(id => id !== authorId);
-            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) { this.authors[authorIndex].stats.followersCount = Math.max(0, this.authors[authorIndex].stats.followersCount - 1); }
+            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
+                this.authors[authorIndex].stats.followersCount = Math.max(0, this.authors[authorIndex].stats.followersCount - 1);
+            }
         } else {
             this.followedAuthorIds.push(authorId);
-             if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) { this.authors[authorIndex].stats.followersCount++; }
+            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
+                this.authors[authorIndex].stats.followersCount++;
+            }
         }
+        
         try {
             console.log(`Simulating API call: toggleFollow(${authorId})`);
             await new Promise(resolve => setTimeout(resolve, 450));
             // await api.users.toggleFollow(authorId); // Реальний виклик
-             // Використовуємо i18n для сповіщення
-             this.showNotification(
-                 isCurrentlyFollowing
-                     ? $store.i18n.t('notifications.unfollowingAuthor', { name: this.authors[authorIndex]?.name || '' })
-                     : $store.i18n.t('notifications.followingAuthor', { name: this.authors[authorIndex]?.name || '' }),
-                 true // isSuccess = true
-             );
+            
+            // Використовуємо i18n для сповіщення, з перевіркою наявності імені автора
+            this.showNotification(
+                isCurrentlyFollowing
+                    ? $store.i18n.t('notifications.unfollowingAuthor', { name: (authorIndex !== -1 ? this.authors[authorIndex]?.name : '') || '' })
+                    : $store.i18n.t('notifications.followingAuthor', { name: (authorIndex !== -1 ? this.authors[authorIndex]?.name : '') || '' }),
+                true // isSuccess = true
+            );
         } catch (error) {
-             console.error('Toggle follow error:', error);
-             // Відкат UI
-             if (isCurrentlyFollowing) {
-                 if (!this.followedAuthorIds.includes(authorId)) this.followedAuthorIds.push(authorId);
-                 if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) { this.authors[authorIndex].stats.followersCount++; }
-             } else {
-                 this.followedAuthorIds = this.followedAuthorIds.filter(id => id !== authorId);
-                 if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) { this.authors[authorIndex].stats.followersCount = Math.max(0, this.authors[authorIndex].stats.followersCount - 1); }
-             }
-             // Використовуємо i18n для сповіщення про помилку
-             this.showNotification($store.i18n.t('story.errorTogglingFollow') + ': ' + (error.message || $store.i18n.t('general.unknownError')), false);
-        } finally { if (button) button.classList.remove('removing'); }
+            console.error('Toggle follow error:', error);
+            
+            // Відкат UI
+            if (isCurrentlyFollowing) {
+                if (!this.followedAuthorIds.includes(authorId)) this.followedAuthorIds.push(authorId);
+                if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
+                    this.authors[authorIndex].stats.followersCount = originalFollowersCount;
+                }
+            } else {
+                this.followedAuthorIds = this.followedAuthorIds.filter(id => id !== authorId);
+                if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
+                    this.authors[authorIndex].stats.followersCount = originalFollowersCount;
+                }
+            }
+            
+            // Використовуємо i18n для сповіщення про помилку
+            this.showNotification(
+                $store.i18n.t('story.errorTogglingFollow') + ': ' + 
+                (error.message || $store.i18n.t('general.unknownError')), 
+                false
+            );
+        } finally {
+            // Видаляємо індикатор завантаження
+            if (button) button.classList.remove('removing');
+        }
     },
      // --- Перевірка підписки ---
      isFollowing(authorId) { return this.followedAuthorIds.includes(authorId); },
 
     // --- Анімація карток ---
     initCardAnimation() {
+        // Перевірка підтримки IntersectionObserver
+        if (!('IntersectionObserver' in window)) {
+            // Якщо браузер не підтримує IntersectionObserver, 
+            // просто показуємо всі картки одразу
+            this.$el.querySelectorAll('.author-card').forEach(card => {
+                card.classList.add('visible');
+            });
+            return;
+        }
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -284,6 +350,7 @@
                 }
             });
         }, { threshold: 0.1 });
+        
         // Шукаємо картки в межах поточного елемента Alpine.js
         this.$el.querySelectorAll('.author-card:not(.visible)').forEach(card => {
             observer.observe(card);
@@ -291,8 +358,14 @@
     }
 
 }" x-init="
-    isLoggedIn = api.utils.isAuthenticated();
-    userId = api.utils.getUserId(); // Зберігаємо ID поточного користувача
+    try {
+        isLoggedIn = api.utils.isAuthenticated();
+        userId = api.utils.getUserId(); // Зберігаємо ID поточного користувача
+    } catch(e) {
+        console.error('Error during initialization:', e);
+        isLoggedIn = false;
+        userId = null;
+    }
     fetchAuthors(); // Завантажуємо авторів (і підписки, якщо залогінений і масив порожній)
 ">
 
@@ -372,13 +445,13 @@
   <div class="filter-bar">
     <div class="search-authors">
       <form @submit.prevent="submitSearch()">
-        <input type="text" x-model="searchQuery" :placeholder="$store.i18n.t('authorsPage.searchPlaceholder')" class="search-input" :aria-label="$store.i18n.t('authorsPage.searchPlaceholder')">
+        <input type="text" x-model="searchQuery" @keydown.enter="submitSearch()" :placeholder="$store.i18n.t('authorsPage.searchPlaceholder')" class="search-input" :aria-label="$store.i18n.t('authorsPage.searchPlaceholder')">
         <button type="submit" class="search-button" :aria-label="$store.i18n.t('general.search')"><i class="fas fa-search"></i></button>
       </form>
     </div>
     <div class="sort-authors">
       <div class="sort-dropdown">
-        <div class="sort-button" @click="toggleSortMenu()">
+        <div class="sort-button" @click="toggleSortMenu()" role="button" tabindex="0" @keydown.enter="toggleSortMenu()">
             <span>
                 <!-- Використовуємо динамічний ключ i18n -->
                 <span x-text="$store.i18n.t('authorsPage.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1))"></span>
@@ -519,6 +592,7 @@
      x-transition:leave-start="opacity-100 transform translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
+     :class="{ 'show': notificationVisible, 'success': true, 'error': false }"
      style="display: none;"
      id="global-notification">
   <span x-text="notificationMessage"></span>

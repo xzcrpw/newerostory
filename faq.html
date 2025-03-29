@@ -73,7 +73,7 @@
       display: flex;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 3rem;
+      margin-bottom: 3рем;
       flex-wrap: wrap;
     }
     .faq-category {
@@ -97,25 +97,25 @@
       color: var(--text-color);
     }
     .faq-list {
-      margin-bottom: 3rem;
+      margin-bottom: 3рем;
     }
     .faq-section-title {
       font-size: 1.8rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.5рем;
       color: var(--accent-gold);
     }
     .faq-item {
       background-color: var(--card-color);
       border-radius: var(--border-radius);
-      margin-bottom: 1rem;
+      margin-bottom: 1рем;
       border: 1px solid rgba(153, 0, 0, 0.1);
       overflow: hidden;
     }
     .faq-question {
-      padding: 1.2rem 1.5rem;
+      padding: 1.2рем 1.5рем;
       cursor: pointer;
       font-weight: 500;
-      font-size: 1.1rem;
+      font-size: 1.1рем;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -142,52 +142,129 @@
       transform: rotate(45deg);
     }
     .faq-answer {
-      padding: 0 1.5rem 1.2rem;
+      padding: 0 1.5рем;
       color: var(--secondary-text);
       line-height: 1.6;
       overflow: hidden; /* Для анімації */
-      /* Початкові стилі для анімації */
-      max-height: 0;
-      opacity: 0;
-      transition: max-height 0.4s ease-out, opacity 0.3s ease-out, padding-bottom 0.3s ease-out;
+      /* Початкові стилі для анімації - x-collapse сам впорається з анімацією */
+      transition: all 0.3s ease-out;
     }
-    /* Стилі для відкритого стану анімації */
-    .faq-item[x-data*='open: true'] .faq-answer {
-      max-height: 500px; /* Або достатньо велике значення */
-      opacity: 1;
-      padding-bottom: 1.2rem;
+
+    .faq-answer p {
+      margin-bottom: 1рем;
+    }
+
+    .faq-answer p:last-child {
+      margin-bottom: 0;
     }
 
     .more-questions {
       background-color: var(--card-color);
       border-radius: var(--border-radius);
-      padding: 2rem;
+      padding: 2рем;
       text-align: center;
       border: 1px solid rgba(153, 0, 0, 0.1);
     }
     .more-questions-title {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+      font-size: 1.5рем;
+      margin-bottom: 1рем;
     }
     .more-questions-text {
       color: var(--secondary-text);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.5рем;
     }
     @media (max-width: 768px) {
       .faq-categories { flex-wrap: wrap; justify-content: center; }
       .faq-category { width: auto; /* Автоширина */ }
-      .faq-title { font-size: 2.2rem; }
+      .faq-title { font-size: 2.2рем; }
     }
   </style>
 </head>
 <body x-data="{
     activeCategory: 'all',
     isLoggedIn: false,
-    // Питання та відповіді тепер будуть генеруватися через $store.i18n
     faqSections: ['account', 'content', 'premium', 'technical'], // Ключі секцій
-    openFaqIndex: null // Індекс відкритого питання (для закриття інших при відкритті нового)
+    openFaqIndex: null, // Індекс відкритого питання (для закриття інших при відкритті нового)
+    
+    // Додаємо функцію перевірки існування ключів i18n для більш надійної роботи
+    keyExists(key) {
+        try {
+            // Перевіряємо, чи існує переклад, порівнюючи вихідний ключ з результатом $store.i18n.t
+            const translation = $store.i18n.t(key);
+            return translation !== key && translation !== '';
+        } catch (error) {
+            console.warn(`Error checking i18n key: ${key}`, error);
+            return false;
+        }
+    },
+    
+    // Функція для відкриття/закриття питання з анімацією
+    toggleQuestion(index) {
+        // Закриваємо всі відкриті питання спочатку
+        document.querySelectorAll('.faq-item[x-data*="open: true"]').forEach(item => {
+            const itemData = item.__x.$data;
+            if (itemData && itemData.globalIndex !== index) {
+                itemData.open = false;
+            }
+        });
+        
+        // Встановлюємо глобальний індекс відкритого питання
+        this.openFaqIndex = (this.openFaqIndex === index) ? null : index;
+    },
+    
+    // Додаємо обробник хешу URL
+    handleHashNavigation() {
+        const hash = window.location.hash;
+        if (hash) {
+            const questionMatch = hash.match(/^#question-([a-z]+)-(\d+)$/);
+            if (questionMatch) {
+                const section = questionMatch[1];
+                const questionNum = parseInt(questionMatch[2]);
+                
+                if (this.faqSections.includes(section) && questionNum >= 1 && questionNum <= 4) {
+                    // Активуємо потрібну категорію
+                    this.activeCategory = section;
+                    
+                    // Обчислюємо глобальний індекс питання
+                    const sectionIndex = this.faqSections.indexOf(section);
+                    const globalIndex = sectionIndex * 4 + questionNum - 1;
+                    
+                    // Чекаємо рендерингу DOM перед спробою відкрити питання
+                    setTimeout(() => {
+                        this.toggleQuestion(globalIndex);
+                        
+                        // Скролимо до питання
+                        const questionElement = document.getElementById(`faq-question-${section}-${questionNum}`);
+                        if (questionElement) {
+                            questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 100);
+                }
+            }
+        }
+    }
 }" x-init="
-    isLoggedIn = api.utils.isAuthenticated();
+    try {
+        isLoggedIn = api.utils.isAuthenticated();
+    } catch(e) {
+        console.error('Error checking authentication status:', e);
+        isLoggedIn = false;
+    }
+    
+    // Додаємо підтримку URL параметрів для відкриття конкретної категорії
+    const urlParams = new URLSearchParams(window.location.search);
+    const category = urlParams.get('category');
+    if (category && faqSections.includes(category)) {
+        activeCategory = category;
+    }
+    
+    // Обробляємо хеш навігацію
+    $nextTick(() => {
+        handleHashNavigation();
+    });
+    
+    // Додаємо слухач зміни хешу для динамічної навігації
+    window.addEventListener('hashchange', () => handleHashNavigation());
 ">
 
 <!-- Хедер -->
@@ -264,38 +341,65 @@
         <p class="faq-description" x-text="$store.i18n.t('faq.description')"></p>
       </div>
 
-      <!-- Категорії FAQ -->
+      <!-- Покращені категорії FAQ з правильними атрибутами доступності -->
       <div class="faq-categories">
-        <div @click="activeCategory = 'all'" class="faq-category" :class="{ 'active': activeCategory === 'all' }" x-text="$store.i18n.t('faq.allQuestions')"></div>
-        <div @click="activeCategory = 'account'" class="faq-category" :class="{ 'active': activeCategory === 'account' }" x-text="$store.i18n.t('faq.categoryAccount')"></div>
-        <div @click="activeCategory = 'content'" class="faq-category" :class="{ 'active': activeCategory === 'content' }" x-text="$store.i18n.t('faq.categoryContent')"></div>
-        <div @click="activeCategory = 'premium'" class="faq-category" :class="{ 'active': activeCategory === 'premium' }" x-text="$store.i18n.t('faq.categoryPremium')"></div>
-        <div @click="activeCategory = 'technical'" class="faq-category" :class="{ 'active': activeCategory === 'technical' }" x-text="$store.i18n.t('faq.categoryTechnical')"></div>
+        <div @click="activeCategory = 'all'" 
+             class="faq-category" 
+             :class="{ 'active': activeCategory === 'all' }" 
+             x-text="$store.i18n.t('faq.allQuestions')" 
+             role="button" 
+             tabindex="0"
+             @keydown.enter="activeCategory = 'all'"></div>
+        
+        <template x-for="section in faqSections" :key="section">
+          <div @click="activeCategory = section" 
+               class="faq-category" 
+               :class="{ 'active': activeCategory === section }" 
+               x-text="$store.i18n.t(`faq.category${section.charAt(0).toUpperCase() + section.slice(1)}`)"
+               role="button"
+               tabindex="0"
+               @keydown.enter="activeCategory = section"></div>
+        </template>
       </div>
 
-      <!-- Список FAQ -->
-      <!-- Використовуємо template для ітерації по секціях -->
+      <!-- Оптимізований блок секцій FAQ -->
       <template x-for="(sectionKey, sectionIndex) in faqSections" :key="sectionKey">
-        <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === sectionKey" x-transition>
-          <!-- Заголовок секції показуємо тільки якщо вибрано 'all' або це активна категорія -->
-          <h2 class="faq-section-title" x-show="activeCategory === 'all' || activeCategory === sectionKey" x-text="$store.i18n.t(`faq.category${sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}`)"></h2>
-
-          <!-- Ітерація по питаннях (припускаємо структуру ключів faq.accountQ1, faq.accountA1 і т.д.) -->
-          <!-- Припускаємо, що в кожній секції по 4 питання -->
-          <template x-for="i in [1, 2, 3, 4]" :key="`${sectionKey}-${i}`">
-            <!-- Перевіряємо, чи існує ключ питання перед рендерингом -->
-            <template x-if="$store.i18n.t(`faq.${sectionKey}Q${i}`) !== `faq.${sectionKey}Q${i}`">
-              <!-- Використовуємо індекс для керування відкриттям/закриттям одного елемента -->
-              <div class="faq-item" x-data="{ open: false, globalIndex: sectionIndex * 4 + i - 1 }">
-                <div class="faq-question" @click="open = !open; openFaqIndex = (openFaqIndex === globalIndex ? null : globalIndex)">
+        <div class="faq-list" 
+             x-show="activeCategory === 'all' || activeCategory === sectionKey" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-4"
+             x-transition:enter-end="opacity-100 transform translate-y-0">
+          
+          <!-- Заголовок секції -->
+          <h2 class="faq-section-title" 
+              x-text="$store.i18n.t(`faq.category${sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}`)"
+              :id="`faq-section-${sectionKey}`"></h2>
+          
+          <!-- Питання секції з оптимізованою логікою -->
+          <template x-for="i in 4" :key="`${sectionKey}-${i}`">
+            <!-- Перевіряємо наявність ключа у перекладах -->
+            <template x-if="keyExists(`faq.${sectionKey}Q${i}`)">
+              <div class="faq-item" 
+                   x-data="{ open: openFaqIndex === (sectionIndex * 4 + i - 1), globalIndex: sectionIndex * 4 + i - 1 }"
+                   x-id="['faq-question']">
+                <div class="faq-question" 
+                     @click="open = !open; toggleQuestion(globalIndex)" 
+                     :aria-expanded="open" 
+                     role="button" 
+                     tabindex="0"
+                     @keydown.enter="open = !open; toggleQuestion(globalIndex)"
+                     :id="`faq-question-${sectionKey}-${i}`">
                   <span x-text="$store.i18n.t(`faq.${sectionKey}Q${i}`)"></span>
-                  <!-- Керуємо іконкою через 'open' стан поточного елемента та глобальний індекс -->
-                  <div class="faq-toggle">
-                    <i :class="open && openFaqIndex === globalIndex ? 'fas fa-times' : 'fas fa-plus'"></i>
+                  <div class="faq-toggle" aria-hidden="true">
+                    <i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i>
                   </div>
                 </div>
-                <!-- Використовуємо x-show та transition для відповіді -->
-                <div class="faq-answer" x-show="open && openFaqIndex === globalIndex" x-collapse>
+                <div class="faq-answer" 
+                     x-show="open" 
+                     x-collapse 
+                     :id="`faq-answer-${sectionKey}-${i}`" 
+                     role="region"
+                     :aria-labelledby="`faq-question-${sectionKey}-${i}`">
                   <p x-text="$store.i18n.t(`faq.${sectionKey}A${i}`)"></p>
                 </div>
               </div>

@@ -66,6 +66,61 @@
         .notification.show { opacity: 1; bottom: 20px; }
         .notification.success { border-left: 4px solid #4cd964; }
         .notification.error { border-left: 4px solid #ff6b6b; }
+        .search-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+        }
+        
+        .btn-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 576px) {
+            .search-status {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .back-to-top.visible {
+            opacity: 0.7;
+            visibility: visible;
+        }
+        
+        .back-to-top:hover {
+            opacity: 1;
+            background-color: var(--accent-hover);
+        }
     </style>
 </head>
 <body x-data="{
@@ -77,14 +132,20 @@
     totalPages: 1,
     totalStories: 0,
     currentFilter: 'all',
-    currentSort: 'rated', // <-- Сортування за замовчуванням
+    currentSort: 'rated',
     showSortMenu: false,
     isLoggedIn: false,
+    isPremiumUser: false,
     notificationVisible: false,
     notificationMessage: '',
+    notificationType: 'success', // Додано змінну для типу сповіщення
     notificationTimeout: null,
+    lastRefresh: null, // Для відстеження останнього оновлення
+    retryAttempts: 0, // Для обмеження спроб повторного завантаження
+    maxRetryAttempts: 3, // Максимальна кількість спроб
+    retryDelay: 2000, // Початкова затримка перед повторною спробою в мс
 
-    // --- Мапа сортувань ---
+    // --- Інші змінні ---
     sortOptionsMap: {
         newest: '-createdAt',
         popular: '-views',
@@ -93,64 +154,156 @@
     },
 
     // --- Функція сповіщень ---
-     showNotification(message, isSuccess = true) {
+    // Покращена функція сповіщень
+    showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
+        
         const notificationElement = document.getElementById('global-notification');
         if (notificationElement) {
-            notificationElement.classList.toggle('success', isSuccess);
-            notificationElement.classList.toggle('error', !isSuccess);
+            notificationElement.classList.remove('success', 'error');
+            notificationElement.classList.add(isSuccess ? 'success' : 'error');
+            notificationElement.classList.add('show'); // Додаємо клас show для анімації
         }
+        
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
+        
+        this.notificationTimeout = setTimeout(() => { 
+            this.notificationVisible = false;
+            // Перевіряємо чи елемент все ще існує
+            const notificationEl = document.getElementById('global-notification');
+            if (notificationEl) {
+                notificationEl.classList.remove('show');
+            }
+        }, 4000);
+    },
+
+    // Додаємо безпечну функцію для перекладів
+    safeT(key, params = {}, fallback = '') {
+        try {
+            if ($store && $store.i18n && typeof $store.i18n.t === 'function') {
+                const translation = $store.i18n.t(key, params);
+                return (translation && translation !== key) ? translation : fallback;
+            }
+            return fallback;
+        } catch (e) {
+            console.warn(`Translation error for key: ${key}`, e);
+            return fallback;
+        }
     },
 
     // --- Завантаження історій ---
+    // Покращена обробка помилок при завантаженні історій
     async fetchStories() {
-        this.isLoading = true; this.error = null;
+        this.isLoading = true;
+        this.error = null;
+        
         try {
             const params = {
                 page: this.currentPage,
-                limit: 9, // Кількість на сторінці
-                sort: this.sortOptionsMap[this.currentSort] || '-averageRating' // <-- Fallback сортування
-                // lang: $store.i18n.selectedLang // Якщо API підтримує
+                limit: 9,
+                sort: this.sortOptionsMap[this.currentSort] || '-averageRating'
             };
+            
             if (this.currentFilter === 'premium') params.isPremium = true;
             else if (this.currentFilter === 'free') params.isPremium = false;
+
+            // Фіксуємо час початку запиту для уникнення дублювання запитів
+            this.lastRefresh = Date.now();
+            const currentRefreshTime = this.lastRefresh;
 
             console.log('Simulating API call: getStories with params:', params);
             await new Promise(resolve => setTimeout(resolve, 600));
 
+            // Перевіряємо, чи не був ініційований новіший запит
+            if (currentRefreshTime !== this.lastRefresh) {
+                console.log('Request outdated, aborting');
+                return;
+            }
+
             // --- Симуляція відповіді ---
-            const totalSimulated = 42; // Інша кількість для top-stories
+            const totalSimulated = 42;
             this.totalPages = Math.ceil(totalSimulated / params.limit) || 1;
             this.totalStories = totalSimulated;
+            
+            // Безпечний доступ до i18n
+            const translate = (key, fallback) => {
+                try {
+                    return $store.i18n?.t(key) || fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            };
+            
             this.stories = Array.from({ length: params.limit }, (_, i) => {
-                 const storyNum = (this.currentPage - 1) * params.limit + i + 1;
-                 if (storyNum > totalSimulated) return null;
-                 return {
-                     _id: `top_story_${params.sort}_${params.filter || 'all'}_${storyNum}`,
-                     title: `Топ Історія ${storyNum} (${this.currentSort}, ${this.currentFilter})`,
-                     imageUrl: `https://source.unsplash.com/random/600x400/?award,${storyNum}`,
-                     isPremium: this.currentFilter === 'premium' ? true : (this.currentFilter === 'free' ? false : Math.random() < 0.4), // Більше преміум у топі
-                     category: { name: $store.i18n.t('createStory.categoryBDSM') || 'БДСМ', slug: 'bdsm' }, // Інша категорія
-                     tags: [$store.i18n.t('tags.domination') || 'домінування', $store.i18n.t('tags.submission') || 'підкорення'],
-                     content: `${$store.i18n.t('storyLists.simulatedExcerptPrefix') || 'Короткий опис топової історії номер'} ${storyNum}...`,
-                     readingTime: Math.floor(Math.random() * 15) + 8, // Трохи довші
-                     views: Math.floor(Math.random() * 10000) + 1000, // Більше переглядів
-                     averageRating: (Math.random() * 0.5 + 4.5).toFixed(1) // Вищий рейтинг (4.5-5.0)
-                 };
+                const storyNum = (this.currentPage - 1) * params.limit + i + 1;
+                if (storyNum > totalSimulated) return null;
+                return {
+                    _id: `top_story_${params.sort}_${params.filter || 'all'}_${storyNum}`,
+                    title: `Топ Історія ${storyNum} (${this.currentSort}, ${this.currentFilter})`,
+                    imageUrl: this.getUniqueImageUrl(`https://source.unsplash.com/random/600x400/?award,${storyNum}`, storyNum),
+                    isPremium: this.currentFilter === 'premium' ? true : (this.currentFilter === 'free' ? false : Math.random() < 0.4),
+                    category: { 
+                        name: translate('createStory.categoryBDSM', 'БДСМ'), 
+                        slug: 'bdsm'
+                    },
+                    tags: [
+                        translate('tags.domination', 'домінування'), 
+                        translate('tags.submission', 'підкорення')
+                    ],
+                    content: `${translate('storyLists.simulatedExcerptPrefix', 'Короткий опис топової історії номер')} ${storyNum}...`,
+                    readingTime: Math.floor(Math.random() * 15) + 8,
+                    views: Math.floor(Math.random() * 10000) + 1000,
+                    averageRating: (Math.random() * 0.5 + 4.5).toFixed(1)
+                };
             }).filter(story => story !== null);
 
-            if (this.currentPage > this.totalPages && this.totalPages > 0) this.currentPage = this.totalPages;
-            if (this.stories.length === 0 && this.currentPage > 1) { this.currentPage--; await this.fetchStories(); return; }
-            // --- Кінець симуляції ---
+            // Перевірки валідності сторінки
+            if (this.currentPage > this.totalPages && this.totalPages > 0) {
+                this.currentPage = this.totalPages;
+                return await this.fetchStories();
+            }
+            
+            if (this.stories.length === 0 && this.currentPage > 1) {
+                this.currentPage--;
+                return await this.fetchStories();
+            }
 
+            this.retryAttempts = 0; // Скидаємо лічильник спроб при успіху
             this.$nextTick(() => this.initCardAnimation());
+            
         } catch (error) {
-            this.error = error.message || $store.i18n.t('storyLists.errorLoadingStories'); // i18n
+            // Покращена обробка помилок
             console.error('Stories fetch error:', error);
-        } finally { this.isLoading = false; }
+            
+            let errorMessage;
+            try {
+                errorMessage = this.safeT('storyLists.errorLoadingStories', {}, 'Помилка завантаження історій');
+                if (error.message) {
+                    errorMessage += ': ' + error.message;
+                }
+            } catch (e) {
+                errorMessage = 'Помилка завантаження історій';
+            }
+            
+            this.error = errorMessage;
+            
+            // Автоматична повторна спроба з експоненціальною затримкою
+            if (this.retryAttempts < this.maxRetryAttempts) {
+                const delay = this.retryDelay * Math.pow(2, this.retryAttempts);
+                console.log(`Auto-retrying in ${delay/1000} seconds (attempt ${this.retryAttempts + 1}/${this.maxRetryAttempts})`);
+                
+                setTimeout(() => {
+                    if (!this.isLoading) { // Перевіряємо, що новий запит ще не почався
+                        this.retryAttempts++;
+                        this.fetchStories();
+                    }
+                }, delay);
+            }
+        } finally {
+            this.isLoading = false;
+        }
     },
 
     // --- Керування фільтрами/сортуванням ---
@@ -160,30 +313,147 @@
     closeSortMenu() { this.showSortMenu = false; },
 
     // --- Пагінація ---
-    nextPage() { if (this.isLoading || this.currentPage >= this.totalPages) return; this.currentPage++; this.fetchStories(); this.$nextTick(() => { document.querySelector('.stories-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
-    prevPage() { if (this.isLoading || this.currentPage <= 1) return; this.currentPage--; this.fetchStories(); this.$nextTick(() => { document.querySelector('.stories-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
+    // Покращені функції пагінації з доступністю
+    nextPage() { 
+        if (this.isLoading || this.currentPage >= this.totalPages) return; 
+        this.currentPage++; 
+        this.fetchStories();
+        this.$nextTick(() => { 
+            try {
+                const storiesSection = document.querySelector('.stories-grid');
+                if (storiesSection) {
+                    storiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+                    
+                    // Встановлюємо фокус для доступності
+                    setTimeout(() => {
+                        const firstStory = storiesSection.querySelector('.story-card');
+                        if (firstStory) {
+                            firstStory.setAttribute('tabindex', '-1');
+                            firstStory.focus();
+                            // Видаляємо tabindex після фокуса
+                            setTimeout(() => firstStory.removeAttribute('tabindex'), 100);
+                        }
+                    }, 500); // Затримка для завершення анімації прокрутки
+                }
+            } catch (error) {
+                console.warn('Scroll error:', error);
+            }
+        }); 
+    },
 
-     // --- Анімація карток ---
-     initCardAnimation() {
-         const observer = new IntersectionObserver(
-             (entries) => {
-                 entries.forEach(entry => {
-                     if (entry.isIntersecting) {
-                         entry.target.classList.add('visible');
-                         observer.unobserve(entry.target);
-                     }
-                 });
-             },
-             { threshold: 0.1 }
-         );
-         this.$el.querySelectorAll('.story-card:not(.visible)').forEach(card => {
-             observer.observe(card);
-         });
-      }
+    prevPage() { 
+        if (this.isLoading || this.currentPage <= 1) return;
+        this.currentPage--; 
+        this.fetchStories();
+        this.$nextTick(() => { 
+            try {
+                const storiesSection = document.querySelector('.stories-grid');
+                if (storiesSection) {
+                    storiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+                    
+                    // Встановлюємо фокус для доступності
+                    setTimeout(() => {
+                        const firstStory = storiesSection.querySelector('.story-card');
+                        if (firstStory) {
+                            firstStory.setAttribute('tabindex', '-1');
+                            firstStory.focus();
+                            // Видаляємо tabindex після фокуса
+                            setTimeout(() => firstStory.removeAttribute('tabindex'), 100);
+                        }
+                    }, 500); // Затримка для завершення анімації прокрутки
+                }
+            } catch (error) {
+                console.warn('Scroll error:', error);
+            }
+        }); 
+    },
+
+    // --- Анімація карток ---
+    // Покращена обробка клавіатурної навігації для карток
+    initCardAnimation() {
+        try {
+            // Перевіряємо підтримку IntersectionObserver
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('visible');
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    },
+                    { threshold: 0.1, rootMargin: '50px' }
+                );
+                
+                // Затримуємо мікрозавдання для гарантії доступу до DOM
+                setTimeout(() => {
+                    const cards = document.querySelectorAll('.story-card:not(.visible)');
+                    cards.forEach((card, index) => {
+                        // Додаємо затримку для каскадного ефекту
+                        setTimeout(() => {
+                            observer.observe(card);
+                        }, index * 50); // 50мс затримка між картками для каскадного ефекту
+                        
+                        // Додаємо доступність з клавіатури
+                        const cardLink = card.querySelector('a[href^="story-detailed.html"]');
+                        if (cardLink) {
+                            card.setAttribute('tabindex', '0');
+                            card.addEventListener('keydown', (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    cardLink.click();
+                                }
+                            });
+                        }
+                    });
+                }, 0);
+            } else {
+                // Запасний варіант для браузерів без підтримки IntersectionObserver
+                document.querySelectorAll('.story-card').forEach(card => {
+                    card.classList.add('visible');
+                });
+            }
+        } catch (error) {
+            console.error('Animation initialization error:', error);
+            // Запасний варіант - показуємо всі картки
+            document.querySelectorAll('.story-card').forEach(card => {
+                card.classList.add('visible');
+            });
+        }
+    },
+
+    // Функція для створення URL зображення з приставкою для запобігання кешування
+    getUniqueImageUrl(baseUrl, id) {
+        // Додаємо унікальний параметр до URL для запобігання кешування однакових зображень
+        try {
+            const url = new URL(baseUrl);
+            // Додаємо або оновлюємо параметр id для унікальності
+            url.searchParams.set('id', id);
+            return url.toString();
+        } catch (error) {
+            // У випадку некоректного URL, повертаємо оригінал з id в кінці
+            console.warn('URL creation error:', error);
+            return `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}id=${id}`;
+        }
+    }
 
 }" x-init="
+    userId = api.utils.getUserId(); // Зберігаємо ID поточного користувача
     isLoggedIn = api.utils.isAuthenticated();
-    currentSort = 'rated'; // <-- Сортування за замовчуванням
+    isPremiumUser = api.utils.isPremium();
+    // Синхронізуємо selectedLang з i18n store
+    if (typeof $store !== 'undefined' && $store.i18n) {
+        selectedLang = $store.i18n.selectedLang;
+        availableLanguages = $store.i18n.available.map(lang => ({
+            code: lang.code,
+            name: lang.code === 'uk' ? `${safeT('story.translationOriginalUk', {}, 'Українська')} (Оригінал)` : lang.name
+        }));
+        // Спостерігаємо за зміною мови в store
+        $watch('$store.i18n.selectedLang', (newLang) => {
+            // Код обробки зміни мови
+        });
+    }
     fetchStories();
 ">
 
@@ -201,19 +471,19 @@
                 <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
             </ul>
             <div class="auth-buttons">
-                <!-- Мовний перемикач -->
+                <!-- Покращений мовний перемикач з обробкою помилок -->
                 <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
                     <div class="lang-dropdown-button" @click="open = !open">
-                        <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+                        <span x-text="$store.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
                         <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
                     </div>
                     <div class="lang-dropdown-menu" x-show="open" x-transition>
-                        <template x-for="lang in $store.i18n.available" :key="lang.code">
+                        <template x-for="lang in $store.i18n?.available || []" :key="lang.code">
                             <div class="lang-dropdown-item"
-                                 :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                                 @click="$store.i18n.setLanguage(lang.code); open = false;">
+                                 :class="{ 'active': lang.code === $store.i18n?.selectedLang }"
+                                 @click="try { $store.i18n.setLanguage(lang.code); open = false; } catch(e) { console.error('Language switch error:', e); open = false; }">
                                 <span x-text="lang.name"></span>
-                                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+                                <i x-show="lang.code === $store.i18n?.selectedLang" class="fas fa-check"></i>
                             </div>
                         </template>
                     </div>
@@ -228,7 +498,22 @@
                 <template x-if="isLoggedIn">
                     <div>
                         <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
-                        <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary"> <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> </a>
+                        <!-- Виправлена кнопка виходу користувача -->
+                        <a href="#" @click.prevent="
+                            try {
+                                api.auth.logout();
+                                isLoggedIn = false;
+                                isPremiumUser = false;
+                                showNotification(safeT('general.loggedOut', {}, 'Ви успішно вийшли з системи'), true);
+                                setTimeout(() => window.location.reload(), 500);
+                            } catch (error) {
+                                console.error('Logout error:', error);
+                                showNotification(safeT('general.logoutError', {}, 'Помилка при виході з системи'), false);
+                            }
+                        " class="btn btn-primary">
+                            <i class="fas fa-sign-out-alt"></i> 
+                            <span x-text="safeT('general.logout', {}, 'Вихід')"></span>
+                        </a>
                     </div>
                 </template>
             </div>
@@ -252,36 +537,54 @@
     </div>
 
     <!-- Фільтри та сортування -->
-    <div class="filter-bar">
-        <div class="filter-options">
-            <div class="filter-option" :class="{ 'active': currentFilter === 'all' }" @click="setFilter('all')" x-text="$store.i18n.t('storyLists.allStoriesFilter')"></div>
-            <div class="filter-option" :class="{ 'active': currentFilter === 'premium' }" @click="setFilter('premium')" x-text="$store.i18n.t('storyLists.premiumFilter')"></div>
-            <div class="filter-option" :class="{ 'active': currentFilter === 'free' }" @click="setFilter('free')" x-text="$store.i18n.t('storyLists.freeFilter')"></div>
+    <!-- Покращені елементи фільтра для доступності -->
+    <div class="filter-bar" role="toolbar" aria-label="Фільтри та сортування історій">
+        <div class="filter-options" role="radiogroup" aria-label="Фільтри історій">
+            <div class="filter-option" 
+                 :class="{ 'active': currentFilter === 'all' }" 
+                 @click="setFilter('all')" 
+                 @keydown="(e) => {if(e.key === 'Enter' || e.key === ' ') {e.preventDefault(); setFilter('all')}}"
+                 tabindex="0"
+                 role="radio"
+                 :aria-checked="currentFilter === 'all'"
+                 x-text="$store.i18n.t('storyLists.allStoriesFilter')"></div>
+            <div class="filter-option" 
+                 :class="{ 'active': currentFilter === 'premium' }" 
+                 @click="setFilter('premium')" 
+                 @keydown="(e) => {if(e.key === 'Enter' || e.key === ' ') {e.preventDefault(); setFilter('premium')}}"
+                 tabindex="0"
+                 role="radio"
+                 :aria-checked="currentFilter === 'premium'"
+                 x-text="$store.i18n.t('storyLists.premiumFilter')"></div>
+            <div class="filter-option" 
+                 :class="{ 'active': currentFilter === 'free' }" 
+                 @click="setFilter('free')" 
+                 @keydown="(e) => {if(e.key === 'Enter' || e.key === ' ') {e.preventDefault(); setFilter('free')}}"
+                 tabindex="0"
+                 role="radio"
+                 :aria-checked="currentFilter === 'free'"
+                 x-text="$store.i18n.t('storyLists.freeFilter')"></div>
         </div>
+    </div>
 
-        <div class="sort-dropdown">
-            <div class="sort-button" @click="toggleSortMenu()">
-                  <span>
-                      <span x-text="$store.i18n.t('storyLists.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1))"></span>
-                  </span>
-                <i class="fas fa-chevron-down" :class="{ 'open': showSortMenu }"></i>
-            </div>
-            <div class="sort-menu" x-show="showSortMenu" x-transition>
-                <!-- Порядок опцій змінено для top-stories -->
-                <div class="sort-option" :class="{ 'active': currentSort === 'rated' }" @click="setSort('rated')">
-                    <i class="fas fa-star"></i> <span x-text="$store.i18n.t('storyLists.sortByRated')"></span>
-                </div>
-                <div class="sort-option" :class="{ 'active': currentSort === 'popular' }" @click="setSort('popular')">
-                    <i class="fas fa-fire"></i> <span x-text="$store.i18n.t('storyLists.sortByPopular')"></span>
-                </div>
-                <div class="sort-option" :class="{ 'active': currentSort === 'commented' }" @click="setSort('commented')">
-                    <i class="fas fa-comments"></i> <span x-text="$store.i18n.t('storyLists.sortByCommented')"></span>
-                </div>
-                <div class="sort-option" :class="{ 'active': currentSort === 'newest' }" @click="setSort('newest')">
-                    <i class="fas fa-clock"></i> <span x-text="$store.i18n.t('storyLists.sortByNewest')"></span>
-                </div>
-            </div>
+    <!-- Додаємо рядок стану з інформацією про пошук -->
+    <div class="search-status" x-show="!isLoading && stories.length > 0">
+        <div class="search-results-info">
+            <span x-text="safeT('storyLists.showingResults', {
+                total: totalStories,
+                filter: safeT('storyLists.' + currentFilter + 'Filter', {}, currentFilter === 'all' ? 'Всі' : (currentFilter === 'premium' ? 'Преміум' : 'Безкоштовні')),
+                sort: safeT('storyLists.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1), {}, 
+                        currentSort === 'rated' ? 'за рейтингом' : 
+                        (currentSort === 'popular' ? 'за популярністю' : 
+                        (currentSort === 'newest' ? 'за новизною' : 'за коментарями')))
+            }, `Показано ${totalStories} історій. Фільтр: ${currentFilter}, Сортування: ${currentSort}`)"></span>
         </div>
+        
+        <!-- Кнопка для очищення фільтрів, якщо не на базових налаштуваннях -->
+        <button class="btn btn-small" 
+                @click="currentFilter = 'all'; currentSort = 'rated'; currentPage = 1; fetchStories();"
+                x-show="currentFilter !== 'all' || currentSort !== 'rated'"
+                x-text="safeT('storyLists.resetFilters', {}, 'Скинути фільтри')"></button>
     </div>
 
     <!-- Індикатор завантаження / Помилка / Список історій -->
@@ -292,28 +595,47 @@
     </div>
 
     <div class="stories-grid" x-show="!isLoading && stories.length > 0">
-        <!-- Рендеринг карток такий самий, як у new-stories.html -->
+        <!-- Покращення доступності для карток історій -->
         <template x-for="story in stories" :key="story._id || story.id">
-            <div class="story-card">
-                <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;">
+            <div class="story-card" :data-id="story._id || story.id">
+                <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;" :aria-label="story.title">
                     <div class="story-card-image">
-                        <img :src="story.imageUrl || `https://source.unsplash.com/random/600x400/?story,${story._id || story.id}`" :alt="story.title">
-                        <div :class="story.isPremium ? 'story-badge premium-badge' : 'story-badge'" x-text="story.ageRestriction || (story.isPremium ? '21+' : '18+')"></div>
+                        <!-- Виправлене створення URL зображень з уникненням кешування -->
+                        <img :src="story.imageUrl || getUniqueImageUrl(`https://source.unsplash.com/random/600x400/?story`, story._id || story.id)" 
+                             :alt="safeT('storyLists.coverImageAlt', { title: story.title }, `Обкладинка історії ${story.title}`)" 
+                             loading="lazy">
+                        <div :class="story.isPremium ? 'story-badge premium-badge' : 'story-badge'" 
+                             x-text="story.ageRestriction || (story.isPremium ? '21+' : '18+')"
+                             aria-label="Вікове обмеження"></div>
                     </div>
                 </a>
                 <div class="story-card-content">
-                    <div class="story-tags">
-                        <a :href="`category-page.html?slug=${story.category?.slug || story.category}`" class="story-tag" x-text="story.category?.name || story.category || $store.i18n.t('general.defaultCategory')"></a>
+                    <div class="story-tags" aria-label="Категорії та теги">
+                        <a :href="`category-page.html?slug=${story.category?.slug || story.category}`" 
+                           class="story-tag" 
+                           x-text="story.category?.name || story.category || safeT('general.defaultCategory', {}, 'Без категорії')"></a>
                         <template x-for="tag in story.tags?.slice(0, 2)" :key="tag">
                             <span class="story-tag" x-text="tag"></span>
                         </template>
                     </div>
-                    <h3 class="story-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
-                    <p class="story-excerpt" x-text="(story.content?.replace(/<[^>]*>?/gm, '').substring(0, 150) || $store.i18n.t('general.descriptionMissing')) + '...'"></p>
+                    <h3 class="story-title">
+                        <a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a>
+                    </h3>
+                    <p class="story-excerpt" x-text="(story.content?.replace(/<[^>]*>?/gm, '').substring(0, 150) || safeT('general.descriptionMissing', {}, 'Опис відсутній')) + '...'"></p>
                     <div class="story-meta">
-                        <div class="story-meta-item"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="$store.i18n.t('general.readingTimeSuffix')"></span></div>
-                        <div class="story-meta-item"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
-                        <div class="story-meta-item rating"><i class="fas fa-star"></i> <span x-text="(story.averageRating || 0).toFixed(1)"></span></div>
+                        <div class="story-meta-item" aria-label="Час читання">
+                            <i class="far fa-clock"></i> 
+                            <span x-text="story.readingTime || '?'"></span> 
+                            <span x-text="safeT('general.readingTimeSuffix', {}, 'хв')"></span>
+                        </div>
+                        <div class="story-meta-item" aria-label="Кількість переглядів">
+                            <i class="far fa-eye"></i> 
+                            <span x-text="story.views || 0"></span>
+                        </div>
+                        <div class="story-meta-item rating" aria-label="Рейтинг">
+                            <i class="fas fa-star"></i> 
+                            <span x-text="(story.averageRating || 0).toFixed(1)"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -337,6 +659,25 @@
     </div>
 
     <!-- Банер підписки можна видалити або залишити, якщо потрібно -->
+
+    <!-- Додаємо кнопку повернення нагору -->
+    <button id="back-to-top" 
+            @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+            x-data 
+            x-init="
+              window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                  $el.classList.add('visible');
+                } else {
+                  $el.classList.remove('visible');
+                }
+              })
+            "
+            aria-label="На початок сторінки"
+            title="На початок сторінки"
+            class="back-to-top">
+      <i class="fas fa-arrow-up"></i>
+    </button>
 
 </main>
 
@@ -375,6 +716,7 @@
             </div>
             <div class="footer-section">
                 <h4 x-text="$store.i18n.t('general.join')"></h4>
+                <!-- Виправлене посилання на реєстрацію -->
                 <ul>
                     <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
                     <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
@@ -390,7 +732,7 @@
     </div>
 </footer>
 
-<!-- Елемент сповіщення -->
+<!-- Елемент сповіщення з підтримкою типів -->
 <div x-show="notificationVisible"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 transform translate-y-2"
@@ -398,7 +740,10 @@
      x-transition:leave="transition ease-in duration-300"
      x-transition:leave-start="opacity-100 transform translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
-     class="notification" style="display: none;" id="global-notification">
+     class="notification"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
+     style="display: none;"
+     id="global-notification">
     <span x-text="notificationMessage"></span>
 </div>
 

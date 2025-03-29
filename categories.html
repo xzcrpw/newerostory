@@ -182,7 +182,10 @@
             this.newsletterSubmitted = true;
             this.newsletterEmail = ''; // Очищаємо поле після успіху
             // Ховаємо повідомлення про успіх через 5 секунд
-            setTimeout(() => { this.newsletterSubmitted = false; }, 5000);
+            setTimeout(() => { 
+                if (this.$el && !this.$el.isConnected) return; // Перевірка чи компонент досі в DOM
+                this.newsletterSubmitted = false; 
+            }, 5000);
         } catch (error) {
              // Обробка помилки з використанням i18n
              this.newsletterError = error.message || $store.i18n.t('newsletter.errorGeneral');
@@ -194,6 +197,15 @@
 
      // --- Анімація карток ---
      initCardAnimation() {
+        // Перевірка чи підтримується Intersection Observer
+        if (!('IntersectionObserver' in window)) {
+            // Якщо не підтримується, просто зробити всі картки видимими
+            this.$el.querySelectorAll('.category-card').forEach(card => {
+                card.classList.add('visible');
+            });
+            return;
+        }
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
@@ -213,9 +225,18 @@
 
 }" x-init="
     isLoggedIn = api.utils.isAuthenticated(); // Перевірка статусу логіну
-    $nextTick(() => { // Запускаємо завантаження після ініціалізації Alpine
-        Promise.all([fetchCategories(), fetchPopularTags()]);
-    });
+    // Використовуємо функцію для початкового завантаження даних
+    const initializeData = async () => {
+        try {
+            await Promise.all([fetchCategories(), fetchPopularTags()]);
+        } catch (error) {
+            console.error('Error initializing data:', error);
+        }
+    };
+    
+    // Запускаємо завантаження після ініціалізації Alpine
+    $nextTick(() => initializeData());
+    
     // Зчитування параметра пошуку з URL при завантаженні сторінки
     const urlParams = new URLSearchParams(window.location.search);
     const search = urlParams.get('search');
@@ -339,11 +360,11 @@
           </div>
           <div class="category-card-content">
             <h3 class="category-name"><span x-text="category.name"></span></h3>
-            <div class="category-description" x-text="category.description || $store.i18n.t('general.descriptionMissing')"></div>
+            <div class="category-description" x-text="category.description || $store.i18n.t('general.descriptionMissing') || 'Опис відсутній'"></div>
             <div class="category-meta">
               <!-- Суфікси для переглядів і лайків з i18n -->
-              <div class="category-meta-item"><i class="far fa-eye"></i> <span x-text="category.stats?.views || 0"></span> <span x-text="$store.i18n.t('general.viewsSuffix')"></span></div>
-              <div class="category-meta-item"><i class="far fa-heart"></i> <span x-text="category.stats?.likes || 0"></span> <span x-text="$store.i18n.t('general.likesSuffix')"></span></div>
+              <div class="category-meta-item"><i class="far fa-eye"></i> <span x-text="category.stats?.views || 0"></span> <span x-text="$store.i18n.t('general.viewsSuffix') || 'переглядів'"></span></div>
+              <div class="category-meta-item"><i class="far fa-heart"></i> <span x-text="category.stats?.likes || 0"></span> <span x-text="$store.i18n.t('general.likesSuffix') || 'вподобань'"></span></div>
             </div>
           </div>
         </a>

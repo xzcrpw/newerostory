@@ -66,11 +66,24 @@
     .notification.success { border-left: 4px solid #4cd964; }
     .notification.error { border-left: 4px solid #ff6b6b; }
     /* Стиль для кнопки під час обробки */
-    button.removing { opacity: 0.7; pointer-events: none; }
-    button.removing i:not(.fa-spinner) { display: none; }
+    button.removing { 
+        opacity: 0.7; 
+        pointer-events: none; 
+        position: relative;
+    }
+    button.removing i:not(.fa-spinner) { 
+        display: none; 
+    }
     button.removing::after {
-      content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
-      display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
+        content: '\f110'; 
+        font-family: 'Font Awesome 6 Free'; 
+        font-weight: 900;
+        display: inline-block; 
+        animation: spin 1s linear infinite; 
+        margin-left: 5px;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     /* Індикатор завантаження в фільтрах */
@@ -130,10 +143,16 @@
         if (notificationElement) {
             notificationElement.classList.toggle('success', isSuccess);
             notificationElement.classList.toggle('error', !isSuccess);
+            notificationElement.classList.add('show'); // Додаємо клас show для відображення
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000); // Трохи довше
+        this.notificationTimeout = setTimeout(() => { 
+            this.notificationVisible = false; 
+            // Переконаємося, що елемент все ще існує перед видаленням класу
+            const el = document.getElementById('global-notification');
+            if (el) el.classList.remove('show');
+        }, 4000); // Трохи довше
     },
 
     // --- Завантаження даних категорії ---
@@ -248,6 +267,15 @@
         } catch (error) {
             this.storiesError = error.message || $store.i18n.t('categoryPage.errorLoadingStories'); // i18n
             console.error('Stories fetch error:', error);
+            
+            // Якщо помилка виникла при завантаженні першої сторінки, але у нас є інші сторінки,
+            // повернемося до останньої успішної сторінки
+            if (this.stories.length === 0 && this.currentPage > 1) {
+                this.currentPage--;
+                this.storiesError = null; // Скидаємо помилку перед повторною спробою
+                await this.fetchStories();
+                return;
+            }
         } finally {
             this.isLoadingStories = false;
         }
@@ -276,62 +304,91 @@
 
     // --- Дії з категорією ---
     async toggleFavoriteCategory(event) {
-        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.isLoggedIn) { 
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); 
+            return; 
+        }
         if (!this.categorySlug || !this.category) return; // Перевірка наявності категорії
-
+    
         const button = event?.currentTarget;
-        if(button) button.classList.add('removing');
+        if (button) {
+            button.disabled = true; // Забороняємо повторні кліки
+            button.classList.add('removing');
+        }
+        
         const originalState = this.isFavoriteCategory;
         const originalLikes = this.category.stats?.likes || 0;
-
+    
         // Оптимістичне оновлення
         this.isFavoriteCategory = !this.isFavoriteCategory;
-         if (this.category.stats && typeof this.category.stats.likes === 'number') {
-            this.category.stats.likes += this.isFavoriteCategory ? 1 : -1;
-         }
-
+        if (this.category.stats && typeof this.category.stats.likes === 'number') {
+           this.category.stats.likes += this.isFavoriteCategory ? 1 : -1;
+        }
+    
         try {
             console.log('Simulating API Call: toggleFavoriteCategory', this.categorySlug);
             await new Promise(resolve => setTimeout(resolve, 500));
-             // await api.categories.toggleFavorite(this.categorySlug); // Реальний виклик (приклад)
-             this.showNotification(this.isFavoriteCategory ? $store.i18n.t('notifications.categoryAddedToFavorites') : $store.i18n.t('notifications.categoryRemovedFromFavorites'), true);
+            // await api.categories.toggleFavorite(this.categorySlug); // Реальний виклик (приклад)
+            this.showNotification(this.isFavoriteCategory ? $store.i18n.t('notifications.categoryAddedToFavorites') : $store.i18n.t('notifications.categoryRemovedFromFavorites'), true);
         } catch (error) {
             // Відкат UI
             this.isFavoriteCategory = originalState;
-             if (this.category.stats && typeof this.category.stats.likes === 'number') {
-                 this.category.stats.likes = originalLikes;
-             }
+            if (this.category.stats && typeof this.category.stats.likes === 'number') {
+                this.category.stats.likes = originalLikes;
+            }
             this.showNotification($store.i18n.t('categoryPage.errorToggleFavorite') + ': ' + (error.message || $store.i18n.t('general.unknownError')), false);
             console.error('Toggle favorite category error:', error);
         } finally {
-            if(button) button.classList.remove('removing');
+            if (button) {
+                button.disabled = false; // Розблоковуємо кнопку
+                button.classList.remove('removing');
+            }
         }
     },
     async toggleSubscribeCategory(event) {
-        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.isLoggedIn) { 
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); 
+            return; 
+        }
         if (!this.categorySlug) return;
 
         const button = event?.currentTarget;
-        if(button) button.classList.add('removing');
+        if (button) {
+            button.disabled = true; // Забороняємо повторні кліки
+            button.classList.add('removing');
+        }
+        
         const originalState = this.isSubscribedCategory;
         this.isSubscribedCategory = !this.isSubscribedCategory; // Оптимістичне оновлення
 
         try {
             console.log('Simulating API Call: subscribeCategory', this.categorySlug);
             await new Promise(resolve => setTimeout(resolve, 500));
-             // await api.categories.subscribeCategory(this.categorySlug); // Реальний виклик
-             this.showNotification(this.isSubscribedCategory ? $store.i18n.t('notifications.subscribedToCategory') : $store.i18n.t('notifications.unsubscribedFromCategory'), true);
+            // await api.categories.subscribeCategory(this.categorySlug); // Реальний виклик
+            this.showNotification(this.isSubscribedCategory ? $store.i18n.t('notifications.subscribedToCategory') : $store.i18n.t('notifications.unsubscribedFromCategory'), true);
         } catch (error) {
             this.isSubscribedCategory = originalState; // Відкат
             this.showNotification($store.i18n.t('categoryPage.errorToggleSubscription') + ': ' + (error.message || $store.i18n.t('general.unknownError')), false);
             console.error('Toggle subscribe category error:', error);
         } finally {
-            if(button) button.classList.remove('removing');
+            if (button) {
+                button.disabled = false; // Розблоковуємо кнопку
+                button.classList.remove('removing');
+            }
         }
     },
 
     // --- Анімація ---
     initCardAnimation() {
+        // Перевірка чи підтримується IntersectionObserver
+        if (!('IntersectionObserver' in window)) {
+            // Якщо не підтримується, просто відображаємо всі картки
+            this.$el.querySelectorAll('.story-item').forEach(card => {
+                card.classList.add('visible');
+            });
+            return;
+        }
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
@@ -343,19 +400,41 @@
             },
             { threshold: 0.1 }
         );
-        // Вибираємо елементи тільки всередині компонента Alpine ($el)
-        this.$el.querySelectorAll('.story-item:not(.visible)').forEach(card => {
-             observer.observe(card);
-        });
+        
+        // Перевіряємо, що $el існує та має querySelectorAll метод
+        if (this.$el && typeof this.$el.querySelectorAll === 'function') {
+            this.$el.querySelectorAll('.story-item:not(.visible)').forEach(card => {
+                observer.observe(card);
+            });
+        }
     }
 
 }" x-init="
-    isLoggedIn = api.utils.isAuthenticated();
-    isPremiumUser = api.utils.isPremium();
-    fetchCategoryData().then(() => {
-        if (!categoryError) { fetchStories(); } // Завантажуємо історії тільки якщо категорія успішно завантажена
-        else { isLoadingStories = false; } // Інакше припиняємо індикатор завантаження історій
-    });
+    try {
+        isLoggedIn = api.utils.isAuthenticated();
+        isPremiumUser = api.utils.isPremium();
+    } catch (e) {
+        console.error('Error initializing auth state:', e);
+        isLoggedIn = false;
+        isPremiumUser = false;
+    }
+
+    const initializeData = async () => {
+        try {
+            await fetchCategoryData();
+            if (!categoryError) { 
+                await fetchStories(); 
+            } else { 
+                isLoadingStories = false; 
+            }
+        } catch (error) {
+            console.error('Error during initialization:', error);
+            isLoadingStories = false;
+            categoryError = error.message || $store.i18n.t('general.unknownError');
+        }
+    };
+
+    $nextTick(() => initializeData());
 ">
 
 <!-- Хедер -->
@@ -571,7 +650,9 @@
       </div>
     </div>
 
-    <div x-show="!isLoadingStories && stories.length === 0 && !storiesError" class="empty-state" x-text="$store.i18n.t('categoryPage.noStoriesFound')">
+    <div x-show="!isLoadingStories && stories.length === 0 && !storiesError" class="empty-state">
+        <p x-text="$store.i18n.t('categoryPage.noStoriesFound') || 'В цій категорії поки немає історій.'"></p>
+        <button @click="fetchStories()" class="btn btn-outline mt-3" x-text="$store.i18n.t('general.refreshButton') || 'Оновити'"></button>
     </div>
 
     <!-- Пагінація -->
@@ -648,6 +729,7 @@
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
+     :class="{ 'show': notificationVisible, 'success': true, 'error': false }"
      style="display: none;"
      id="global-notification"> <!-- Додав ID для можливого стильового розрізнення -->
   <span x-text="notificationMessage"></span>

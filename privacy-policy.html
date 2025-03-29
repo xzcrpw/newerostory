@@ -35,9 +35,89 @@
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+  <style>
+    /* Стиль для кнопки прокрутки нагору */
+    .scroll-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      cursor: pointer;
+      z-index: 100;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .scroll-to-top.visible {
+      opacity: 0.8;
+      visibility: visible;
+    }
+    
+    .scroll-to-top:hover {
+      opacity: 1;
+      background-color: var(--accent-hover);
+    }
+    
+    /* Покращення доступності для навігації */
+    .terms-navigation a:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    
+    /* Покращення стилю посилань в розділах */
+    .section a {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+    
+    .section a:hover {
+      color: var(--accent-hover);
+    }
+  </style>
 </head>
 <!-- Простий x-data для хедера -->
-<body x-data="{ isLoggedIn: false }" x-init="isLoggedIn = api.utils.isAuthenticated()">
+<body x-data="{ 
+  isLoggedIn: false,
+  isPremiumUser: false,
+  
+  // Функція для безпечного доступу до i18n ключів
+  safeT(key, fallback) {
+    try {
+      const translation = $store.i18n?.t(key);
+      return (translation && translation !== key) ? translation : fallback;
+    } catch (e) {
+      console.warn(`Translation key error: ${key}`, e);
+      return fallback;
+    }
+  },
+  
+  // Функція для плавного скролу до секцій
+  scrollToSection(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+}" x-init="
+  try {
+    isLoggedIn = api.utils.isAuthenticated();
+    isPremiumUser = api.utils.isPremium();
+  } catch (error) {
+    console.error('Error checking authentication status:', error);
+    isLoggedIn = false;
+    isPremiumUser = false;
+  }
+">
 
 <!-- Хедер -->
 <header>
@@ -56,16 +136,16 @@
         <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <span x-text="$store.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
           </div>
           <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n.available" :key="lang.code">
+            <template x-for="lang in $store.i18n?.available || []" :key="lang.code">
               <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                   :class="{ 'active': lang.code === $store.i18n?.selectedLang }"
+                   @click="try { $store.i18n.setLanguage(lang.code); open = false; } catch(e) { console.error('Error switching language:', e); open = false; }">
                 <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+                <i x-show="lang.code === $store.i18n?.selectedLang" class="fas fa-check"></i>
               </div>
             </template>
           </div>
@@ -74,13 +154,25 @@
         <template x-if="!isLoggedIn">
           <div>
             <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span> </a>
-            <a href="register-page.html" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span> </a>
+            <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span> </a>
           </div>
         </template>
         <template x-if="isLoggedIn">
           <div>
             <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
-            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary"> <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> </a>
+            <!-- Безпечний обробник виходу з профілю -->
+            <a href="#" @click.prevent="
+              try { 
+                api.auth.logout();
+                isLoggedIn = false;
+                window.location.reload();
+              } catch (e) { 
+                console.error('Logout error:', e);
+                alert($store.i18n?.t('general.logoutError') || 'Помилка при виході з системи');
+              }
+            " class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            </a>
           </div>
         </template>
       </div>
@@ -98,24 +190,25 @@
       <span class="current" x-text="$store.i18n.t('policyPages.privacyTitle')"></span>
     </div>
 
-    <div class="terms-container"> <!-- Використовуємо той самий контейнер, що й для terms-page -->
+    <div class="terms-container" role="main"> <!-- Використовуємо той самий контейнер, що й для terms-page -->rms-page -->
       <!-- Заголовок -->
       <div class="terms-header">
-        <h1 class="terms-title" x-text="$store.i18n.t('policyPages.privacyTitle')"></h1>
-        <p class="terms-description" x-text="$store.i18n.t('policyPages.privacyDescription')"></p>
+        <!-- Приклад використання безпечної функції перекладу -->
+        <h1 class="terms-title" x-text="safeT('policyPages.privacyTitle', 'Політика конфіденційності')" id="privacy-top"></h1>rivacy-top"></h1>
+        <p class="terms-description" x-text="safeT('policyPages.privacyDescription', 'Як ми збираємо, використовуємо та захищаємо ваші персональні дані')"></p>
         <!-- Дата оновлення -->
-        <span class="last-updated" x-text="`${$store.i18n.t('policyPages.lastUpdated')}: 12 березня 2025 р.`"></span>
+        <span class="last-updated" x-text="`${safeT('policyPages.lastUpdated', 'Останнє оновлення')}: 12 березня 2025 р.`" aria-label="Дата останнього оновлення політики"></span> р.`" aria-label="Дата останнього оновлення політики"></span>
       </div>
 
-      <!-- Навігація по розділах (використовуємо ключі i18n) -->
-      <nav class="terms-navigation">
-        <a href="#collection" x-text="$store.i18n.t('policyPages.privacyNavCollection')"></a>
-        <a href="#usage" x-text="$store.i18n.t('policyPages.privacyNavUsage')"></a>
-        <a href="#protection" x-text="$store.i18n.t('policyPages.privacyNavProtection')"></a>
-        <a href="#cookies" x-text="$store.i18n.t('policyPages.privacyNavCookies')"></a>
-        <a href="#rights" x-text="$store.i18n.t('policyPages.privacyNavRights')"></a>
-        <a href="#changes" x-text="$store.i18n.t('policyPages.privacyNavChanges')"></a>
-        <a href="#contact" x-text="$store.i18n.t('policyPages.privacyNavContact')"></a>
+      <!-- Навігація по розділах з атрибутами доступності -->
+      <nav class="terms-navigation" aria-labelledby="privacy-top">aria-labelledby="privacy-top">
+        <a href="#collection" @click.prevent="scrollToSection('collection')" x-text="safeT('policyPages.privacyNavCollection', 'Збір даних')"></a>
+        <a href="#usage" @click.prevent="scrollToSection('usage')" x-text="safeT('policyPages.privacyNavUsage', 'Використання даних')"></a>
+        <a href="#protection" @click.prevent="scrollToSection('protection')" x-text="safeT('policyPages.privacyNavProtection', 'Захист даних')"></a>
+        <a href="#cookies" @click.prevent="scrollToSection('cookies')" x-text="safeT('policyPages.privacyNavCookies', 'Файли cookie')"></a>
+        <a href="#rights" @click.prevent="scrollToSection('rights')" x-text="safeT('policyPages.privacyNavRights', 'Ваші права')"></a>
+        <a href="#changes" @click.prevent="scrollToSection('changes')" x-text="safeT('policyPages.privacyNavChanges', 'Зміни політики')"></a>
+        <a href="#contact" @click.prevent="scrollToSection('contact')" x-text="safeT('policyPages.privacyNavContact', 'Контакти')"></a>
       </nav>
 
       <!-- Зміст політики (використовуємо ключі i18n) -->
@@ -165,17 +258,17 @@
           <!-- Можна додати підрозділи, якщо політика детальніша -->
         </section>
 
-        <section id="cookies" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection4Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection4Text1')"></p>
-          <p x-text="$store.i18n.t('policyPages.privacySection4Text2')"></p>
+        <section id="cookies" class="section" aria-labelledby="cookies-heading">
+          <h2 class="section-title" id="cookies-heading" x-text="safeT('policyPages.privacySection4Title', 'Файли cookie та технології відстеження')"></h2>
+          <p x-text="safeT('policyPages.privacySection4Text1', 'Ми використовуємо файли cookie та подібні технології для покращення вашого досвіду на нашому веб-сайті.')"></p>
+          <p x-text="safeT('policyPages.privacySection4Text2', 'Наш веб-сайт використовує такі типи файлів cookie:')"></p>
           <ul>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType1')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType2')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType3')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType4')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType1', 'Необхідні файли cookie: потрібні для функціонування веб-сайту')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType2', 'Аналітичні файли cookie: допомагають нам розуміти, як відвідувачі взаємодіють з веб-сайтом')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType3', 'Функціональні файли cookie: дозволяють веб-сайту запам\'ятати ваші налаштування')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType4', 'Рекламні файли cookie: допомагають показувати вам релевантну рекламу')"></li>
           </ul>
-          <p x-text="$store.i18n.t('policyPages.privacyCookieManage')"></p>
+          <p x-text="safeT('policyPages.privacyCookieManage', 'Ви можете керувати файлами cookie через налаштування вашого браузера.')"></p>
         </section>
 
         <section id="rights" class="section">
@@ -205,6 +298,13 @@
         </section>
       </div>
 
+      <!-- Додаємо можливість PDF експорту -->
+      <div class="terms-actions">
+        <button @click="generatePDF()" class="btn btn-outline" title="Завантажити політику конфіденційності у форматі PDF">
+          <i class="fas fa-file-pdf"></i> <span x-text="safeT('policyPages.downloadPDF', 'Завантажити PDF')"></span>
+        </button>
+      </div>
+
       <!-- Футер сторінки -->
       <div class="terms-footer">
         <p x-text="$store.i18n.t('policyPages.footerText')"></p>
@@ -213,6 +313,17 @@
     </div>
   </div>
 </main>
+
+<!-- Додавання кнопки нагору для зручності -->
+<button class="scroll-to-top" 
+        @click="window.scrollTo({top: 0, behavior: 'smooth'})" 
+        :class="{ 'visible': window.scrollY > 500 }" 
+        x-data 
+        x-init="window.addEventListener('scroll', () => $el.classList.toggle('visible', window.scrollY > 500))" 
+        aria-label="Прокрутити нагору" 
+        title="Нагору">
+  <i class="fas fa-arrow-up"></i>
+</button>
 
 <!-- Footer -->
 <footer>
@@ -251,18 +362,82 @@
         <h4 x-text="$store.i18n.t('general.join')"></h4>
         <ul>
           <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+          <li><a href="login.html?tab=register" x-text="safeT('general.register', 'Реєстрація')"></a></li>
           <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
           <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
         </ul>
       </div>
     </div>
+    <!-- Виправлений футер з безпечною логікою для дати -->
     <div class="footer-bottom">
-      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+      © <span x-text="new Date().getFullYear() || '2025'"></span> 
+      <span x-text="safeT('general.copyright', 'Таємний Світ')"></span>. 
+      <span x-text="safeT('general.allRightsReserved', 'Всі права захищені')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="safeT('general.terms', 'Умови використання')"></a> | 
+      <a href="privacy-policy.html" x-text="safeT('general.privacy', 'Політика конфіденційності')"></a>
     </div>
   </div>
 </footer>
+
+<!-- Обробник подій для подсвічування активних розділів при скролі -->
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.terms-navigation a');
+  
+  function highlightNavigation() {
+    let scrollY = window.pageYOffset;
+    
+    sections.forEach(section => {
+      const sectionHeight = section.offsetHeight;
+      const sectionTop = section.offsetTop - 100; // Відступ для раннього підсвічування
+      const sectionId = section.getAttribute('id');
+      
+      if(scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+        // Знаходимо відповідне посилання і додаємо активний клас
+        navLinks.forEach(link => {
+          if(link.getAttribute('href') === '#' + sectionId) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+    });
+  }
+  
+  // Додаємо стиль для активних посилань
+  const style = document.createElement('style');
+  style.textContent = `
+    .terms-navigation a.active {
+      color: var(--accent);
+      font-weight: bold;
+      position: relative;
+    }
+    .terms-navigation a.active::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--accent);
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Додаємо прослуховування скролу для підсвічування
+  window.addEventListener('scroll', highlightNavigation);
+  
+  // Викликаємо один раз для ініціалізації
+  highlightNavigation();
+});
+
+// Проста імітація завантаження PDF
+function generatePDF() {
+  alert('Функціональність завантаження PDF буде реалізована пізніше. Наразі ви можете використовувати функцію друку браузера (Ctrl+P/Cmd+P).');
+}
+</script>
 
 </body>
 </html>

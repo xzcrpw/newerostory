@@ -7,8 +7,16 @@
   <!-- Title використовує i18n -->
   <title x-text="`${$store.i18n.t('policyPages.termsTitle')} — ${$store.i18n.t('general.copyright')}`"></title>
 
-  <!-- Мета-теги використовують i18n -->
-  <meta name="description" :content="$store.i18n.t('policyPages.termsMetaDescription') || 'Правила та умови використання сайту Таємний Світ. Ознайомтеся з вимогами до контенту, правами та обов\'язками користувачів нашої платформи.'">
+  <!-- Оновлені мета-теги з обробкою помилок -->
+  <meta name="description" :content="
+    (() => {
+      try {
+        return $store.i18n.t('policyPages.termsMetaDescription') || 'Правила та умови використання сайту Таємний Світ. Ознайомтеся з вимогами до контенту, правами та обов\'язками користувачів нашої платформи.';
+      } catch (e) {
+        return 'Правила та умови використання сайту Таємний Світ. Ознайомтеся з вимогами до контенту, правами та обов\'язками користувачів нашої платформи.';
+      }
+    })()
+  ">
   <meta property="og:title" :content="`${$store.i18n.t('policyPages.termsTitle')} — ${$store.i18n.t('general.copyright')}`">
   <meta property="og:description" :content="$store.i18n.t('policyPages.termsMetaDescription') || 'Правила та умови використання сайту Таємний Світ.'">
   <meta property="og:type" content="website">
@@ -35,9 +43,135 @@
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+  <!-- Стилі для кнопки нагору -->
+  <style>
+    .back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .back-to-top.visible {
+      opacity: 0.7;
+      visibility: visible;
+    }
+    
+    .back-to-top:hover {
+      opacity: 1;
+      background-color: var(--accent-hover);
+    }
+    
+    @media (max-width: 768px) {
+      .back-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 35px;
+        height: 35px;
+      }
+    }
+  </style>
+
+  <!-- Стилі для пропуску до вмісту -->
+  <style>
+    .skip-to-content {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 1001;
+      transition: top 0.3s;
+    }
+    
+    .skip-to-content:focus-within {
+      top: 0;
+    }
+    
+    .skip-to-content a {
+      background: var(--accent);
+      color: white;
+      padding: 10px 20px;
+      display: inline-block;
+      text-decoration: none;
+      border-radius: 0 0 5px 5px;
+    }
+  </style>
 </head>
-<!-- Простий x-data для хедера -->
-<body x-data="{ isLoggedIn: false }" x-init="isLoggedIn = api.utils.isAuthenticated()">
+<!-- Додаємо безпечну функцію доступу до перекладів -->
+<body x-data="{ 
+  isLoggedIn: false,
+  isPremiumUser: false,
+  
+  // Допоміжна функція для безпечного доступу до i18n
+  safeT(key, params = {}, fallback = '') {
+    try {
+      if ($store && $store.i18n && typeof $store.i18n.t === 'function') {
+        const translation = $store.i18n.t(key, params);
+        return (translation && translation !== key) ? translation : fallback;
+      }
+      return fallback;
+    } catch (e) {
+      console.warn(`Translation error for key: ${key}`, e);
+      return fallback;
+    }
+  },
+  
+  // Додаємо функцію плавного скролу до розділів
+  scrollToSection(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+  }
+}" x-init="
+  try {
+    isLoggedIn = api.utils.isAuthenticated();
+    isPremiumUser = api.utils.isPremium();
+  } catch (error) {
+    console.error('Auth check error:', error);
+    isLoggedIn = false;
+    isPremiumUser = false;
+  }
+  
+  // Функція для налаштування доступності
+  $nextTick(() => {
+    try {
+      // Додаємо атрибути ARIA до розділів для кращої доступності
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(section => {
+        const titleElement = section.querySelector('.section-title');
+        if (titleElement && !section.getAttribute('aria-labelledby') && titleElement.id) {
+          section.setAttribute('aria-labelledby', titleElement.id);
+        }
+      });
+    } catch (error) {
+      console.warn('Accessibility setup error:', error);
+    }
+  });
+">
+
+<!-- Покращення доступності -->
+<div id="skipToContent" class="skip-to-content">
+  <a href="#general" @click.prevent="scrollToSection('general')" x-text="safeT('general.skipToContent', {}, 'Перейти до вмісту')"></a>
+</div>
 
 <!-- Хедер -->
 <header>
@@ -53,19 +187,19 @@
         <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
       <div class="auth-buttons">
-        <!-- Мовний перемикач -->
+        <!-- Покращений мовний перемикач з обробкою помилок -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <span x-text="$store.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
           </div>
           <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n.available" :key="lang.code">
+            <template x-for="lang in $store.i18n?.available || []" :key="lang.code">
               <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                   :class="{ 'active': lang.code === $store.i18n?.selectedLang }"
+                   @click="try { $store.i18n.setLanguage(lang.code); open = false; } catch(e) { console.error('Language switch error:', e); open = false; }">
                 <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+                <i x-show="lang.code === $store.i18n?.selectedLang" class="fas fa-check"></i>
               </div>
             </template>
           </div>
@@ -80,7 +214,18 @@
         <template x-if="isLoggedIn">
           <div>
             <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
-            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary"> <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> </a>
+            <!-- Безпечний обробник виходу з системи -->
+            <a href="#" @click.prevent="
+              try { 
+                api.auth.logout(); 
+                window.location.reload(); 
+              } catch (e) { 
+                console.error('Logout error:', e);
+                alert(safeT('general.logoutError', {}, 'Помилка при виході з системи'));
+              }
+            " class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout', {}, 'Вийти')"></span>
+            </a>
           </div>
         </template>
       </div>
@@ -91,11 +236,11 @@
 <!-- Основний контент -->
 <main>
   <div class="container">
-    <!-- Хлібні крихти -->
+    <!-- Хлібні крихти з безпечним доступом до перекладів -->
     <div class="breadcrumbs">
-      <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+      <a href="index.html" x-text="safeT('general.home', {}, 'Головна')"></a>
       <span class="separator">/</span>
-      <span class="current" x-text="$store.i18n.t('policyPages.termsTitle')"></span>
+      <span class="current" x-text="safeT('policyPages.termsTitle', {}, 'Правила та умови використання')"></span>
     </div>
 
     <div class="terms-container">
@@ -107,25 +252,30 @@
         <span class="last-updated" x-text="`${$store.i18n.t('policyPages.lastUpdated')}: 12 березня 2025 р.`"></span>
       </div>
 
-      <!-- Навігація по розділах (з ключами i18n) -->
+      <!-- Оновлена навігація з плавним скролом -->
       <nav class="terms-navigation">
-        <a href="#general" x-text="$store.i18n.t('policyPages.termsNavGeneral')"></a>
-        <a href="#content" x-text="$store.i18n.t('policyPages.termsNavContent')"></a>
-        <a href="#restrictions" x-text="$store.i18n.t('policyPages.termsNavRestrictions')"></a>
-        <a href="#premium" x-text="$store.i18n.t('policyPages.termsNavPremium')"></a>
-        <a href="#account" x-text="$store.i18n.t('policyPages.termsNavAccount')"></a>
-        <a href="#disclaimer" x-text="$store.i18n.t('policyPages.termsNavDisclaimer')"></a>
-        <a href="#changes" x-text="$store.i18n.t('policyPages.termsNavChanges')"></a>
-        <a href="#contact" x-text="$store.i18n.t('policyPages.termsNavContact')"></a>
+        <a href="#general" @click.prevent="scrollToSection('general')" x-text="safeT('policyPages.termsNavGeneral', {}, 'Загальні положення')"></a>
+        <a href="#content" @click.prevent="scrollToSection('content')" x-text="safeT('policyPages.termsNavContent', {}, 'Контент')"></a>
+        <a href="#restrictions" @click.prevent="scrollToSection('restrictions')" x-text="safeT('policyPages.termsNavRestrictions', {}, 'Обмеження')"></a>
+        <a href="#premium" @click.prevent="scrollToSection('premium')" x-text="safeT('policyPages.termsNavPremium', {}, 'Преміум')"></a>
+        <a href="#account" @click.prevent="scrollToSection('account')" x-text="safeT('policyPages.termsNavAccount', {}, 'Обліковий запис')"></a>
+        <a href="#disclaimer" @click.prevent="scrollToSection('disclaimer')" x-text="safeT('policyPages.termsNavDisclaimer', {}, 'Відмова від відповідальності')"></a>
+        <a href="#changes" @click.prevent="scrollToSection('changes')" x-text="safeT('policyPages.termsNavChanges', {}, 'Зміни')"></a>
+        <a href="#contact" @click.prevent="scrollToSection('contact')" x-text="safeT('policyPages.termsNavContact', {}, 'Зв\'язок')"></a>
       </nav>
 
       <!-- Зміст правил (використовуємо ключі i18n для кожного параграфа/пункту) -->
       <div class="terms-content">
-        <section id="general" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.termsSection1Title')"></h2>
-          <div class="subsection">
-            <h3 class="subsection-title" x-text="$store.i18n.t('policyPages.termsSection1_1Title')"></h3>
-            <p x-text="$store.i18n.t('policyPages.termsSection1_1Text')"></p>
+        <section id="general" class="section" aria-labelledby="general-title">
+          <h2 id="general-title" class="section-title" x-text="safeT('policyPages.termsSection1Title', {}, 'Загальні положення')"></h2>
+          <div class="subsection" x-data="{ expanded: true }">
+            <h3 class="subsection-title" @click="expanded = !expanded" :class="{ 'collapsed': !expanded }">
+              <span x-text="safeT('policyPages.termsSection1_1Title', {}, 'Прийняття умов')"></span>
+              <span class="toggle-icon"><i :class="expanded ? 'fas fa-minus' : 'fas fa-plus'"></i></span>
+            </h3>
+            <div x-show="expanded" x-transition>
+              <p x-text="safeT('policyPages.termsSection1_1Text', {}, 'Використовуючи цей веб-сайт, ви погоджуєтесь дотримуватися цих умов. Якщо ви не згодні з будь-якою частиною цих умов, будь ласка, не використовуйте наш веб-сайт.')"></p>
+            </div>
           </div>
           <div class="subsection">
             <h3 class="subsection-title" x-text="$store.i18n.t('policyPages.termsSection1_2Title')"></h3>
@@ -196,6 +346,72 @@
         </section>
       </div>
 
+      <!-- Додаємо кнопку для збереження PDF -->
+      <div class="terms-actions">
+        <button onclick="alert('Функція завантаження PDF буде доступна незабаром. Наразі ви можете використати функцію друку браузера (Ctrl+P / Cmd+P)')" class="btn btn-outline">
+          <i class="fas fa-file-pdf"></i> <span x-text="safeT('policyPages.downloadPdf', {}, 'Завантажити PDF')"></span>
+        </button>
+        <button @click="window.print()" class="btn btn-outline">
+          <i class="fas fa-print"></i> <span x-text="safeT('policyPages.printPage', {}, 'Надрукувати')"></span>
+        </button>
+      </div>
+
+      <!-- Стилі для контейнера з кнопками -->
+      <style>
+        .terms-actions {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+        }
+        
+        /* Стилі для друку */
+        @media print {
+          header, footer, .breadcrumbs, .terms-actions, .terms-navigation, #back-to-top {
+            display: none !important;
+          }
+          
+          .terms-content {
+            font-size: 12pt;
+          }
+          
+          .terms-title {
+            font-size: 18pt;
+          }
+          
+          .section-title {
+            font-size: 14pt;
+          }
+        }
+      </style>
+
+      <!-- Стилі для згортання/розгортання -->
+      <style>
+        .subsection-title {
+          position: relative;
+          cursor: pointer;
+          padding-right: 30px;
+        }
+        
+        .toggle-icon {
+          position: absolute;
+          right: 0;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        
+        @media (min-width: 768px) {
+          .subsection-title {
+            cursor: default;
+          }
+          
+          .toggle-icon {
+            display: none;
+          }
+        }
+      </style>
+
       <!-- Футер сторінки -->
       <div class="terms-footer">
         <p x-text="$store.i18n.t('policyPages.footerText')"></p>
@@ -205,6 +421,86 @@
   </div>
 </main>
 
+<!-- Додаємо кнопку для прокрутки нагору -->
+<button id="back-to-top" 
+        @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+        x-data 
+        x-init="
+          window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+              $el.classList.add('visible');
+            } else {
+              $el.classList.remove('visible');
+            }
+          })
+        "
+        aria-label="На початок сторінки"
+        title="На початок сторінки"
+        class="back-to-top">
+  <i class="fas fa-arrow-up"></i>
+</button>
+
+<!-- Додаємо скрипт для відстеження активного розділу -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Отримуємо всі розділи
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.terms-navigation a');
+  
+  // Функція для підсвічування активного пункту навігації
+  function highlightActiveSection() {
+    // Відступ для раннього підсвічування
+    const scrollPosition = window.scrollY + 100;
+    
+    // Перевіряємо кожен розділ
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.offsetHeight;
+      const sectionId = section.getAttribute('id');
+      
+      // Якщо поточна позиція скролу знаходиться в межах розділу
+      if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+        // Знімаємо активний клас з усіх посилань
+        navLinks.forEach(link => link.classList.remove('active'));
+        
+        // Додаємо активний клас відповідному посиланню
+        const activeLink = document.querySelector(`.terms-navigation a[href="#${sectionId}"]`);
+        if (activeLink) {
+          activeLink.classList.add('active');
+        }
+      }
+    });
+  }
+  
+  // Додаємо стилі для активного пункту навігації
+  const style = document.createElement('style');
+  style.textContent = `
+    .terms-navigation a.active {
+      color: var(--accent);
+      font-weight: 600;
+      position: relative;
+    }
+    
+    .terms-navigation a.active::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--accent);
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Слухаємо подію скролу
+  window.addEventListener('scroll', highlightActiveSection);
+  
+  // Запускаємо один раз для ініціалізації
+  highlightActiveSection();
+});
+</script>
+
 <!-- Footer -->
 <footer>
   <div class="container">
@@ -213,10 +509,37 @@
       <div class="footer-section footer-about">
         <h4 x-text="$store.i18n.t('general.about')"></h4>
         <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <!-- Виправлені посилання соціальних мереж -->
         <div class="social-links">
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
-          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="social-link" 
+             :title="safeT('general.shareFacebook', {}, 'Поділитися у Facebook')" 
+             @click.prevent="
+               try {
+                 window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, 'facebook-share', 'width=580,height=520');
+                 return false;
+               } catch (e) {
+                 console.error('Share error:', e);
+               }
+             ">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="social-link" 
+             :title="safeT('general.shareTelegram', {}, 'Поділитися у Telegram')"
+             @click.prevent="
+               try {
+                 window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(document.title)}`, 'telegram-share', 'width=580,height=520');
+                 return false;
+               } catch (e) {
+                 console.error('Share error:', e);
+               }
+             ">
+            <i class="fab fa-telegram-plane"></i>
+          </a>
+          <a href="#" class="social-link" 
+             title="Instagram"
+             @click.prevent="alert('Instagram sharing coming soon')">
+            <i class="fab fa-instagram"></i>
+          </a>
         </div>
       </div>
       <div class="footer-section">
@@ -241,10 +564,10 @@
       <div class="footer-section">
         <h4 x-text="$store.i18n.t('general.join')"></h4>
         <ul>
-          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+          <li><a href="login.html" x-text="safeT('general.login', {}, 'Увійти')"></a></li>
+          <li><a href="login.html?tab=register" x-text="safeT('general.register', {}, 'Зареєструватися')"></a></li>
+          <li><a href="premium.html" x-text="safeT('general.premium', {}, 'Преміум')"></a></li>
+          <li><a href="create_story.html" x-text="safeT('createStory.title', {}, 'Створити історію')"></a></li>
         </ul>
       </div>
     </div>

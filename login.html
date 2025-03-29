@@ -37,28 +37,50 @@
     rememberMe: false,
 
     // --- Допоміжні функції валідації ---
+    // Більш надійна валідація email
     validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) return false;
+        // RFC 5322 сумісний регулярний вираз для email
+        const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return emailRegex.test(String(email).toLowerCase());
     },
+    // Покращена перевірка сили пароля
     validatePasswordStrength(password) {
-        // Приклад: мінімум 8 символів
-        return password && password.length >= 8;
+        if (!password) return false;
+        
+        // Мінімальні вимоги: 8 символів, хоча б 1 цифра, хоча б 1 буква
+        const hasMinLength = password.length >= 8;
+        const hasDigit = /\d/.test(password);
+        const hasLetter = /[a-zA-Z]/.test(password);
+        
+        return hasMinLength && (hasDigit || hasLetter);
     },
     clearMessages() {
         this.errorMessage = '';
         this.successMessage = '';
     },
 
+    // Безпечна функція отримання i18n значень з запасними варіантами
+    safeT(key, fallback) {
+        try {
+            const translation = $store.i18n?.t(key);
+            // Переконуємось, що переклад існує і не є пустим
+            return (translation && translation !== key) ? translation : fallback;
+        } catch (error) {
+            console.warn(`Translation error for key: ${key}`, error);
+            return fallback;
+        }
+    },
+
     // --- Функція входу ---
     async submitLogin() {
         this.clearMessages();
         if (!this.loginEmail || !this.loginPassword) {
-            this.errorMessage = $store.i18n.t('auth.errorRequiredFields');
+            this.errorMessage = this.safeT('auth.errorRequiredFields', 'Будь ласка, заповніть всі обов\'язкові поля');
             return;
         }
         if (!this.validateEmail(this.loginEmail)) {
-            this.errorMessage = $store.i18n.t('auth.emailInvalid');
+            this.errorMessage = this.safeT('auth.emailInvalid', 'Невірний формат email');
             return;
         }
 
@@ -80,42 +102,66 @@
         // Не робимо isSubmitting = false при успіху, бо йде редірект
     },
 
-    // --- Функція реєстрації ---
+    // Оновлений метод реєстрації
     async submitRegister() {
         this.clearMessages();
         if (!this.registerName.trim() || !this.registerEmail || !this.registerPassword || !this.registerPasswordConfirm) {
-            this.errorMessage = $store.i18n.t('auth.errorRequiredFields');
+            this.errorMessage = this.safeT('auth.errorRequiredFields', 'Будь ласка, заповніть всі обов\'язкові поля');
             return;
         }
         if (!this.validateEmail(this.registerEmail)) {
-            this.errorMessage = $store.i18n.t('auth.emailInvalid');
+            this.errorMessage = this.safeT('auth.emailInvalid', 'Невірний формат email');
             return;
         }
         if (!this.validatePasswordStrength(this.registerPassword)) {
-            this.errorMessage = $store.i18n.t('auth.passwordInvalid');
+            this.errorMessage = this.safeT('auth.passwordInvalid', 'Пароль повинен містити мінімум 8 символів та включати хоча б 1 цифру або букву');
             return;
         }
         if (this.registerPassword !== this.registerPasswordConfirm) {
-            this.errorMessage = $store.i18n.t('auth.passwordsDontMatch');
+            this.errorMessage = this.safeT('auth.passwordsDontMatch', 'Паролі не співпадають');
             return;
         }
         if (!this.agreeTermsRegister) {
-            this.errorMessage = $store.i18n.t('auth.termsRequired');
+            this.errorMessage = this.safeT('auth.termsRequired', 'Необхідно погодитись з умовами');
             return;
         }
 
         this.isSubmitting = true;
         try {
-            await api.auth.register(this.registerName.trim(), this.registerEmail, this.registerPassword);
-            this.successMessage = $store.i18n.t('notifications.registerSuccess');
+            // Припускаємо, що API повертає токен та інші дані користувача
+            const result = await api.auth.register(this.registerName.trim(), this.registerEmail, this.registerPassword);
+            
+            // Якщо реєстрація відразу логінить користувача
+            if (result && result.token) {
+                api.utils.setToken(result.token);
+                if (result.isPremium !== undefined) api.utils.setPremiumStatus(result.isPremium);
+                if (result.userId) api.utils.setUserId(result.userId);
+                
+                this.successMessage = this.safeT('notifications.registerLoginSuccess', 'Реєстрація успішна! Перенаправлення...');
+                
+                // Перенаправлення після успішної реєстрації
+                setTimeout(() => {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectUrl = urlParams.get('redirect') || 'index.html';
+                    window.location.href = redirectUrl;
+                }, 1500);
+                
+                return; // Виходимо з функції, бо користувач вже авторизований
+            }
+            
+            // Якщо реєстрація лише створює обліковий запис без автологіну
+            this.successMessage = this.safeT('notifications.registerSuccess', 'Реєстрація успішна! Тепер ви можете увійти');
             // Очищаємо поля і перемикаємо вкладку
             this.registerName = ''; this.registerEmail = ''; this.registerPassword = '';
             this.registerPasswordConfirm = ''; this.agreeTermsRegister = false;
             this.activeTab = 'login';
             // Встановлюємо фокус на поле email для зручності
-            this.$nextTick(() => { document.getElementById('loginEmail')?.focus(); });
+            this.$nextTick(() => { 
+                const loginEmailField = document.getElementById('loginEmail');
+                if (loginEmailField) loginEmailField.focus(); 
+            });
         } catch (error) {
-            this.errorMessage = error.message || $store.i18n.t('auth.registerError');
+            this.errorMessage = error.message || this.safeT('auth.registerError', 'Помилка реєстрації. Спробуйте ще раз.');
             console.error('Register error:', error);
         } finally {
             this.isSubmitting = false; // Завжди знімаємо блокування кнопки
@@ -151,19 +197,42 @@
     },
 
     // --- OAuth ---
+    // Безпечнiший Google OAuth
     loginWithGoogle() {
         this.clearMessages();
         this.isSubmitting = true;
-        this.successMessage = $store.i18n.t('auth.redirectingToGoogle');
+        
         try {
-             setTimeout(() => {
-                 api.auth.googleLoginRedirect();
-             }, 500);
+            // Отримуємо поточний URL для редіректу назад
+            const currentUrl = new URL(window.location.href);
+            const redirectParam = currentUrl.searchParams.get('redirect');
+            
+            // Зберігаємо параметр redirect у локальне сховище для відновлення після OAuth
+            if (redirectParam) {
+                try {
+                    localStorage.setItem('oauthRedirect', redirectParam);
+                } catch (storageError) {
+                    console.warn('Failed to save redirect to localStorage:', storageError);
+                }
+            }
+            
+            this.successMessage = this.safeT('auth.redirectingToGoogle', 'Переадресація на Google...');
+            
+            setTimeout(() => {
+                try {
+                    api.auth.googleLoginRedirect();
+                } catch (redirectError) {
+                    console.error('Google redirect failed:', redirectError);
+                    this.errorMessage = this.safeT('auth.googleRedirectError', 'Помилка підключення до Google');
+                    this.successMessage = '';
+                    this.isSubmitting = false;
+                }
+            }, 500);
         } catch (error) {
-             this.errorMessage = $store.i18n.t('auth.googleRedirectError');
-             console.error('Google login redirect error:', error);
-             this.isSubmitting = false;
-             this.successMessage = '';
+            console.error('Google login error:', error);
+            this.errorMessage = this.safeT('auth.googleRedirectError', 'Помилка підключення до Google');
+            this.successMessage = '';
+            this.isSubmitting = false;
         }
     },
     loginWithFacebook() {
@@ -191,11 +260,16 @@
         }
     }
 }" x-init="
-    // Перевірка, чи користувач вже залогінений
-    if (api.utils.isAuthenticated()) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectUrl = urlParams.get('redirect') || 'index.html';
-        window.location.href = redirectUrl; // Перенаправляємо, якщо вже залогінений
+    try {
+        // Перевірка, чи користувач вже залогінений
+        if (api.utils.isAuthenticated()) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') || 'index.html';
+            window.location.href = redirectUrl; // Перенаправляємо, якщо вже залогінений
+        }
+    } catch (error) {
+        console.error('Error checking authentication status:', error);
+        // Не перенаправляємо при помилці, залишаємося на сторінці
     }
 
     // Перевірка параметра 'tab' в URL для вибору вкладки
@@ -203,34 +277,55 @@
     const tab = urlParams.get('tab');
     if (tab === 'register') { activeTab = 'register'; }
 
+    // Покращена обробка параметрів OAuth
     // Обробка параметрів після повернення з OAuth
-    const oauthToken = urlParams.get('token');
-    const oauthError = urlParams.get('error');
-    const oauthIsPremium = urlParams.get('isPremium');
-    const oauthUserId = urlParams.get('userId');
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+        const oauthError = urlParams.get('error');
+        const oauthIsPremium = urlParams.get('isPremium');
+        const oauthUserId = urlParams.get('userId');
 
-    if (oauthToken) {
-        api.utils.setToken(oauthToken);
-        api.utils.setPremiumStatus(oauthIsPremium === 'true');
-        api.utils.setUserId(oauthUserId || null);
+        if (oauthToken) {
+            try {
+                // Перевіряємо токен на мінімальну валідність (не пустий рядок)
+                if (!oauthToken.trim()) throw new Error('Invalid token');
+                
+                api.utils.setToken(oauthToken);
+                api.utils.setPremiumStatus(oauthIsPremium === 'true');
+                api.utils.setUserId(oauthUserId || null);
 
-        const redirectAfterOAuth = urlParams.get('redirect') || 'index.html';
+                const redirectAfterOAuth = urlParams.get('redirect') || 'index.html';
 
-        // Видаляємо OAuth параметри з URL
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete('token');
-        cleanUrl.searchParams.delete('error');
-        cleanUrl.searchParams.delete('isPremium');
-        cleanUrl.searchParams.delete('userId');
-        window.history.replaceState({}, document.title, cleanUrl.toString());
+                // Видаляємо OAuth параметри з URL для безпеки
+                const cleanUrl = new URL(window.location.href);
+                cleanUrl.searchParams.delete('token');
+                cleanUrl.searchParams.delete('error');
+                cleanUrl.searchParams.delete('isPremium');
+                cleanUrl.searchParams.delete('userId');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
 
-        window.location.href = redirectAfterOAuth; // Перенаправляємо
-
-    } else if (oauthError) {
-        errorMessage = decodeURIComponent(oauthError);
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete('error');
-        window.history.replaceState({}, document.title, cleanUrl.toString());
+                // Застосовуємо затримку для обробки сесії
+                setTimeout(() => {
+                    window.location.href = redirectAfterOAuth;
+                }, 100);
+            } catch (tokenError) {
+                console.error('Error processing OAuth token:', tokenError);
+                errorMessage = 'Помилка автентифікації. Спробуйте ще раз.';
+            }
+        } else if (oauthError) {
+            errorMessage = decodeURIComponent(oauthError);
+            // Декодуємо помилку, але перевіряємо максимальну довжину для безпеки
+            if (errorMessage.length > 300) {
+                errorMessage = errorMessage.substring(0, 300) + '...';
+            }
+            // Видаляємо параметр помилки з URL
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('error');
+            window.history.replaceState({}, document.title, cleanUrl.toString());
+        }
+    } catch (oauthError) {
+        console.error('Error handling OAuth parameters:', oauthError);
     }
 ">
 
@@ -299,16 +394,35 @@
         <i class="fas fa-check-circle"></i> <span x-text="successMessage"></span>
       </div>
 
-      <!-- Форма входу -->
+      <!-- Форма логіну з покращеними атрибутами доступності та валідації -->
       <div x-show="activeTab === 'login' && !showResetPassword" class="auth-form">
         <form @submit.prevent="submitLogin()">
           <div class="form-group">
             <label for="loginEmail" class="form-label" x-text="$store.i18n.t('auth.emailLabel')"></label>
-            <input type="email" id="loginEmail" class="form-input" :placeholder="$store.i18n.t('auth.emailPlaceholder')" x-model="loginEmail" required aria-required="true">
+            <input 
+              type="email" 
+              id="loginEmail" 
+              class="form-input" 
+              :placeholder="$store.i18n.t('auth.emailPlaceholder')" 
+              x-model="loginEmail" 
+              required 
+              aria-required="true"
+              autocomplete="email"
+              pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+            >
           </div>
           <div class="form-group">
             <label for="loginPassword" class="form-label" x-text="$store.i18n.t('auth.passwordLabel')"></label>
-            <input type="password" id="loginPassword" class="form-input" :placeholder="$store.i18n.t('auth.passwordPlaceholder')" x-model="loginPassword" required aria-required="true">
+            <input 
+              type="password" 
+              id="loginPassword" 
+              class="form-input" 
+              :placeholder="$store.i18n.t('auth.passwordPlaceholder')" 
+              x-model="loginPassword" 
+              required 
+              aria-required="true"
+              autocomplete="current-password"
+            >
             <div class="form-help">
               <div class="checkbox-group">
                 <input type="checkbox" id="rememberMe" x-model="rememberMe">
@@ -317,20 +431,14 @@
               <a href="#" @click.prevent="toggleResetPassword()" x-text="$store.i18n.t('auth.forgotPassword')"></a>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary form-submit processing" :disabled="isSubmitting">
+          <button type="submit" class="btn btn-primary form-submit" :class="{ 'processing': isSubmitting }" :disabled="isSubmitting">
             <span x-show="!isSubmitting" x-text="$store.i18n.t('general.login')"></span>
-            <span x-show="isSubmitting"><span x-text="$store.i18n.t('general.loggingIn')"></span></span> <!-- Спінер додається CSS -->
+            <span x-show="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span x-text="$store.i18n.t('general.loggingIn')"></span>
+            </span>
           </button>
         </form>
-        <div class="auth-divider" x-text="$store.i18n.t('auth.orLoginWith')"></div>
-        <div class="social-login">
-          <button @click="loginWithGoogle()" class="btn btn-social google-btn">
-            <i class="fab fa-google"></i> <span x-text="$store.i18n.t('auth.loginWithGoogle')"></span>
-          </button>
-          <button @click="loginWithFacebook()" class="btn btn-social facebook-btn">
-            <i class="fab fa-facebook-f"></i> <span x-text="$store.i18n.t('auth.loginWithFacebook')"></span>
-          </button>
-        </div>
       </div>
 
       <!-- Форма реєстрації -->
@@ -363,9 +471,12 @@
               </label>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary form-submit processing" :disabled="isSubmitting">
+          <button type="submit" class="btn btn-primary form-submit" :class="{ 'processing': isSubmitting }" :disabled="isSubmitting">
             <span x-show="!isSubmitting" x-text="$store.i18n.t('general.register')"></span>
-            <span x-show="isSubmitting"><span x-text="$store.i18n.t('general.registering')"></span></span>
+            <span x-show="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span x-text="$store.i18n.t('general.registering')"></span>
+            </span>
           </button>
         </form>
         <div class="auth-divider" x-text="$store.i18n.t('auth.orRegisterWith')"></div>
@@ -382,16 +493,32 @@
       <!-- Форма відновлення паролю -->
       <div x-show="showResetPassword" class="reset-password-form">
         <div class="reset-icon"><i class="fas fa-key"></i></div>
-        <h2 class="reset-title" x-text="$store.i18n.t('auth.resetPasswordTitle')"></h2>
-        <p class="reset-description" x-text="$store.i18n.t('auth.resetPasswordDescription')"></p>
-        <form @submit.prevent="submitResetPassword()">
+        <form @submit.prevent="submitResetPassword()" aria-labelledby="reset-password-title">
+          <h2 id="reset-password-title" class="reset-title" x-text="$store.i18n.t('auth.resetPasswordTitle')"></h2>
           <div class="form-group">
             <label for="resetEmail" class="form-label visually-hidden" x-text="$store.i18n.t('auth.emailLabel')"></label>
-            <input type="email" id="resetEmail" class="form-input" :placeholder="$store.i18n.t('auth.emailPlaceholder')" x-model="resetEmail" required aria-required="true">
+            <input 
+              type="email" 
+              id="resetEmail" 
+              class="form-input" 
+              :placeholder="$store.i18n.t('auth.emailPlaceholder')" 
+              x-model="resetEmail" 
+              required 
+              aria-required="true" 
+              autocomplete="email"
+              pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+              aria-describedby="reset-email-help"
+            >
+            <div id="reset-email-help" class="form-help-text visually-hidden">
+              Введіть електронну адресу, вказану при реєстрації, для відновлення доступу до облікового запису
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary form-submit processing" :disabled="isSubmitting">
+          <button type="submit" class="btn btn-primary form-submit" :class="{ 'processing': isSubmitting }" :disabled="isSubmitting">
             <span x-show="!isSubmitting" x-text="$store.i18n.t('auth.resetPasswordButton')"></span>
-            <span x-show="isSubmitting"><span x-text="$store.i18n.t('general.sending')"></span></span>
+            <span x-show="isSubmitting">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span x-text="$store.i18n.t('general.sending')"></span>
+            </span>
           </button>
         </form>
         <a href="#" class="back-link" @click.prevent="toggleResetPassword()">

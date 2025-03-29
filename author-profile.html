@@ -128,7 +128,7 @@
         this.authorError = null;
         this.authorId = new URLSearchParams(window.location.search).get('id');
         if (!this.authorId) {
-            this.authorError = $store.i18n.t('profile.authorIdNotFound'); // i18n
+            this.authorError = $store.i18n.t('authorProfilePage.authorIdNotFound'); // i18n
             this.isLoadingAuthor = false;
             // Title оновлюється автоматично через x-text
             return;
@@ -142,20 +142,19 @@
             this.updateMetaTags();
 
             // Завантажуємо статус підписки поточного користувача на цього автора
-             if (this.isLoggedIn) {
-                 try {
-                     // Припускаємо, що API повертає об'єкт { isFollowing: true/false }
-                     const followStatus = await api.users.getFollowStatus(this.authorId); // Потрібно реалізувати цей метод в api-utils
-                     this.followed = followStatus.isFollowing;
-                 } catch (followError) {
-                     console.warn('Could not load follow status:', followError);
-                 }
-             }
-
+            if (this.isLoggedIn) {
+                try {
+                    // Припускаємо, що API повертає об'єкт { isFollowing: true/false }
+                    const followStatus = await api.users.getFollowStatus(this.authorId); // Потрібно реалізувати цей метод в api-utils
+                    this.followed = followStatus.isFollowing;
+                } catch (followError) {
+                    console.warn('Could not load follow status:', followError);
+                }
+            }
         } catch (err) {
             this.authorError = err.message || $store.i18n.t('authorProfilePage.errorLoadingAuthorProfile'); // i18n
             console.error('Author fetch error:', err);
-             // Title оновлюється автоматично через x-text
+            // Title оновлюється автоматично через x-text
         } finally {
             this.isLoadingAuthor = false;
         }
@@ -242,9 +241,9 @@ async toggleFollow(event) {
         await api.users.toggleFollow(this.authorId);
         // Показуємо сповіщення про успіх
         this.showNotification(
-            this.followed
-                ? $store.i18n.t('notifications.followingAuthor', { name: this.author.name })
-                : $store.i18n.t('notifications.unfollowingAuthor', { name: this.author.name }),
+            this.followed 
+                ? $store.i18n.t('notifications.followingAuthor', { name: this.author.name || '' })
+                : $store.i18n.t('notifications.unfollowingAuthor', { name: this.author.name || '' }),
             true // isSuccess = true
         );
     } catch (error) {
@@ -253,7 +252,7 @@ async toggleFollow(event) {
         if (this.author.stats) this.author.stats.followersCount = originalFollowers;
         // Показуємо сповіщення про помилку
         this.showNotification(
-             $store.i18n.t('story.errorTogglingFollow') + ': ' + (error.message || $store.i18n.t('general.unknownError')),
+            $store.i18n.t('story.errorTogglingFollow') + ': ' + (error.message || $store.i18n.t('general.unknownError')),
             false // isSuccess = false
         );
         console.error('Toggle follow error:', error);
@@ -285,7 +284,7 @@ initCardAnimation() {
 isLoggedIn = api.utils.isAuthenticated();
 fetchAuthorData().then(() => {
     if (!authorError) {
-        fetchAuthorStoriesPage(1); // Завантажуємо першу сторінку історій тільки якщо автор завантажився
+        fetchAuthorStoriesPage(1);
     }
 });
 ">

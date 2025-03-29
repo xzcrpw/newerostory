@@ -50,7 +50,9 @@
 
     // --- Допоміжні функції ---
     validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) return false;
+        // Більш надійний regex для перевірки email
+        const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return emailRegex.test(String(email).toLowerCase());
     },
     clearMessages() {
@@ -61,34 +63,47 @@
     // --- Валідація форми (з i18n) ---
     validateForm() {
         this.clearMessages();
-        if (!this.contactName.trim()) {
-            this.errorMessage = $store.i18n.t('contact.errorNameRequired');
+        
+        // Додаємо обробку помилок для випадків, коли $store.i18n не доступний
+        try {
+            if (!this.contactName.trim()) {
+                this.errorMessage = $store.i18n?.t('contact.errorNameRequired') || 'Будь ласка, введіть ваше ім\'я.';
+                return false;
+            }
+            if (!this.contactEmail) {
+                this.errorMessage = $store.i18n?.t('contact.errorEmailRequired') || 'Будь ласка, введіть ваш email.';
+                return false;
+            }
+            if (!this.validateEmail(this.contactEmail)) {
+                this.errorMessage = $store.i18n?.t('contact.errorEmailInvalid') || 'Будь ласка, введіть коректний email.';
+                return false;
+            }
+            if (!this.contactSubject.trim()) {
+                this.errorMessage = $store.i18n?.t('contact.errorSubjectRequired') || 'Будь ласка, введіть тему повідомлення.';
+                return false;
+            }
+            if (!this.contactMessage.trim()) {
+                this.errorMessage = $store.i18n?.t('contact.errorMessageRequired') || 'Будь ласка, введіть текст повідомлення.';
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error during form validation:', error);
+            this.errorMessage = 'Виникла помилка при валідації форми. Будь ласка, перевірте введені дані.';
             return false;
         }
-        if (!this.contactEmail) {
-            this.errorMessage = $store.i18n.t('contact.errorEmailRequired');
-            return false;
-        }
-        if (!this.validateEmail(this.contactEmail)) {
-            this.errorMessage = $store.i18n.t('contact.errorEmailInvalid');
-            return false;
-        }
-        if (!this.contactSubject.trim()) {
-            this.errorMessage = $store.i18n.t('contact.errorSubjectRequired');
-            return false;
-        }
-        if (!this.contactMessage.trim()) {
-            this.errorMessage = $store.i18n.t('contact.errorMessageRequired');
-            return false;
-        }
-        return true;
     },
 
     // --- Відправка форми (з i18n) ---
     async submitForm() {
         if (!this.validateForm()) {
-            // Плавний скрол до повідомлення про помилку
-            this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+            // Плавний скрол до повідомлення про помилку з перевіркою наявності елемента
+            this.$nextTick(() => { 
+                const errorElement = document.querySelector('.error-message');
+                if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+                }
+            });
             return;
         }
 
@@ -101,6 +116,20 @@
                 subject: this.contactSubject.trim(),
                 message: this.contactMessage.trim()
             };
+
+            // Санітація даних перед надсиланням
+            Object.keys(formData).forEach(key => {
+                // Перевірка, що це рядок
+                if (typeof formData[key] === 'string') {
+                    // Заміна потенційно небезпечних символів на HTML-сутності
+                    formData[key] = formData[key]
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+                }
+            });
+
             console.log('Simulating API call: contact.sendMessage', formData);
             await new Promise(resolve => setTimeout(resolve, 1000)); // Симуляція запиту
             // await api.contact.sendMessage(formData); // Реальний виклик API
@@ -108,31 +137,51 @@
             this.successMessage = $store.i18n.t('contact.successMessage'); // i18n
             // Очищаємо форму
             this.contactName = ''; this.contactEmail = ''; this.contactSubject = ''; this.contactMessage = '';
-            // Плавний скрол до повідомлення про успіх
-            this.$nextTick(() => { document.querySelector('.success-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+            // Плавний скрол до повідомлення про успіх з перевіркою наявності елемента
+            this.$nextTick(() => { 
+                const successElement = document.querySelector('.success-message');
+                if (successElement) {
+                    successElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+                }
+            });
 
         } catch (error) {
             this.errorMessage = error.message || $store.i18n.t('contact.errorGeneral'); // i18n
             console.error('Contact form error:', error);
-            // Плавний скрол до повідомлення про помилку
-            this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+            // Плавний скрол до повідомлення про помилку з перевіркою наявності елемента
+            this.$nextTick(() => { 
+                const errorElement = document.querySelector('.error-message');
+                if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+                }
+            });
         } finally {
             this.isSubmitting = false;
         }
     }
 
 }" x-init="
-    isLoggedIn = api.utils.isAuthenticated();
-    // Можна додати логіку автозаповнення полів email та імені для залогіненого користувача
-    // if (isLoggedIn) {
-    //     try {
-    //         const user = await api.users.getCurrentUser();
-    //         if(user) {
-    //             contactName = user.name;
-    //             contactEmail = user.email;
-    //         }
-    //     } catch(e) { console.warn('Failed to autofill contact form:', e); }
-    // }
+    try {
+        isLoggedIn = api.utils.isAuthenticated();
+        
+        // Автозаповнення полів для залогіненого користувача
+        if (isLoggedIn) {
+            (async function() {
+                try {
+                    const user = await api.users.getCurrentUser();
+                    if(user) {
+                        contactName = user.name || '';
+                        contactEmail = user.email || '';
+                    }
+                } catch(e) { 
+                    console.warn('Failed to autofill contact form:', e); 
+                }
+            })();
+        }
+    } catch(e) {
+        console.error('Error checking authentication status:', e);
+        isLoggedIn = false;
+    }
 ">
 
 <!-- Хедер -->
@@ -213,23 +262,27 @@
       <div class="contact-info">
         <h2 class="contact-subtitle" x-text="$store.i18n.t('contact.infoTitle')"></h2>
         <p x-text="$store.i18n.t('contact.infoText')"></p>
+        <!-- Виправлені адреси електронної пошти -->
         <div class="contact-details">
           <div class="contact-item">
             <i class="fas fa-envelope"></i>
             <div>
-              <strong x-text="$store.i18n.t('contact.infoGeneral')"></strong> <a href="mailto:contact@e.world">contact@e.world</a>
+              <strong x-text="$store.i18n.t('contact.infoGeneral') || 'Загальні питання:'"></strong> 
+              <a href="mailto:contact@erostory.world">contact@erostory.world</a>
             </div>
           </div>
           <div class="contact-item">
             <i class="fas fa-headset"></i>
             <div>
-              <strong x-text="$store.i18n.t('contact.infoSupport')"></strong> <a href="mailto:help@e.world">help@e.world</a>
+              <strong x-text="$store.i18n.t('contact.infoSupport') || 'Технічна підтримка:'"></strong> 
+              <a href="mailto:help@erostory.world">help@erostory.world</a>
             </div>
           </div>
           <div class="contact-item">
             <i class="fas fa-shield-alt"></i>
             <div>
-              <strong x-text="$store.i18n.t('contact.infoSecurity')"></strong> <a href="mailto:admin@e.world">admin@e.world</a>
+              <strong x-text="$store.i18n.t('contact.infoSecurity') || 'Безпека та скарги:'"></strong> 
+              <a href="mailto:admin@erostory.world">admin@erostory.world</a>
             </div>
           </div>
         </div>
@@ -243,14 +296,14 @@
         <h2 class="contact-subtitle" x-text="$store.i18n.t('contact.formTitle')"></h2>
 
         <!-- Повідомлення про помилку -->
-        <div x-show="errorMessage" x-transition class="error-message">
-          <i class="fas fa-exclamation-circle"></i>
+        <div x-show="errorMessage" x-transition class="error-message" role="alert" aria-live="assertive">
+          <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
           <span x-text="errorMessage"></span>
         </div>
 
         <!-- Повідомлення про успіх -->
-        <div x-show="successMessage" x-transition class="success-message">
-          <i class="fas fa-check-circle"></i>
+        <div x-show="successMessage" x-transition class="success-message" role="status" aria-live="polite">
+          <i class="fas fa-check-circle" aria-hidden="true"></i>
           <span x-text="successMessage"></span>
         </div>
 
@@ -271,10 +324,15 @@
             <label for="contactMessage" class="form-label" x-text="$store.i18n.t('contact.formMessageLabel')"></label>
             <textarea id="contactMessage" class="form-textarea" x-model="contactMessage" rows="6" :placeholder="$store.i18n.t('contact.formMessagePlaceholder')" required aria-required="true"></textarea>
           </div>
+          <!-- Поліпшення UX для кнопки під час відправки -->
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-              <span x-show="!isSubmitting" x-text="$store.i18n.t('contact.sendButton')"></span>
-              <span x-show="isSubmitting"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('contact.sendingButton')"></span></span>
+            <button type="submit" class="btn btn-primary" :disabled="isSubmitting" 
+                    aria-busy="isSubmitting">
+              <span x-show="!isSubmitting" x-text="$store.i18n.t('contact.sendButton') || 'Надіслати'"></span>
+              <span x-show="isSubmitting">
+                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> 
+                <span x-text="$store.i18n.t('contact.sendingButton') || 'Відправляємо...'"></span>
+              </span>
             </button>
           </div>
         </form>
