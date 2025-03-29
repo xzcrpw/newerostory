@@ -1,26 +1,4 @@
-/* css/categories */
-:root {
-    /* Основні кольори */
-    --bg-color: #0f0a0c;
-    --card-color: #1a1114;
-    --text-color: #ffffff;
-    --secondary-text: rgba(255, 255, 255, 0.7);
-
-    /* Градієнти */
-    --primary-gradient: linear-gradient(135deg, #800020 0%, #cc0033 100%);
-    --button-gradient: linear-gradient(135deg, #990000 0%, #cc0033 70%, #e30043 100%);
-    --card-gradient: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(25, 17, 20, 0.2) 100%);
-
-    /* Акцентні кольори */
-    --accent-red: #cc0033;
-    --accent-burgundy: #800020;
-    --accent-gold: #d9a45b;
-
-    /* Розміри */
-    --container-width: 1240px;
-    --border-radius: 12px;
-    --button-radius: 30px;
-}
+/* css/categories.css */
 
 * {
     margin: 0;
@@ -369,7 +347,7 @@ header:after {
 }
 
 .category-card:hover {
-    transform: translateY(-8px);
+    transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
     border-color: rgba(153, 0, 0, 0.2);
 }

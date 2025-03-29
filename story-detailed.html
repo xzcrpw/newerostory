@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="uk" x-data :lang="$store.i18n.selectedLang" xmlns:x-transition="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Title встановлюється динамічно -->
+  <title x-text="isLoading ? `${$store.i18n.t('general.loading')}... — ${$store.i18n.t('general.copyright')}` : (error ? `${$store.i18n.t('general.error')} — ${$store.i18n.t('general.copyright')}` : (story ? `${story.title} — ${$store.i18n.t('general.copyright')}` : `${$store.i18n.t('general.error')} — ${$store.i18n.t('general.copyright')}`))"></title>
+
+  <!-- Мета-теги встановлюються динамічно -->
+  <meta name="description" :content="story ? story.content.replace(/<[^>]*>?/gm, '').substring(0, 160) + '...' : ($store.i18n.t('story.metaDescriptionPlaceholder') || 'Еротичні історії на сайті Таємний Світ.')">
+  <meta property="og:title" content=""> <!-- Встановлюється в JS -->
+  <meta property="og:description" content=""> <!-- Встановлюється в JS -->
+  <meta property="og:image" content=""> <!-- Встановлюється в JS -->
+  <meta property="og:type" content="article">
+
+  <!-- Шрифти -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- API Config & Utils -->
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/story.css">
+
+  <style>
+    /* Стилі для сповіщення */
+    .notification {
+      position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+      background-color: var(--card-color); color: var(--text-color);
+      padding: 1rem 1.5rem; border-radius: var(--border-radius);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
+      opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
+      min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
+    }
+    .notification.show { opacity: 1; bottom: 20px; }
+    .notification.success { border-left: 4px solid #4cd964; }
+    .notification.error { border-left: 4px solid #ff6b6b; }
+
+    /* Стилі для індикатора завантаження */
+    .loading-indicator-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(15, 10, 12, 0.8); display: flex;
+      align-items: center; justify-content: center; z-index: 9998;
+      backdrop-filter: blur(5px);
+    }
+    .loading-spinner {
+      border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: var(--accent-red);
+      border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Стиль для кнопки під час обробки */
+    button.removing, .action-btn.removing { opacity: 0.7; pointer-events: none; }
+    button.removing i:not(.fa-spinner), .action-btn.removing i:not(.fa-spinner) { display: none; }
+    button.removing::after, .action-btn.removing::after, button:disabled.processing::after {
+      content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+      display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
+      font-size: 0.9em; /* Трохи менший спінер */
+    }
+    /* Специфічний відступ для кнопки follow */
+    .follow-btn.removing::after { margin-left: 5px; }
+    /* Специфічний відступ для лайка коментаря */
+    .comment-actions a.removing::after { margin-left: 3px; font-size: 0.8em; }
+
+    /* Додаткові стилі для перекладу */
+    .translation-controls {
+      margin-bottom: 1.5rem; padding: 1rem;
+      background-color: rgba(255, 255, 255, 0.03); border-radius: var(--border-radius);
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .translation-label { font-weight: 500; color: var(--secondary-text); }
+    .translation-select {
+      padding: 0.5rem 0.8rem; background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--border-radius);
+      color: var(--text-color); font-family: 'Montserrat', sans-serif; cursor: pointer;
+    }
+    .translation-status {
+      margin-left: auto; font-size: 0.9rem; color: var(--secondary-text);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .translation-error-inline { color: #ff6b6b; }
+
+    /* Помилка коментаря */
+    .error-message-inline { color: #ff6b6b; font-size: 0.85rem; margin-top: -0.8rem; margin-bottom: 0.8rem; display: block; }
+  </style>
+</head>
+<body x-data="{
+    // --- Стани UI ---
+    isLoggedIn: false,
+    isPremiumUser: false,
+    isLoading: true,
+    error: null,
+    isSubmittingComment: false,
+    commentError: null,
+    notificationVisible: false,
+    notificationMessage: '',
+    notificationTimeout: null,
+    userId: null, // ID поточного користувача
+
+    // --- Дані ---
+    story: null,
+    author: null,
+    relatedStories: [],
+    comments: [],
+    storyId: null,
+
+    // --- Стани взаємодії поточного користувача ---
+    userRating: 0,
+    bookmarked: false,
+    followed: false, // Стеження за автором історії
+    liked: false, // Лайк самої історії
+    commentText: '',
+
+    // --- Переклад ---
+    selectedLang: 'uk',
+    translatedContent: null,
+    isTranslating: false,
+    translationError: null,
+    availableLanguages: [], // Заповнюється з $store.i18n
+
+    // --- Функція для показу сповіщень ---
+    showNotification(message, isSuccess = true) {
+        this.notificationMessage = message;
+        const el = document.getElementById('global-notification');
+        if(el) { el.classList.toggle('success', isSuccess); el.classList.toggle('error', !isSuccess); }
+        this.notificationVisible = true;
+        if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
+    },
+
+    // --- Завантаження даних ---
+    async fetchStoryData() {
+        this.isLoading = true;
+        this.error = null;
+        this.storyId = new URLSearchParams(window.location.search).get('id');
+
+        if (!this.storyId) {
+            this.error = $store.i18n.t('story.errorStoryIdMissing') || 'ID історії не знайдено в URL.';
+            this.isLoading = false;
+            // Title оновлюється автоматично через x-text
+            return;
+        }
+
+        try {
+            console.log(`Fetching story data for ID: ${this.storyId}`);
+            // Паралельно запитуємо дані історії, коментарі та пов'язані історії (якщо API дозволяє)
+            const [storyData, commentsData, relatedData] = await Promise.all([
+                api.stories.getStoryById(this.storyId),
+                api.comments.getComments(this.storyId, { sort: '-createdAt' }),
+                api.stories.getRelatedStories(this.storyId, { limit: 3 }) // Припускаємо існування цього методу
+            ]);
+
+            if (!storyData) throw new Error($store.i18n.t('story.storyNotFound'));
+
+            this.story = storyData;
+            this.comments = commentsData.data || [];
+            this.relatedStories = relatedData.data || []; // Припускаємо, що API повертає { data: [...] }
+
+            // Форматуємо дати коментарів
+            this.comments.forEach(c => {
+                c.date = new Date(c.createdAt).toLocaleString($store.i18n.selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' });
+                c.liked = false; // Початковий стан лайка (буде оновлено, якщо є статус)
+            });
+
+            // Завантажуємо дані автора, якщо вони не прийшли разом з історією
+            if (this.story.author && typeof this.story.author === 'string') { // Якщо автор - це лише ID
+                 try { this.author = await api.authors.getAuthorById(this.story.author); }
+                 catch (authorError) { console.warn('Could not fetch author data:', authorError); this.author = null; }
+            } else if (this.story.author && typeof this.story.author === 'object') { // Якщо автор - це об'єкт
+                 this.author = this.story.author;
+            } else {
+                 this.author = null;
+            }
+
+            // Оновлюємо лічильники для автора, якщо він є
+             if(this.author) {
+                 this.author.storyCount = this.author.stats?.storyCount || 0;
+                 this.author.averageRating = this.author.stats?.averageRating || 0;
+                 this.author.followersCount = this.author.stats?.followersCount || 0;
+             }
+
+            // Оновлюємо title та мета-теги
+            // Title оновлюється через x-text
+            this.updateMetaTags();
+
+            // Завантажуємо статус взаємодії користувача
+            if(this.isLoggedIn) {
+                await this.fetchUserInteractionStatus();
+                 // Оновлюємо стан лайків коментарів (якщо API це підтримує)
+                 // await this.fetchCommentLikeStatuses();
+            }
+
+        } catch (err) {
+            this.error = err.message || $store.i18n.t('story.errorLoadingStory');
+            console.error('Fetch Story Error:', err);
+             // Title оновлюється автоматично через x-text
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    // Завантаження статусів взаємодії користувача
+    async fetchUserInteractionStatus() {
+         try {
+              console.log(`Fetching user interaction status for story ${this.storyId}`);
+              const status = await api.users.getStoryInteractionStatus(this.storyId); // Потрібно реалізувати в api-utils
+              this.liked = status.liked;
+              this.bookmarked = status.bookmarked;
+              this.userRating = status.rating || 0;
+              if (this.author?._id) {
+                  this.followed = await api.users.checkIfFollowing(this.author._id); // Потрібно реалізувати в api-utils
+              }
+              console.log('User interaction status loaded:', status, 'Following:', this.followed);
+         } catch (statusError) {
+             console.warn('Could not load user interaction status:', statusError);
+             // Не кидаємо помилку, просто статуси залишаться false/0
+         }
+     },
+    // (Опціонально) Завантаження статусів лайків коментарів
+     async fetchCommentLikeStatuses() {
+         if (!this.comments.length) return;
+         const commentIds = this.comments.map(c => c._id);
+         try {
+             console.log('Fetching like statuses for comments:', commentIds);
+             // Припускаємо, що API повертає об'єкт { commentId: true/false }
+             const likeStatuses = await api.comments.getLikeStatuses(commentIds);
+             this.comments.forEach(comment => {
+                 if (likeStatuses[comment._id] !== undefined) {
+                     comment.liked = likeStatuses[comment._id];
+                 }
+             });
+             console.log('Comment like statuses updated');
+         } catch (error) {
+             console.warn('Could not fetch comment like statuses:', error);
+         }
+     },
+
+    // --- Оновлення мета-тегів ---
+    updateMetaTags() {
+        if (!this.story) return;
+        const ogTitleTag = document.querySelector('meta[property=\'og:title\']');
+        const ogDescriptionTag = document.querySelector('meta[property=\'og:description\']');
+        const ogImageTag = document.querySelector('meta[property=\'og:image\']');
+        const descriptionTag = document.querySelector('meta[name=\'description\']');
+
+        const siteName = $store.i18n.t('general.copyright');
+        const title = `${this.story.title} — ${siteName}`;
+        const textContent = this.story.content ? this.story.content.replace(/<[^>]*>?/gm, '') : '';
+        const excerpt = textContent.substring(0, 160) + '...';
+
+        if (ogTitleTag) ogTitleTag.setAttribute('content', title);
+        if (descriptionTag) descriptionTag.setAttribute('content', excerpt);
+        if (ogDescriptionTag) ogDescriptionTag.setAttribute('content', excerpt);
+        if (ogImageTag && this.story.imageUrl) ogImageTag.setAttribute('content', this.story.imageUrl);
+    },
+
+    // --- Функції взаємодії ---
+    async toggleLike(event) {
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.story) return;
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        const originalLiked = this.liked;
+        const originalLikes = this.story.likes || 0;
+        // Оптимістичне оновлення
+        this.liked = !this.liked;
+        this.story.likes = Math.max(0, originalLikes + (this.liked ? 1 : -1));
+        try {
+            await api.stories.likeStory(this.storyId);
+            this.showNotification(this.liked ? $store.i18n.t('notifications.addedToLikes') : $store.i18n.t('notifications.removedFromLikes'), true);
+        } catch (err) {
+            this.liked = originalLiked; this.story.likes = originalLikes; // Відкат
+            this.showNotification($store.i18n.t('story.errorTogglingLike') + ': ' + (err.message || $store.i18n.t('general.unknownError')), false);
+            console.error('Like Error:', err);
+        } finally { if (button) button.classList.remove('removing'); }
+    },
+    async setRating(rating) {
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.story) return;
+        const originalRating = this.userRating;
+        const newRating = this.userRating === rating ? 0 : rating; // Дозволяємо скасувати оцінку повторним кліком
+        this.userRating = newRating; // Оптимістичне оновлення
+        const starsContainer = this.$refs.ratingStarsContainer; // Використовуємо $refs
+        if(starsContainer) starsContainer.style.opacity = '0.5'; // Показуємо стан обробки
+        try {
+            const response = await api.stories.rateStory(this.storyId, newRating);
+            // Оновлюємо дані з відповіді API
+            if (response && response.averageRating !== undefined && response.totalRatings !== undefined) {
+                this.story.averageRating = response.averageRating;
+                this.story.totalRatings = response.totalRatings;
+            }
+            this.showNotification(newRating > 0 ? $store.i18n.t('notifications.ratingThanks', { rating: newRating }) : $store.i18n.t('notifications.ratingRemoved'), true);
+        } catch (err) {
+            this.userRating = originalRating; // Відкат
+            this.showNotification($store.i18n.t('story.errorSavingRating') + ': ' + (err.message || $store.i18n.t('general.unknownError')), false);
+            console.error('Rating Error:', err);
+        } finally { if(starsContainer) starsContainer.style.opacity = '1'; }
+    },
+    async toggleBookmark(event) {
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.story) return;
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        const originalBookmarked = this.bookmarked;
+        this.bookmarked = !this.bookmarked; // Оптимістичне оновлення
+        try {
+            await api.users.toggleBookmark(this.storyId);
+            this.showNotification(this.bookmarked ? $store.i18n.t('notifications.addedToBookmarks') : $store.i18n.t('notifications.removedFromBookmarks'), true);
+        } catch (err) {
+            this.bookmarked = originalBookmarked; // Відкат
+            this.showNotification($store.i18n.t('story.errorTogglingBookmark') + ': ' + (err.message || $store.i18n.t('general.unknownError')), false);
+            console.error('Bookmark Error:', err);
+        } finally { if (button) button.classList.remove('removing'); }
+    },
+    async toggleFollow(event) {
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.author || !this.author._id) return;
+        // Не дозволяємо підписуватись на себе
+        if (this.author._id === this.userId) {
+             this.showNotification($store.i18n.t('story.errorFollowSelf'), false);
+             return;
+        }
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        const originalFollowed = this.followed;
+        const originalFollowers = this.author.followersCount || 0;
+        // Оптимістичне оновлення
+        this.followed = !this.followed;
+        if (typeof this.author.followersCount === 'number') { this.author.followersCount = Math.max(0, originalFollowers + (this.followed ? 1 : -1)); }
+        try {
+            await api.users.toggleFollow(this.author._id);
+            this.showNotification(this.followed ? $store.i18n.t('notifications.followingAuthor', {name: this.author.name}) : $store.i18n.t('notifications.unfollowingAuthor', {name: this.author.name}), true);
+        } catch (err) {
+            this.followed = originalFollowed; // Відкат
+            if (typeof this.author.followersCount === 'number') { this.author.followersCount = originalFollowers; }
+            this.showNotification($store.i18n.t('story.errorTogglingFollow') + ': ' + (err.message || $store.i18n.t('general.unknownError')), false);
+            console.error('Follow Error:', err);
+        } finally { if (button) button.classList.remove('removing'); }
+    },
+    async submitComment() {
+        this.commentError = null;
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!this.commentText.trim()) {
+            this.commentError = $store.i18n.t('story.errorCommentEmpty');
+            this.$nextTick(() => { this.$refs.commentInputRef?.focus(); }); // Використовуємо $refs
+            return;
+        }
+        if (!this.story) return;
+        this.isSubmittingComment = true;
+        try {
+            const commentTextToSend = this.commentText.trim();
+            const addedCommentData = await api.comments.createComment(this.storyId, commentTextToSend);
+            // Форматуємо дату та додаємо стан лайка
+            addedCommentData.date = new Date(addedCommentData.createdAt).toLocaleString($store.i18n.selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' });
+            addedCommentData.liked = false; // Новий коментар ще не лайкнутий
+            this.comments.unshift(addedCommentData);
+            this.commentText = '';
+            if (this.story && this.story.commentsCount !== undefined) { this.story.commentsCount++; }
+            this.showNotification($store.i18n.t('notifications.commentAdded'), true);
+        } catch (err) {
+            this.commentError = err.message || $store.i18n.t('story.errorAddingComment');
+            console.error('Comment Submit Error:', err);
+        } finally { this.isSubmittingComment = false; }
+    },
+    async likeComment(commentId, event) {
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        const commentIndex = this.comments.findIndex(c => (c._id || c.id) === commentId);
+        if (commentIndex === -1) return;
+
+        const button = event?.currentTarget; if (button) button.classList.add('removing'); // Показуємо спінер
+
+        const comment = this.comments[commentIndex];
+        const originalLiked = comment.liked;
+        const originalLikes = comment.likes || 0;
+        // Оптимістичне оновлення
+        this.comments[commentIndex].liked = !originalLiked;
+        this.comments[commentIndex].likes = Math.max(0, originalLikes + (this.comments[commentIndex].liked ? 1 : -1));
+        try {
+            await api.comments.likeComment(commentId);
+            // Сповіщення не показуємо, щоб не дратувати
+        } catch (err) {
+            this.comments[commentIndex].liked = originalLiked; // Відкат
+            this.comments[commentIndex].likes = originalLikes;
+            this.showNotification($store.i18n.t('story.errorLikingComment') + ': ' + (err.message || $store.i18n.t('general.unknownError')), false);
+            console.error('Comment Like Error:', err);
+        } finally { if (button) button.classList.remove('removing'); }
+    },
+    copyLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            this.showNotification($store.i18n.t('general.copiedLink'), true);
+        }).catch(err => {
+            this.showNotification($store.i18n.t('general.copyLinkError'), false);
+            console.error('Copy Link Error:', err);
+        });
+    },
+     async translateStory() {
+         if (!this.isPremiumUser) {
+             this.showNotification($store.i18n.t('story.translationAvailableForPremium'), false);
+             this.selectedLang = 'uk'; return;
+         }
+         if (this.selectedLang === 'uk') { this.translatedContent = null; this.translationError = null; return; }
+         this.isTranslating = true; this.translationError = null; this.translatedContent = null;
+         try {
+             const originalContent = this.story?.content;
+             if (!originalContent) throw new Error($store.i18n.t('story.errorNoContentForTranslation') || 'Немає контенту для перекладу.');
+
+             console.log(`Translating story ${this.storyId} to ${this.selectedLang} (client-side translation disabled)`);
+             // Кидаємо помилку, бо переклад має бути на бекенді
+             throw new Error($store.i18n.t('story.errorTranslationClientSide') || 'Функція перекладу контенту виконується на сервері.');
+
+             // --- Закоментований код для симуляції/майбутнього API ---
+             // console.log(`API call: translateText to ${this.selectedLang}`);
+             // await new Promise(resolve => setTimeout(resolve, 1000));
+             // const translationResult = await api.translation.translateText(originalContent, this.selectedLang);
+             // this.translatedContent = translationResult.translatedText;
+             // --- Кінець ---
+
+         } catch (error) {
+             this.translationError = error.message || $store.i18n.t('story.translationError');
+             console.error('Translation error:', error);
+             this.translatedContent = `<p style='color: #ff6b6b;'>${this.translationError}</p>`;
+         } finally { this.isTranslating = false; }
+     }
+
+}" x-init="
+    userId = api.utils.getUserId(); // Зберігаємо ID поточного користувача
+    isLoggedIn = api.utils.isAuthenticated();
+    isPremiumUser = api.utils.isPremium();
+    // Синхронізуємо selectedLang з i18n store
+    if (typeof $store !== 'undefined' && $store.i18n) {
+        selectedLang = $store.i18n.selectedLang;
+        availableLanguages = $store.i18n.available.map(lang => ({
+            code: lang.code,
+            name: lang.code === 'uk' ? `${$store.i18n.t('story.translationOriginalUk') || 'Українська'} (Оригінал)` : lang.name
+        }));
+        // Спостерігаємо за зміною мови в store
+        $watch('$store.i18n.selectedLang', (newLang) => {
+            if (selectedLang !== newLang) {
+                selectedLang = newLang;
+                // Оновлюємо дати коментарів
+                comments.forEach(c => c.date = new Date(c.createdAt).toLocaleString(selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' }));
+                // Можливо, скинути переклад при зміні мови сайту
+                // if (selectedLang !== 'uk') translateStory(); else translatedContent = null;
+            }
+        });
+    } else { console.warn('i18n store not available on init'); }
+    // Запускаємо завантаження даних історії
+    fetchStoryData();
+">
+
+<!-- Індикатор завантаження -->
+<div x-show="isLoading" class="loading-indicator-overlay" x-transition.opacity>
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Хедер -->
+<header>
+  <div class="container">
+    <nav class="navbar">
+      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+      </ul>
+      <div class="auth-buttons">
+        <!-- Мовний перемикач -->
+        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+          <div class="lang-dropdown-button" @click="open = !open">
+            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          </div>
+          <div class="lang-dropdown-menu" x-show="open" x-transition>
+            <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <div class="lang-dropdown-item"
+                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                <span x-text="lang.name"></span>
+                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+              </div>
+            </template>
+          </div>
+        </div>
+        <!-- Кнопки входу/профілю -->
+        <template x-if="!isLoggedIn">
+          <div>
+            <a href="login.html" class="btn btn-outline">
+              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
+            </a>
+            <a href="login.html?tab=register" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
+            </a>
+          </div>
+        </template>
+        <template x-if="isLoggedIn">
+          <div>
+            <a href="profile.html" class="btn btn-outline">
+              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
+            </a>
+            <a href="#" @click.prevent="api.auth.logout(); isLoggedIn = false; window.location.reload();" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            </a>
+          </div>
+        </template>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- Основний контент -->
+<main class="container">
+  <!-- Повідомлення про помилку завантаження -->
+  <div x-show="error && !isLoading" class="error-message" style="margin: 2rem 0;">
+    <i class="fas fa-exclamation-circle"></i> <span x-text="error"></span>
+    <button @click="fetchStoryData()" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+  </div>
+
+  <!-- Контент сторінки історії -->
+  <template x-if="story && !isLoading && !error">
+    <div>
+      <!-- Хлібні крихти -->
+      <div class="breadcrumbs">
+        <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+        <span class="separator">/</span>
+        <a href="categories.html" x-text="$store.i18n.t('general.categories')"></a>
+        <span class="separator">/</span>
+        <a :href="`category-page.html?slug=${story.category?.slug || 'other'}`" x-text="story.category?.name || $store.i18n.t('general.defaultCategory')"></a>
+        <span class="separator">/</span>
+        <span class="current" x-text="story.title"></span>
+      </div>
+
+      <!-- Структура сторінки -->
+      <div class="story-page">
+        <!-- Основний контент -->
+        <div class="story-main">
+          <!-- Заголовок історії -->
+          <div class="story-header">
+            <div class="story-category" x-text="story.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+            <h1 class="story-title-main" x-text="story.title"></h1>
+            <div class="story-meta-info">
+              <div><i class="far fa-calendar-alt"></i> <span x-text="new Date(story.createdAt).toLocaleDateString($store.i18n.selectedLang || 'uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })"></span></div>
+              <div><i class="far fa-eye"></i> <span x-text="story.views"></span> <span x-text="$store.i18n.t('general.views')"></span></div>
+              <div><i class="far fa-clock"></i> <span x-text="story.readingTime"></span> <span x-text="$store.i18n.t('general.readingTimeSuffix')"></span></div>
+              <div><i class="far fa-comments"></i> <span x-text="comments.length"></span> <span x-text="$store.i18n.t('general.comments')"></span></div>
+            </div>
+
+            <!-- Блок автора -->
+            <template x-if="author">
+              <div class="story-author">
+                <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="display: contents;">
+                  <div class="author-avatar" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile'}')`" role="img" :aria-label="`${$store.i18n.t('story.avatarOf') || 'Аватар'} ${author.name}`"></div>
+                </a>
+                <div class="author-info">
+                  <div class="author-name">
+                    <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="color: inherit; text-decoration: none;" x-text="author.name || $store.i18n.t('general.anonymous')"></a>
+                  </div>
+                  <div class="author-bio" x-text="author.bio || ''"></div>
+                </div>
+                <!-- Кнопка стеження -->
+                <template x-if="author._id && isLoggedIn && userId !== author._id">
+                  <button type="button" @click="toggleFollow($event)" class="btn btn-outline follow-btn removing" :disabled="!author" :class="{ 'following': followed }">
+                    <span x-text="followed ? $store.i18n.t('story.unfollowAuthor') : $store.i18n.t('story.followAuthor')"></span>
+                  </button>
+                </template>
+                <template x-if="author._id && !isLoggedIn">
+                  <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-outline follow-btn" x-text="$store.i18n.t('story.followAuthor')"></a>
+                </template>
+              </div>
+            </template>
+            <template x-if="!author"> <!-- Якщо автора немає -->
+              <div class="story-author">
+                <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?profile-placeholder')"></div>
+                <div class="author-info">
+                  <div class="author-name" x-text="$store.i18n.t('general.anonymous')"></div>
+                  <div class="author-bio" x-text="$store.i18n.t('authorsPage.bioMissing')"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Головне зображення -->
+          <div class="story-featured-image" :style="`background-image: url('${story.imageUrl || 'https://source.unsplash.com/random/1200x600/?abstract'}')`">
+            <div class="story-badge-large" x-text="story.ageRestriction"></div>
+          </div>
+
+          <!-- Оцінка і дії -->
+          <div class="story-actions">
+            <div class="story-rating">
+              <div class="rating-score" x-text="(story.averageRating || 0).toFixed(1)"></div>
+              <div class="rating-stars" x-ref="ratingStarsContainer"> <!-- Додав x-ref -->
+                <template x-for="i in 5">
+                  <i class="rating-star"
+                     :class="i <= userRating ? 'fas fa-star' : 'far fa-star'"
+                     @click="setRating(i)"
+                     style="cursor: pointer;"
+                     :aria-label="$store.i18n.t('story.rateAriaLabel', { stars: i }) || `Оцінити на ${i} з 5`"></i>
+                </template>
+              </div>
+              <div class="rating-count">
+                (<span x-text="story.totalRatings || 0"></span> <span x-text="$store.i18n.t('story.ratingCountSuffix')"></span>)
+              </div>
+            </div>
+            <div class="story-buttons">
+              <button type="button" class="action-btn removing" @click="toggleLike($event)" :title="liked ? $store.i18n.t('story.likedStory') : $store.i18n.t('story.likeStory')" :style="{ 'background-color': liked ? 'rgba(204, 0, 51, 0.2)' : '' }">
+                <i :class="liked ? 'fas fa-heart' : 'far fa-heart'" style="color: var(--accent-red);"></i>
+                <span x-text="story.likes || 0" style="margin-left: 5px; font-size: 0.9em;"></span>
+              </button>
+              <button type="button" class="action-btn removing" @click="toggleBookmark($event)" :title="bookmarked ? $store.i18n.t('story.savedBookmark') : $store.i18n.t('story.saveBookmark')" :style="{ 'background-color': bookmarked ? 'rgba(255, 255, 255, 0.1)' : '' }">
+                <i :class="bookmarked ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
+              </button>
+              <button type="button" class="action-btn" @click="copyLink()" :title="$store.i18n.t('general.copyLink')">
+                <i class="fas fa-share-alt"></i>
+              </button>
+              <button type="button" class="action-btn" @click="showNotification($store.i18n.t('notifications.reportSent'))" :title="$store.i18n.t('story.reportProblem')">
+                <i class="fas fa-flag"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок керування перекладом -->
+          <template x-if="isPremiumUser"> <!-- Показуємо тільки преміум користувачам -->
+            <div class="translation-controls">
+              <span class="translation-label" x-text="$store.i18n.t('story.translationLabel')"></span>
+              <select class="translation-select" x-model="selectedLang" @change="translateStory()">
+                <template x-for="lang in availableLanguages" :key="lang.code">
+                  <option :value="lang.code" x-text="lang.name"></option>
+                </template>
+              </select>
+              <div class="translation-status">
+                <span x-show="isTranslating"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('story.translationLoading')"></span></span>
+                <span x-show="translationError" class="translation-error-inline"><i class="fas fa-exclamation-triangle"></i> <span x-text="translationError"></span></span>
+                <span x-show="!isTranslating && !translationError && selectedLang !== 'uk'" x-text="$store.i18n.t('story.translationShowing')"></span>
+                <span x-show="!isTranslating && !translationError && selectedLang === 'uk'" x-text="$store.i18n.t('story.translationOriginalShowing')"></span>
+              </div>
+            </div>
+          </template>
+
+          <!-- Контент історії -->
+          <div class="story-content">
+            <!-- Урізаний контент для не-преміум -->
+            <template x-if="story.isPremium && !isPremiumUser">
+              <div x-html="story.content.substring(0, Math.min(500, Math.floor(story.content.length * 0.3))) + '...'"></div>
+              <div class="story-premium-notice">
+                <h3 x-text="$store.i18n.t('story.premiumContentBlocked')"></h3>
+                <p x-text="$store.i18n.t('story.premiumContentDescription')"></p>
+                <a href="premium.html" class="btn btn-primary" x-text="$store.i18n.t('story.getPremiumButton')"></a>
+              </div>
+            </template>
+            <!-- Повний контент для преміум або не-преміум історій -->
+            <template x-if="!story.isPremium || isPremiumUser">
+              <!-- Перекладений контент -->
+              <div x-show="selectedLang !== 'uk' && translatedContent" x-html="translatedContent"></div>
+              <!-- Оригінальний контент -->
+              <div x-show="selectedLang === 'uk' || !translatedContent" x-html="story.content"></div>
+            </template>
+          </div>
+
+
+          <!-- Теги історії -->
+          <div class="story-tags-section" x-show="story.tags && story.tags.length > 0">
+            <h3 class="story-tags-title" x-text="$store.i18n.t('story.tagsLabel')"></h3>
+            <div class="story-tags-list">
+              <template x-for="tag in story.tags" :key="tag">
+                <a href="#" @click.prevent="window.location.href=`categories.html?search=${encodeURIComponent(tag)}`" class="story-tag-link" x-text="tag"></a>
+              </template>
+            </div>
+          </div>
+
+          <!-- Навігація між історіями (заглушка) -->
+          <div class="story-navigation">
+            <a href="#" class="prev-story" style="opacity: 0.5; pointer-events: none;" aria-hidden="true">
+              <div class="prev-story-icon"><i class="fas fa-chevron-left"></i></div>
+              <div>
+                <span class="nav-direction" x-text="$store.i18n.t('story.prevStoryLink')"></span>
+                <h4 class="nav-title" x-text="$store.i18n.t('story.noPrevStory')"></h4>
+              </div>
+            </a>
+            <a href="#" class="next-story" style="opacity: 0.5; pointer-events: none;" aria-hidden="true">
+              <div>
+                <span class="nav-direction" x-text="$store.i18n.t('story.nextStoryLink')"></span>
+                <h4 class="nav-title" x-text="$store.i18n.t('story.noNextStory')"></h4>
+              </div>
+              <div class="next-story-icon"><i class="fas fa-chevron-right"></i></div>
+            </a>
+          </div>
+
+          <!-- Коментарі -->
+          <div class="comments-section">
+            <h2 class="comments-title"><span x-text="$store.i18n.t('story.commentsTitle')"></span> (<span x-text="comments.length"></span>)</h2>
+            <div class="comment-form" x-show="isLoggedIn">
+              <textarea x-model="commentText" class="comment-input" :placeholder="$store.i18n.t('story.leaveCommentPlaceholder')" :disabled="isSubmittingComment" aria-label="Текст коментаря" x-ref="commentInputRef"></textarea>
+              <div x-show="commentError" class="error-message-inline" x-text="commentError"></div>
+              <div class="comment-submit">
+                <button type="button" @click="submitComment()" class="btn btn-primary processing" :disabled="isSubmittingComment || !commentText.trim()">
+                  <span x-show="!isSubmittingComment" x-text="$store.i18n.t('story.addCommentButton')"></span>
+                  <span x-show="isSubmittingComment"><span x-text="$store.i18n.t('general.adding')"></span></span>
+                </button>
+              </div>
+            </div>
+            <div class="comment-form" x-show="!isLoggedIn" style="text-align: center; padding: 1rem; background-color: rgba(255,255,255,0.05); border-radius: var(--border-radius);">
+              <p style="margin-bottom: 1rem; color: var(--secondary-text);">
+                <span x-text="$store.i18n.t('story.loginToComment')"></span>
+                <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" style="color: var(--accent-red);" x-text="$store.i18n.t('general.login')"></a>
+                <span x-text="$store.i18n.t('general.or')"></span>
+                <a href="login.html?tab=register" style="color: var(--accent-red);" x-text="$store.i18n.t('general.register')"></a>.
+              </p>
+            </div>
+
+            <div class="comments-list">
+              <template x-for="comment in comments" :key="comment.id || comment._id">
+                <div class="comment">
+                  <div class="comment-avatar" :style="`background-image: url('${comment.author?.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile'}')`" role="img" :aria-label="`${$store.i18n.t('story.avatarOf') || 'Аватар'} ${comment.author?.name}`"></div>
+                  <div class="comment-body">
+                    <div class="comment-author" x-text="comment.author?.name || $store.i18n.t('general.anonymous')"></div>
+                    <div class="comment-date" x-text="comment.date || new Date(comment.createdAt).toLocaleString($store.i18n.selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' })"></div>
+                    <div class="comment-text" x-text="comment.text"></div>
+                    <div class="comment-actions">
+                      <a href="#" class="removing" @click.prevent="likeComment(comment.id || comment._id, $event)" :aria-label="comment.liked ? $store.i18n.t('story.unlikeCommentAriaLabel') : $store.i18n.t('story.likeCommentAriaLabel')">
+                        <i :class="comment.liked ? 'fas fa-thumbs-up' : 'far fa-thumbs-up'"></i>
+                        <span x-text="$store.i18n.t('story.likeCommentAction')"></span> (<span x-text="comment.likes || 0"></span>)
+                      </a>
+                      <a href="#" @click.prevent="alert($store.i18n.t('story.replyWIP') || 'Функція відповіді в розробці')"><i class="far fa-comment"></i> <span x-text="$store.i18n.t('story.replyButton')"></span></a>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <div x-show="comments.length === 0 && !isLoading" style="text-align: center; color: var(--secondary-text); padding: 1rem;" x-text="$store.i18n.t('story.noCommentsYet')">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Сайдбар -->
+        <div class="story-sidebar">
+          <!-- Віджет автора -->
+          <template x-if="author">
+            <div class="sidebar-widget author-widget">
+              <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="display: contents;">
+                <div class="author-avatar-large" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile'}')`" role="img" :aria-label="`${$store.i18n.t('story.avatarOf') || 'Аватар'} ${author.name}`"></div>
+              </a>
+              <h3 class="author-name-large">
+                <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="color: inherit; text-decoration: none;" x-text="author.name || $store.i18n.t('general.anonymous')"></a>
+              </h3>
+              <div class="author-stats">
+                <div class="author-stat">
+                  <div class="stat-value" x-text="author.storyCount || 0"></div>
+                  <div class="stat-label" x-text="$store.i18n.t('profile.storiesWritten')"></div>
+                </div>
+                <div class="author-stat">
+                  <div class="stat-value" x-text="(author.averageRating || 0).toFixed(1)"></div>
+                  <div class="stat-label" x-text="$store.i18n.t('general.ratingLabel')"></div>
+                </div>
+                <div class="author-stat">
+                  <div class="stat-value" x-text="author.followersCount || 0"></div>
+                  <div class="stat-label" x-text="$store.i18n.t('profile.followers')"></div>
+                </div>
+              </div>
+              <template x-if="author._id && isLoggedIn && userId !== author._id">
+                <button type="button" @click="toggleFollow($event)" class="btn btn-primary follow-btn removing" style="width: 100%;" :disabled="!author">
+                  <span x-text="followed ? $store.i18n.t('story.unfollowAuthor') : $store.i18n.t('story.followAuthor')"></span>
+                </button>
+              </template>
+              <template x-if="author._id && !isLoggedIn">
+                <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-primary" style="width: 100%;" x-text="$store.i18n.t('story.followAuthor')"></a>
+              </template>
+            </div>
+          </template>
+
+          <!-- Віджет підписки -->
+          <template x-if="!isPremiumUser">
+            <div class="sidebar-widget premium-widget">
+              <div class="premium-icon"><i class="fas fa-crown"></i></div>
+              <h3 class="premium-title" x-text="$store.i18n.t('premium.sidebarTitle') || 'Преміум доступ'"></h3>
+              <p class="premium-description" x-text="$store.i18n.t('premium.sidebarDescription') || 'Відкрийте найгарячіші моменти історії та ексклюзивний контент'"></p>
+              <div class="premium-price" x-text="$store.i18n.t('premium.sidebarPrice') || '199 ₴'"></div>
+              <span class="price-period" x-text="$store.i18n.t('premium.perMonth')"></span>
+              <div class="premium-features">
+                <div class="premium-feature"><i class="fas fa-check"></i><div x-text="$store.i18n.t('premium.benefitAccess')"></div></div>
+                <div class="premium-feature"><i class="fas fa-check"></i><div x-text="$store.i18n.t('premium.benefitExclusive')"></div></div>
+                <div class="premium-feature"><i class="fas fa-check"></i><div x-text="$store.i18n.t('premium.benefitNoAds')"></div></div>
+                <div class="premium-feature"><i class="fas fa-check"></i><div x-text="$store.i18n.t('premium.benefitTranslation')"></div></div>
+              </div>
+              <a href="premium.html" class="btn btn-primary" style="width: 100%;" x-text="$store.i18n.t('premium.sidebarButton') || 'Спробувати преміум'"></a>
+            </div>
+          </template>
+
+          <!-- Віджет схожих історій -->
+          <div class="sidebar-widget" x-show="relatedStories.length > 0">
+            <h3 class="widget-title" x-text="$store.i18n.t('story.similarStories')"></h3>
+            <div class="related-stories-list">
+              <template x-for="related in relatedStories" :key="related.id">
+                <a :href="`story-detailed.html?id=${related.id}`" class="related-story">
+                  <div class="related-story-image" :style="`background-image: url('${related.imageUrl}')`" role="img" :aria-label="related.title"></div>
+                  <div class="related-story-info">
+                    <h4 class="related-story-title" x-text="related.title"></h4>
+                    <div class="related-story-meta">
+                      <div class="related-story-views"><i class="far fa-eye"></i> <span x-text="related.views"></span></div>
+                      <div class="related-story-rating"><i class="fas fa-star"></i> <span x-text="(related.rating || 0).toFixed(1)"></span></div>
+                    </div>
+                  </div>
+                </a>
+              </template>
+            </div>
+          </div>
+
+          <!-- Віджет поділитися -->
+          <div class="sidebar-widget">
+            <h3 class="widget-title" x-text="$store.i18n.t('story.shareStoryTitle')"></h3>
+            <p x-text="$store.i18n.t('story.shareStoryText')"></p>
+            <div class="share-buttons">
+              <a href="#" @click.prevent="window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'width=600,height=400')" class="share-button share-facebook" :title="$store.i18n.t('general.shareFacebook')" :aria-label="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" @click.prevent="window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(story.title)}`, '_blank', 'width=600,height=400')" class="share-button share-twitter" :title="$store.i18n.t('general.shareTwitter')" :aria-label="$store.i18n.t('general.shareTwitter')"><i class="fab fa-twitter"></i></a>
+              <a href="#" @click.prevent="window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(story.title)}`, '_blank')" class="share-button share-telegram" :title="$store.i18n.t('general.shareTelegram')" :aria-label="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+              <a :href="`https://api.whatsapp.com/send?text=${encodeURIComponent(story.title + ' ' + window.location.href)}`" target="_blank" class="share-button share-whatsapp" :title="$store.i18n.t('general.shareWhatsApp')" :aria-label="$store.i18n.t('general.shareWhatsApp')"><i class="fab fa-whatsapp"></i></a>
+              <button type="button" @click.prevent="copyLink()" class="share-button share-link" :title="$store.i18n.t('general.copyLink')" :aria-label="$store.i18n.t('general.copyLink')"><i class="fas fa-link"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+</main>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <!-- Код футера як у index.html -->
+    <div class="footer-content">
+      <div class="footer-section footer-about">
+        <h4 x-text="$store.i18n.t('general.about')"></h4>
+        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <div class="social-links">
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <ul>
+          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <ul>
+          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <ul>
+          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+    </div>
+  </div>
+</footer>
+
+<!-- Елемент сповіщення -->
+<div x-show="notificationVisible"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 transform translate-y-2"
+     x-transition:enter-end="opacity-100 transform translate-y-0"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 transform translate-y-0"
+     x-transition:leave-end="opacity-0 -translate-y-full"
+     class="notification"
+     style="display: none;"
+     id="global-notification">
+  <span x-text="notificationMessage"></span>
+</div>
+
+</body>
+</html>

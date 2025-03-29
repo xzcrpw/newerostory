@@ -1,18 +1,29 @@
 <!DOCTYPE html>
-<html lang="uk">
+<!-- Додано x-data та :lang -->
+<html lang="uk" x-data :lang="$store.i18n.selectedLang">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Часті запитання — Таємний Світ</title>
+  <!-- Title використовує i18n -->
+  <title x-text="`${$store.i18n.t('faq.title')} — ${$store.i18n.t('general.copyright')}`"></title>
 
-  <!-- Мета-теги для SEO і соцмереж -->
-  <meta name="description" content="Відповіді на часті запитання користувачів сайту Таємний Світ. Дізнайтеся більше про правила публікації, преміум-підписку та інші особливості платформи.">
-  <meta property="og:title" content="Часті запитання — Таємний Світ">
-  <meta property="og:description" content="Відповіді на часті запитання користувачів сайту Таємний Світ. Дізнайтеся більше про правила публікації, преміум-підписку та інші особливості платформи.">
+  <!-- Мета-теги використовують i18n -->
+  <meta name="description" :content="$store.i18n.t('faq.metaDescription')">
+  <meta property="og:title" :content="`${$store.i18n.t('faq.title')} — ${$store.i18n.t('general.copyright')}`">
+  <meta property="og:description" :content="$store.i18n.t('faq.metaDescription')">
   <meta property="og:type" content="website">
 
   <!-- Стилі -->
   <link rel="stylesheet" href="css/main.css">
+  <!-- Специфічні стилі для FAQ -->
+  <link rel="stylesheet" href="css/faq_styles.css"> <!-- Створимо або додамо в main.css -->
+
+  <!-- API Config & Utils -->
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
   <!-- Шрифти -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,25 +37,22 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <style>
-    /* Специфічні стилі для сторінки FAQ */
+    /* Стилі можна перенести в окремий файл faq_styles.css */
     .faq-container {
       max-width: 800px;
       margin: 0 auto;
       padding: 2rem 0 4rem;
     }
-    
     .faq-header {
       text-align: center;
       margin-bottom: 3rem;
     }
-    
     .faq-title {
       font-size: 2.8rem;
       margin-bottom: 1rem;
       position: relative;
       display: inline-block;
     }
-    
     .faq-title:after {
       content: '';
       position: absolute;
@@ -55,14 +63,12 @@
       height: 3px;
       background: var(--accent-red);
     }
-    
     .faq-description {
       color: var(--secondary-text);
       font-size: 1.1rem;
       max-width: 700px;
       margin: 0 auto;
     }
-    
     .faq-categories {
       display: flex;
       justify-content: center;
@@ -70,7 +76,6 @@
       margin-bottom: 3rem;
       flex-wrap: wrap;
     }
-    
     .faq-category {
       padding: 0.8rem 1.5rem;
       background-color: rgba(255, 255, 255, 0.05);
@@ -79,30 +84,26 @@
       color: var(--secondary-text);
       cursor: pointer;
       transition: all 0.3s;
+      font-size: 0.95rem; /* Трохи збільшив */
     }
-    
     .faq-category:hover {
       background-color: rgba(153, 0, 0, 0.1);
       border-color: rgba(153, 0, 0, 0.2);
       color: var(--text-color);
     }
-    
     .faq-category.active {
       background-color: rgba(153, 0, 0, 0.2);
       border-color: rgba(153, 0, 0, 0.3);
       color: var(--text-color);
     }
-    
     .faq-list {
       margin-bottom: 3rem;
     }
-    
     .faq-section-title {
       font-size: 1.8rem;
       margin-bottom: 1.5rem;
       color: var(--accent-gold);
     }
-    
     .faq-item {
       background-color: var(--card-color);
       border-radius: var(--border-radius);
@@ -110,7 +111,6 @@
       border: 1px solid rgba(153, 0, 0, 0.1);
       overflow: hidden;
     }
-    
     .faq-question {
       padding: 1.2rem 1.5rem;
       cursor: pointer;
@@ -121,11 +121,9 @@
       align-items: center;
       transition: all 0.3s;
     }
-    
     .faq-question:hover {
       background-color: rgba(255, 255, 255, 0.02);
     }
-    
     .faq-toggle {
       width: 24px;
       height: 24px;
@@ -136,19 +134,30 @@
       justify-content: center;
       color: var(--secondary-text);
       transition: all 0.3s;
+      flex-shrink: 0; /* Щоб іконка не стискалася */
     }
-    
-    .faq-item.active .faq-toggle {
+    .faq-item[x-data*='open: true'] .faq-toggle { /* Стиль для відкритого стану */
       background-color: var(--accent-red);
       color: white;
+      transform: rotate(45deg);
     }
-    
     .faq-answer {
       padding: 0 1.5rem 1.2rem;
       color: var(--secondary-text);
       line-height: 1.6;
+      overflow: hidden; /* Для анімації */
+      /* Початкові стилі для анімації */
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.4s ease-out, opacity 0.3s ease-out, padding-bottom 0.3s ease-out;
     }
-    
+    /* Стилі для відкритого стану анімації */
+    .faq-item[x-data*='open: true'] .faq-answer {
+      max-height: 500px; /* Або достатньо велике значення */
+      opacity: 1;
+      padding-bottom: 1.2rem;
+    }
+
     .more-questions {
       background-color: var(--card-color);
       border-radius: var(--border-radius);
@@ -156,155 +165,83 @@
       text-align: center;
       border: 1px solid rgba(153, 0, 0, 0.1);
     }
-    
     .more-questions-title {
       font-size: 1.5rem;
       margin-bottom: 1rem;
     }
-    
     .more-questions-text {
       color: var(--secondary-text);
       margin-bottom: 1.5rem;
     }
-
-    /* Респонсивність */
     @media (max-width: 768px) {
-      .faq-categories {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      
-      .faq-category {
-        width: 45%;
-        text-align: center;
-      }
-      
-      .faq-title {
-        font-size: 2.2rem;
-      }
+      .faq-categories { flex-wrap: wrap; justify-content: center; }
+      .faq-category { width: auto; /* Автоширина */ }
+      .faq-title { font-size: 2.2rem; }
     }
   </style>
 </head>
 <body x-data="{
     activeCategory: 'all',
-    faqItems: {
-      account: [
-        { 
-          question: 'Як зареєструватися на сайті?', 
-          answer: 'Для реєстрації на сайті натисніть кнопку «Реєстрація» у верхньому правому куті екрана. Заповніть необхідні поля: ім\'я користувача, електронну пошту та пароль. Підтвердіть свою згоду з правилами сайту, після чого на вашу пошту надійде лист із посиланням для активації облікового запису.'
-        },
-        { 
-          question: 'Як відновити забутий пароль?', 
-          answer: 'Якщо ви забули пароль, натисніть посилання «Забули пароль?» на сторінці входу. Введіть свою електронну пошту, і ми надішлемо вам інструкції для відновлення доступу до облікового запису.'
-        },
-        { 
-          question: 'Чи можна змінити нікнейм після реєстрації?', 
-          answer: 'Так, ви можете змінити нікнейм у налаштуваннях профілю. Зверніть увагу, що змінювати нікнейм можна не частіше одного разу на 30 днів.'
-        },
-        { 
-          question: 'Як видалити обліковий запис?', 
-          answer: 'Для видалення облікового запису перейдіть до налаштувань профілю та натисніть опцію «Видалити обліковий запис». Вам буде запропоновано ввести пароль для підтвердження дії. Зверніть увагу, що видалення облікового запису є незворотною операцією, і всі ваші публікації та коментарі будуть видалені.'
-        }
-      ],
-      content: [
-        { 
-          question: 'Які обмеження щодо контенту існують на сайті?', 
-          answer: 'На нашому сайті заборонено публікацію контенту, який містить опис протизаконних дій, насильства, контенту за участю неповнолітніх, а також контенту, що розпалює міжнаціональну ворожнечу. Детальніше з правилами можна ознайомитися на сторінці «Правила сайту».'
-        },
-        { 
-          question: 'Як я можу опублікувати свою історію?', 
-          answer: 'Для публікації історії натисніть на «+» в правому нижньому куті екрана або перейдіть у розділ «Створити історію» у своєму профілі. Заповніть необхідні поля: назву, категорію, теги, виберіть зображення для історії та напишіть текст. Після перевірки модераторами ваша історія з\'явиться на сайті.'
-        },
-        { 
-          question: 'Чи можу я редагувати опубліковану історію?', 
-          answer: 'Так, ви можете редагувати свої історії після публікації. Для цього перейдіть до розділу «Мої історії» у своєму профілі, оберіть потрібну історію та натисніть «Редагувати». Зверніть увагу, що після значних змін історія може бути відправлена на повторну модерацію.'
-        },
-        { 
-          question: 'Як довго триває модерація?', 
-          answer: 'Зазвичай модерація триває до 24 годин. У періоди високої активності цей термін може збільшуватися до 48 годин. Якщо модерація тривала більше 48 годин, будь ласка, зв\'яжіться з нами через форму зворотного зв\'язку.'
-        }
-      ],
-      premium: [
-        { 
-          question: 'Які переваги дає преміум-підписка?', 
-          answer: 'Преміум-підписка надає доступ до ексклюзивного контенту, дозволяє читати без реклами, отримати пріоритетну підтримку та ранній доступ до нових функцій. Крім того, преміум-користувачі можуть завантажувати історії для офлайн-читання та мають доступ до розширених функцій перекладу.'
-        },
-        { 
-          question: 'Як оформити преміум-підписку?', 
-          answer: 'Для оформлення преміум-підписки натисніть кнопку «Отримати преміум» у своєму профілі або в преміум-блоці на будь-якій сторінці сайту. Виберіть зручний для вас тарифний план, спосіб оплати та слідуйте інструкціям для завершення процесу.'
-        },
-        { 
-          question: 'Як скасувати преміум-підписку?', 
-          answer: 'Для скасування преміум-підписки перейдіть до розділу «Налаштування підписки» у своєму профілі та натисніть «Скасувати підписку». Ваша підписка діятиме до кінця оплаченого періоду, після чого автоматичне продовження буде скасовано.'
-        },
-        { 
-          question: 'Чи є пробний період для преміум-підписки?', 
-          answer: 'Так, новим користувачам доступний 7-денний пробний період преміум-підписки. Для його активації необхідно ввести платіжні дані, але плата буде знята тільки після закінчення пробного періоду, якщо ви не скасуєте підписку.'
-        }
-      ],
-      technical: [
-        { 
-          question: 'Як змінити мову інтерфейсу?', 
-          answer: 'Для зміни мови інтерфейсу натисніть на поточну мову у верхньому правому куті екрана та виберіть бажану мову з випадаючого списку. Сайт підтримує українську, англійську та російську мови інтерфейсу.'
-        },
-        { 
-          question: 'Чому я не можу завантажити зображення для історії?', 
-          answer: 'Можливі причини: розмір файлу перевищує обмеження (5 МБ), формат файлу не підтримується (підтримуються JPG, PNG) або тимчасові технічні проблеми. Спробуйте зменшити розмір зображення або змінити його формат. Якщо проблема не вирішується, зверніться до служби підтримки.'
-        },
-        { 
-          question: 'Як налаштувати сповіщення?', 
-          answer: 'Для налаштування сповіщень перейдіть до розділу «Налаштування» у своєму профілі та виберіть вкладку «Сповіщення». Тут ви можете вибрати, які типи сповіщень ви хочете отримувати (коментарі до ваших історій, нові історії в обраних категоріях тощо) і спосіб їх отримання (на сайті, електронною поштою).'
-        },
-        { 
-          question: 'Що робити, якщо сайт не працює належним чином?', 
-          answer: 'Спробуйте очистити кеш браузера, оновити сторінку або використати інший браузер. Якщо проблема залишається, напишіть нам через форму зворотного зв\'язку, вказавши: ваш браузер, операційну систему, опис проблеми та скріншот помилки (якщо є).'
-        }
-      ]
-    },
-    
-    setCategory(category) {
-      this.activeCategory = category;
-    },
-    
-    toggleFaq(event, index, category) {
-      const item = event.target.closest('.faq-item');
-      
-      if (item) {
-        const isActive = item.classList.contains('active');
-        
-        // Закрити всі інші відкриті FAQ
-        const allItems = document.querySelectorAll('.faq-item');
-        allItems.forEach(i => i.classList.remove('active'));
-        
-        // Якщо елемент не був активним, відкрити його
-        if (!isActive) {
-          item.classList.add('active');
-        }
-      }
-    }
-}">
+    isLoggedIn: false,
+    // Питання та відповіді тепер будуть генеруватися через $store.i18n
+    faqSections: ['account', 'content', 'premium', 'technical'], // Ключі секцій
+    openFaqIndex: null // Індекс відкритого питання (для закриття інших при відкритті нового)
+}" x-init="
+    isLoggedIn = api.utils.isAuthenticated();
+">
 
 <!-- Хедер -->
 <header>
   <div class="container">
     <nav class="navbar">
       <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-
+      <!-- Навігація з i18n -->
       <ul class="nav-links">
-        <li><a href="index.html">Головна</a></li>
-        <li><a href="new-stories.html">Нові історії</a></li>
-        <li><a href="top-stories.html">Топ рейтинг</a></li>
-        <li><a href="categories.html">Категорії</a></li>
-        <li><a href="authors.html">Автори</a></li>
+        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
-
       <div class="auth-buttons">
-        <div class="lang-dropdown">
-          <span>UA</span>
-          <i class="fas fa-chevron-down"></i>
+        <!-- Мовний перемикач -->
+        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+          <div class="lang-dropdown-button" @click="open = !open">
+            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          </div>
+          <div class="lang-dropdown-menu" x-show="open" x-transition>
+            <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <div class="lang-dropdown-item"
+                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                <span x-text="lang.name"></span>
+                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+              </div>
+            </template>
+          </div>
         </div>
-        <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
-        <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+        <!-- Кнопки авторизації -->
+        <template x-if="!isLoggedIn">
+          <div>
+            <a href="login.html" class="btn btn-outline">
+              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
+            </a>
+            <a href="register-page.html" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
+            </a>
+          </div>
+        </template>
+        <template x-if="isLoggedIn">
+          <div>
+            <a href="profile.html" class="btn btn-outline">
+              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
+            </a>
+            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            </a>
+          </div>
+        </template>
       </div>
     </nav>
   </div>
@@ -315,176 +252,117 @@
   <div class="container">
     <!-- Хлібні крихти -->
     <div class="breadcrumbs">
-      <a href="index.html">Головна</a>
+      <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
       <span class="separator">/</span>
-      <span class="current">Часті запитання</span>
+      <span class="current" x-text="$store.i18n.t('faq.title')"></span>
     </div>
-    
+
     <div class="faq-container">
       <!-- Заголовок -->
       <div class="faq-header">
-        <h1 class="faq-title">Часті запитання</h1>
-        <p class="faq-description">Знайдіть відповіді на найпоширеніші запитання про наш сайт, правила публікації контенту, функції та можливості платформи.</p>
+        <h1 class="faq-title" x-text="$store.i18n.t('faq.title')"></h1>
+        <p class="faq-description" x-text="$store.i18n.t('faq.description')"></p>
       </div>
-      
+
       <!-- Категорії FAQ -->
       <div class="faq-categories">
-        <div 
-          @click="setCategory('all')" 
-          class="faq-category" 
-          :class="{ 'active': activeCategory === 'all' }"
-        >
-          Усі питання
-        </div>
-        <div 
-          @click="setCategory('account')" 
-          class="faq-category" 
-          :class="{ 'active': activeCategory === 'account' }"
-        >
-          Обліковий запис
-        </div>
-        <div 
-          @click="setCategory('content')" 
-          class="faq-category" 
-          :class="{ 'active': activeCategory === 'content' }"
-        >
-          Контент і публікації
-        </div>
-        <div 
-          @click="setCategory('premium')" 
-          class="faq-category" 
-          :class="{ 'active': activeCategory === 'premium' }"
-        >
-          Преміум-підписка
-        </div>
-        <div 
-          @click="setCategory('technical')" 
-          class="faq-category" 
-          :class="{ 'active': activeCategory === 'technical' }"
-        >
-          Технічні питання
-        </div>
+        <div @click="activeCategory = 'all'" class="faq-category" :class="{ 'active': activeCategory === 'all' }" x-text="$store.i18n.t('faq.allQuestions')"></div>
+        <div @click="activeCategory = 'account'" class="faq-category" :class="{ 'active': activeCategory === 'account' }" x-text="$store.i18n.t('faq.categoryAccount')"></div>
+        <div @click="activeCategory = 'content'" class="faq-category" :class="{ 'active': activeCategory === 'content' }" x-text="$store.i18n.t('faq.categoryContent')"></div>
+        <div @click="activeCategory = 'premium'" class="faq-category" :class="{ 'active': activeCategory === 'premium' }" x-text="$store.i18n.t('faq.categoryPremium')"></div>
+        <div @click="activeCategory = 'technical'" class="faq-category" :class="{ 'active': activeCategory === 'technical' }" x-text="$store.i18n.t('faq.categoryTechnical')"></div>
       </div>
-      
-      <!-- Список FAQ: Обліковий запис -->
-      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'account'">
-        <h2 class="faq-section-title">Обліковий запис</h2>
-        
-        <template x-for="(item, index) in faqItems.account" :key="index">
-          <div class="faq-item" @click="toggleFaq($event, index, 'account')">
-            <div class="faq-question">
-              <span x-text="item.question"></span>
-              <div class="faq-toggle">
-                <i class="fas fa-plus"></i>
+
+      <!-- Список FAQ -->
+      <!-- Використовуємо template для ітерації по секціях -->
+      <template x-for="(sectionKey, sectionIndex) in faqSections" :key="sectionKey">
+        <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === sectionKey" x-transition>
+          <!-- Заголовок секції показуємо тільки якщо вибрано 'all' або це активна категорія -->
+          <h2 class="faq-section-title" x-show="activeCategory === 'all' || activeCategory === sectionKey" x-text="$store.i18n.t(`faq.category${sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}`)"></h2>
+
+          <!-- Ітерація по питаннях (припускаємо структуру ключів faq.accountQ1, faq.accountA1 і т.д.) -->
+          <!-- Припускаємо, що в кожній секції по 4 питання -->
+          <template x-for="i in [1, 2, 3, 4]" :key="`${sectionKey}-${i}`">
+            <!-- Перевіряємо, чи існує ключ питання перед рендерингом -->
+            <template x-if="$store.i18n.t(`faq.${sectionKey}Q${i}`) !== `faq.${sectionKey}Q${i}`">
+              <!-- Використовуємо індекс для керування відкриттям/закриттям одного елемента -->
+              <div class="faq-item" x-data="{ open: false, globalIndex: sectionIndex * 4 + i - 1 }">
+                <div class="faq-question" @click="open = !open; openFaqIndex = (openFaqIndex === globalIndex ? null : globalIndex)">
+                  <span x-text="$store.i18n.t(`faq.${sectionKey}Q${i}`)"></span>
+                  <!-- Керуємо іконкою через 'open' стан поточного елемента та глобальний індекс -->
+                  <div class="faq-toggle">
+                    <i :class="open && openFaqIndex === globalIndex ? 'fas fa-times' : 'fas fa-plus'"></i>
+                  </div>
+                </div>
+                <!-- Використовуємо x-show та transition для відповіді -->
+                <div class="faq-answer" x-show="open && openFaqIndex === globalIndex" x-collapse>
+                  <p x-text="$store.i18n.t(`faq.${sectionKey}A${i}`)"></p>
+                </div>
               </div>
-            </div>
-            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
-          </div>
-        </template>
-      </div>
-      
-      <!-- Список FAQ: Контент і публікації -->
-      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'content'">
-        <h2 class="faq-section-title" x-show="activeCategory === 'all'">Контент і публікації</h2>
-        
-        <template x-for="(item, index) in faqItems.content" :key="index">
-          <div class="faq-item" @click="toggleFaq($event, index, 'content')">
-            <div class="faq-question">
-              <span x-text="item.question"></span>
-              <div class="faq-toggle">
-                <i class="fas fa-plus"></i>
-              </div>
-            </div>
-            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
-          </div>
-        </template>
-      </div>
-      
-      <!-- Список FAQ: Преміум-підписка -->
-      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'premium'">
-        <h2 class="faq-section-title" x-show="activeCategory === 'all'">Преміум-підписка</h2>
-        
-        <template x-for="(item, index) in faqItems.premium" :key="index">
-          <div class="faq-item" @click="toggleFaq($event, index, 'premium')">
-            <div class="faq-question">
-              <span x-text="item.question"></span>
-              <div class="faq-toggle">
-                <i class="fas fa-plus"></i>
-              </div>
-            </div>
-            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
-          </div>
-        </template>
-      </div>
-      
-      <!-- Список FAQ: Технічні питання -->
-      <div class="faq-list" x-show="activeCategory === 'all' || activeCategory === 'technical'">
-        <h2 class="faq-section-title" x-show="activeCategory === 'all'">Технічні питання</h2>
-        
-        <template x-for="(item, index) in faqItems.technical" :key="index">
-          <div class="faq-item" @click="toggleFaq($event, index, 'technical')">
-            <div class="faq-question">
-              <span x-text="item.question"></span>
-              <div class="faq-toggle">
-                <i class="fas fa-plus"></i>
-              </div>
-            </div>
-            <div class="faq-answer" style="display: none;" x-text="item.answer"></div>
-          </div>
-        </template>
-      </div>
-      
+            </template>
+          </template>
+        </div>
+      </template>
+
       <!-- Блок для додаткових питань -->
       <div class="more-questions">
-        <h3 class="more-questions-title">Не знайшли відповідь на своє запитання?</h3>
-        <p class="more-questions-text">Зв'яжіться з нами через форму зворотного зв'язку, і ми відповімо на ваше запитання якомога швидше.</p>
-        <a href="contact.html" class="btn btn-primary">Зв'язатися з нами</a>
+        <h3 class="more-questions-title" x-text="$store.i18n.t('faq.moreQuestionsTitle')"></h3>
+        <p class="more-questions-text" x-text="$store.i18n.t('faq.moreQuestionsText')"></p>
+        <a href="contact.html" class="btn btn-primary" x-text="$store.i18n.t('faq.contactUsButton')"></a>
       </div>
     </div>
   </div>
 </main>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Функція для відображення/приховування відповідей
-    const questions = document.querySelectorAll('.faq-question');
-    
-    questions.forEach(question => {
-      question.addEventListener('click', function() {
-        // Отримуємо батьківський елемент (faq-item)
-        const item = this.parentElement;
-        
-        // Отримуємо відповідь
-        const answer = this.nextElementSibling;
-        
-        // Змінюємо іконку
-        const icon = this.querySelector('.faq-toggle i');
-        
-        // Перевіряємо, чи відкритий цей елемент
-        const isActive = item.classList.contains('active');
-        
-        // Закриваємо всі відкриті елементи
-        document.querySelectorAll('.faq-item.active').forEach(activeItem => {
-          if (activeItem !== item) {
-            activeItem.classList.remove('active');
-            activeItem.querySelector('.faq-answer').style.display = 'none';
-            activeItem.querySelector('.faq-toggle i').className = 'fas fa-plus';
-          }
-        });
-        
-        // Перемикаємо стан поточного елемента
-        if (isActive) {
-          item.classList.remove('active');
-          answer.style.display = 'none';
-          icon.className = 'fas fa-plus';
-        } else {
-          item.classList.add('active');
-          answer.style.display = 'block';
-          icon.className = 'fas fa-minus';
-        }
-      });
-    });
-  });
-</script>
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <!-- Код футера як у index.html -->
+    <div class="footer-content">
+      <div class="footer-section footer-about">
+        <h4 x-text="$store.i18n.t('general.about')"></h4>
+        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <div class="social-links">
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <ul>
+          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <ul>
+          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <ul>
+          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

@@ -1,0 +1,128 @@
+/* css/contact.css */
+
+.contact-page-container {
+    margin-bottom: 4rem;
+}
+
+.contact-header {
+    text-align: center;
+    margin: 3rem 0;
+}
+
+.contact-title {
+    font-size: 2.8rem;
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.contact-title:after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: var(--accent-red);
+}
+
+.contact-description {
+    color: var(--secondary-text);
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.contact-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Ліва колонка менша */
+    gap: 3rem;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    background-image: var(--card-gradient);
+}
+
+.contact-subtitle {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent-gold);
+}
+
+.contact-info p {
+    color: var(--secondary-text);
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+}
+
+.contact-info a {
+    color: var(--accent-red);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+.contact-details {
+    margin-bottom: 1.5rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    color: var(--secondary-text);
+}
+
+.contact-item i {
+    font-size: 1.2rem;
+    color: var(--accent-red);
+    margin-right: 1rem;
+    margin-top: 0.2rem;
+    width: 20px; /* Фіксована ширина для вирівнювання */
+    text-align: center;
+}
+
+.contact-item strong {
+    color: var(--text-color);
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.contact-form-container {
+    /* Стилі для контейнера форми */
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+
+/* Адаптивність */
+@media (max-width: 992px) {
+    .contact-content {
+        grid-template-columns: 1fr; /* В одну колонку */
+    }
+
+    .contact-info {
+        margin-bottom: 2rem; /* Відступ знизу для інфо-блоку */
+    }
+}
+
+@media (max-width: 576px) {
+    .contact-header {
+        margin: 2rem 0;
+    }
+    .contact-title {
+        font-size: 2.2rem;
+    }
+    .contact-content {
+        padding: 1.5rem;
+    }
+}
