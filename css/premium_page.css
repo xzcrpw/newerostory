@@ -1,13 +1,5 @@
+/* css/premium_page.css */
 /* Стилі для сторінки преміум-підписки */
-
-:root {
-    /* Преміум-кольори */
-    --premium-gold: #d9a45b;
-    --premium-gold-rgb: 217, 164, 91;
-    --premium-gold-dark: #b78a4d;
-    --premium-gold-light: #e3bb7d;
-    --premium-gradient: linear-gradient(135deg, var(--premium-gold) 0%, var(--premium-gold-dark) 100%);
-}
 
 /* Hero секція */
 .premium-hero {
@@ -514,33 +506,6 @@
     gap: 1.5rem;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-group label {
-    font-size: 0.95rem;
-    color: var(--secondary-text);
-}
-
-.form-group input {
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
-    background-color: rgba(255, 255, 255, 0.08);
-}
 
 .card-input-group {
     position: relative;
@@ -569,28 +534,6 @@
     flex: 1;
 }
 
-.form-agreement {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.8rem;
-    margin-top: 1rem;
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-}
-
-.form-agreement input {
-    margin-top: 0.3rem;
-}
-
-.form-agreement a {
-    color: var(--accent-red);
-    text-decoration: none;
-    transition: all 0.3s;
-}
-
-.form-agreement a:hover {
-    color: var(--accent-gold);
-}
 
 .form-action {
     margin-top: 1.5rem;
@@ -885,7 +828,7 @@
 }
 
 .benefit-card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-5px);
     border-color: rgba(153, 0, 0, 0.3);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }

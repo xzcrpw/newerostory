@@ -1,28 +1,24 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" x-data :lang="$store.i18n.selectedLang">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Вхід та реєстрація — Таємний Світ</title>
+  <!-- Title використовує i18n -->
+  <title x-text="`${$store.i18n.t('general.login')} / ${$store.i18n.t('general.register')} — ${$store.i18n.t('general.copyright')}`"></title>
 
+  <!-- Стилі, Шрифти, Font Awesome, Alpine, API, i18n -->
+  <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/login.css">
-
-  <!-- Шрифти -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Font Awesome для іконок -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
-
-  <!-- Alpine.js для інтерактивності -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+  <script type="module" src="js/i18n.js" defer></script>
+  <!-- login.js більше не потрібен, оскільки логіка перенесена в x-data -->
 
-  <!-- API конфігурація -->
-  <script src="js/api-config.js"></script>
-
-  <!-- Скрипт для авторизації -->
-  <script src="js/login.js"></script>
 </head>
 <body x-data="{
     activeTab: 'login',
@@ -33,32 +29,242 @@
     registerEmail: '',
     registerPassword: '',
     registerPasswordConfirm: '',
+    agreeTermsRegister: false,
     resetEmail: '',
     errorMessage: '',
     successMessage: '',
     isSubmitting: false,
+    rememberMe: false,
 
-    // Використовуємо функції, визначені в скрипті
-    ...window.loginFormFunctions
-}">
+    // --- Допоміжні функції валідації ---
+    validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(String(email).toLowerCase());
+    },
+    validatePasswordStrength(password) {
+        // Приклад: мінімум 8 символів
+        return password && password.length >= 8;
+    },
+    clearMessages() {
+        this.errorMessage = '';
+        this.successMessage = '';
+    },
+
+    // --- Функція входу ---
+    async submitLogin() {
+        this.clearMessages();
+        if (!this.loginEmail || !this.loginPassword) {
+            this.errorMessage = $store.i18n.t('auth.errorRequiredFields');
+            return;
+        }
+        if (!this.validateEmail(this.loginEmail)) {
+            this.errorMessage = $store.i18n.t('auth.emailInvalid');
+            return;
+        }
+
+        this.isSubmitting = true;
+        try {
+            await api.auth.login(this.loginEmail, this.loginPassword);
+            this.successMessage = $store.i18n.t('notifications.loginSuccess');
+            console.log('Remember me setting:', this.rememberMe); // Логування для відладки
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') || 'index.html';
+            // Затримка перед перенаправленням, щоб користувач побачив повідомлення
+            setTimeout(() => { window.location.href = redirectUrl; }, 1000);
+        } catch (error) {
+            this.errorMessage = error.message || $store.i18n.t('auth.invalidCredentials');
+            console.error('Login error:', error);
+            this.isSubmitting = false; // Дозволяємо спробувати ще раз
+        }
+        // Не робимо isSubmitting = false при успіху, бо йде редірект
+    },
+
+    // --- Функція реєстрації ---
+    async submitRegister() {
+        this.clearMessages();
+        if (!this.registerName.trim() || !this.registerEmail || !this.registerPassword || !this.registerPasswordConfirm) {
+            this.errorMessage = $store.i18n.t('auth.errorRequiredFields');
+            return;
+        }
+        if (!this.validateEmail(this.registerEmail)) {
+            this.errorMessage = $store.i18n.t('auth.emailInvalid');
+            return;
+        }
+        if (!this.validatePasswordStrength(this.registerPassword)) {
+            this.errorMessage = $store.i18n.t('auth.passwordInvalid');
+            return;
+        }
+        if (this.registerPassword !== this.registerPasswordConfirm) {
+            this.errorMessage = $store.i18n.t('auth.passwordsDontMatch');
+            return;
+        }
+        if (!this.agreeTermsRegister) {
+            this.errorMessage = $store.i18n.t('auth.termsRequired');
+            return;
+        }
+
+        this.isSubmitting = true;
+        try {
+            await api.auth.register(this.registerName.trim(), this.registerEmail, this.registerPassword);
+            this.successMessage = $store.i18n.t('notifications.registerSuccess');
+            // Очищаємо поля і перемикаємо вкладку
+            this.registerName = ''; this.registerEmail = ''; this.registerPassword = '';
+            this.registerPasswordConfirm = ''; this.agreeTermsRegister = false;
+            this.activeTab = 'login';
+            // Встановлюємо фокус на поле email для зручності
+            this.$nextTick(() => { document.getElementById('loginEmail')?.focus(); });
+        } catch (error) {
+            this.errorMessage = error.message || $store.i18n.t('auth.registerError');
+            console.error('Register error:', error);
+        } finally {
+            this.isSubmitting = false; // Завжди знімаємо блокування кнопки
+        }
+    },
+
+    // --- Функція відновлення паролю ---
+    async submitResetPassword() {
+        this.clearMessages();
+        if (!this.resetEmail) {
+            this.errorMessage = $store.i18n.t('auth.emailRequired');
+            return;
+        }
+        if (!this.validateEmail(this.resetEmail)) {
+            this.errorMessage = $store.i18n.t('auth.emailInvalid');
+            return;
+        }
+
+        this.isSubmitting = true;
+        try {
+            await api.auth.forgotPassword(this.resetEmail);
+            this.successMessage = $store.i18n.t('auth.resetPasswordSuccess');
+            this.resetEmail = '';
+            // Не закриваємо форму, даємо користувачу прочитати
+        } catch (error) {
+            console.error('Reset Password error:', error);
+            // Показуємо те саме повідомлення для безпеки
+            this.successMessage = $store.i18n.t('auth.resetPasswordSuccess');
+            this.resetEmail = '';
+        } finally {
+            this.isSubmitting = false;
+        }
+    },
+
+    // --- OAuth ---
+    loginWithGoogle() {
+        this.clearMessages();
+        this.isSubmitting = true;
+        this.successMessage = $store.i18n.t('auth.redirectingToGoogle');
+        try {
+             setTimeout(() => {
+                 api.auth.googleLoginRedirect();
+             }, 500);
+        } catch (error) {
+             this.errorMessage = $store.i18n.t('auth.googleRedirectError');
+             console.error('Google login redirect error:', error);
+             this.isSubmitting = false;
+             this.successMessage = '';
+        }
+    },
+    loginWithFacebook() {
+        this.clearMessages();
+        this.errorMessage = $store.i18n.t('auth.facebookNotImplemented');
+        // TODO: Реалізувати Facebook OAuth
+    },
+
+    // --- Перемикання вкладок/форм ---
+    switchToRegister() {
+        this.activeTab = 'register';
+        this.clearMessages();
+        this.showResetPassword = false;
+    },
+    switchToLogin() {
+        this.activeTab = 'login';
+        this.clearMessages();
+        this.showResetPassword = false;
+    },
+    toggleResetPassword() {
+        this.showResetPassword = !this.showResetPassword;
+        this.clearMessages();
+        if (!this.showResetPassword) {
+            this.resetEmail = ''; // Очищаємо поле при закритті
+        }
+    }
+}" x-init="
+    // Перевірка, чи користувач вже залогінений
+    if (api.utils.isAuthenticated()) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect') || 'index.html';
+        window.location.href = redirectUrl; // Перенаправляємо, якщо вже залогінений
+    }
+
+    // Перевірка параметра 'tab' в URL для вибору вкладки
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'register') { activeTab = 'register'; }
+
+    // Обробка параметрів після повернення з OAuth
+    const oauthToken = urlParams.get('token');
+    const oauthError = urlParams.get('error');
+    const oauthIsPremium = urlParams.get('isPremium');
+    const oauthUserId = urlParams.get('userId');
+
+    if (oauthToken) {
+        api.utils.setToken(oauthToken);
+        api.utils.setPremiumStatus(oauthIsPremium === 'true');
+        api.utils.setUserId(oauthUserId || null);
+
+        const redirectAfterOAuth = urlParams.get('redirect') || 'index.html';
+
+        // Видаляємо OAuth параметри з URL
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('token');
+        cleanUrl.searchParams.delete('error');
+        cleanUrl.searchParams.delete('isPremium');
+        cleanUrl.searchParams.delete('userId');
+        window.history.replaceState({}, document.title, cleanUrl.toString());
+
+        window.location.href = redirectAfterOAuth; // Перенаправляємо
+
+    } else if (oauthError) {
+        errorMessage = decodeURIComponent(oauthError);
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('error');
+        window.history.replaceState({}, document.title, cleanUrl.toString());
+    }
+">
 
 <!-- Хедер -->
 <header>
   <div class="container">
     <nav class="navbar">
       <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-
       <ul class="nav-links">
-        <li><a href="index.html">Головна</a></li>
-        <li><a href="new-stories.html">Нові історії</a></li>
-        <li><a href="top-stories.html">Топ рейтинг</a></li>
-        <li><a href="categories.html">Категорії</a></li>
-        <li><a href="authors.html">Автори</a></li>
+        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
-
-      <div class="lang-dropdown">
-        <span>UA</span>
-        <i class="fas fa-chevron-down"></i>
+      <div class="auth-buttons">
+        <!-- Мовний перемикач -->
+        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+          <div class="lang-dropdown-button" @click="open = !open">
+            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          </div>
+          <div class="lang-dropdown-menu" x-show="open" x-transition>
+            <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <div class="lang-dropdown-item"
+                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                <span x-text="lang.name"></span>
+                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+              </div>
+            </template>
+          </div>
+        </div>
+        <!-- Кнопки відсутні на сторінці логіну/реєстрації -->
       </div>
     </nav>
   </div>
@@ -70,95 +276,59 @@
     <!-- Ліва частина з зображенням -->
     <div class="auth-image">
       <div class="auth-quote">
-        <div class="auth-quote-text">"Вхід у світ таємних фантазій, де історії такі ж гарячі, як ваша уява."</div>
-        <div class="auth-quote-author">Таємний Світ</div>
+        <div class="auth-quote-text" x-text="activeTab === 'login' ? ($store.i18n.t('auth.quoteLogin') || 'Вхід у світ таємних фантазій, де історії такі ж гарячі, як ваша уява.') : ($store.i18n.t('auth.quoteRegister') || 'Приєднуйтесь до нашої спільноти та відкрийте для себе світ еротичних фантазій.')"></div>
+        <div class="auth-quote-author" x-text="$store.i18n.t('general.copyright')"></div>
       </div>
     </div>
 
     <!-- Права частина з формами -->
     <div class="auth-forms">
-      <!-- Перемикач між формами логіну та реєстрації -->
+      <!-- Перемикач -->
       <div x-show="!showResetPassword">
         <div class="auth-tabs">
-          <div
-                  class="auth-tab"
-                  :class="{ 'active': activeTab === 'login' }"
-                  @click="activeTab = 'login'"
-          >
-            Вхід
-          </div>
-          <div
-                  class="auth-tab"
-                  :class="{ 'active': activeTab === 'register' }"
-                  @click="activeTab = 'register'"
-          >
-            Реєстрація
-          </div>
+          <div class="auth-tab" :class="{ 'active': activeTab === 'login' }" @click="switchToLogin()" x-text="$store.i18n.t('general.login')"></div>
+          <div class="auth-tab" :class="{ 'active': activeTab === 'register' }" @click="switchToRegister()" x-text="$store.i18n.t('general.register')"></div>
         </div>
       </div>
 
-      <!-- Повідомлення про помилку -->
-      <div x-show="errorMessage" class="error-message">
-        <i class="fas fa-exclamation-circle"></i>
-        <span x-text="errorMessage"></span>
+      <!-- Повідомлення -->
+      <div x-show="errorMessage" x-transition class="error-message">
+        <i class="fas fa-exclamation-circle"></i> <span x-text="errorMessage"></span>
       </div>
-
-      <!-- Повідомлення про успіх -->
-      <div x-show="successMessage" class="success-message">
-        <i class="fas fa-check-circle"></i>
-        <span x-text="successMessage"></span>
+      <div x-show="successMessage" x-transition class="success-message">
+        <i class="fas fa-check-circle"></i> <span x-text="successMessage"></span>
       </div>
 
       <!-- Форма входу -->
       <div x-show="activeTab === 'login' && !showResetPassword" class="auth-form">
         <form @submit.prevent="submitLogin()">
           <div class="form-group">
-            <label for="loginEmail" class="form-label">Електронна пошта</label>
-            <input
-                    type="email"
-                    id="loginEmail"
-                    class="form-input"
-                    placeholder="Введіть вашу електронну пошту"
-                    x-model="loginEmail"
-                    required
-            >
+            <label for="loginEmail" class="form-label" x-text="$store.i18n.t('auth.emailLabel')"></label>
+            <input type="email" id="loginEmail" class="form-input" :placeholder="$store.i18n.t('auth.emailPlaceholder')" x-model="loginEmail" required aria-required="true">
           </div>
-
           <div class="form-group">
-            <label for="loginPassword" class="form-label">Пароль</label>
-            <input
-                    type="password"
-                    id="loginPassword"
-                    class="form-input"
-                    placeholder="Введіть ваш пароль"
-                    x-model="loginPassword"
-                    required
-            >
+            <label for="loginPassword" class="form-label" x-text="$store.i18n.t('auth.passwordLabel')"></label>
+            <input type="password" id="loginPassword" class="form-input" :placeholder="$store.i18n.t('auth.passwordPlaceholder')" x-model="loginPassword" required aria-required="true">
             <div class="form-help">
-              <div>
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">Запам'ятати мене</label>
+              <div class="checkbox-group">
+                <input type="checkbox" id="rememberMe" x-model="rememberMe">
+                <label for="rememberMe" x-text="$store.i18n.t('auth.rememberMe')"></label>
               </div>
-              <a href="#" @click.prevent="showResetPassword = true">Забули пароль?</a>
+              <a href="#" @click.prevent="toggleResetPassword()" x-text="$store.i18n.t('auth.forgotPassword')"></a>
             </div>
           </div>
-
-          <button type="submit" class="btn btn-primary form-submit" :disabled="isSubmitting">
-            <span x-show="!isSubmitting">Увійти</span>
-            <span x-show="isSubmitting">
-              <i class="fas fa-spinner fa-spin"></i> Обробка...
-            </span>
+          <button type="submit" class="btn btn-primary form-submit processing" :disabled="isSubmitting">
+            <span x-show="!isSubmitting" x-text="$store.i18n.t('general.login')"></span>
+            <span x-show="isSubmitting"><span x-text="$store.i18n.t('general.loggingIn')"></span></span> <!-- Спінер додається CSS -->
           </button>
         </form>
-
-        <div class="auth-divider">або</div>
-
+        <div class="auth-divider" x-text="$store.i18n.t('auth.orLoginWith')"></div>
         <div class="social-login">
-          <button class="social-btn google-btn" @click="loginWithGoogle()" :disabled="isSubmitting">
-            <i class="fab fa-google"></i> Google
+          <button @click="loginWithGoogle()" class="btn btn-social google-btn">
+            <i class="fab fa-google"></i> <span x-text="$store.i18n.t('auth.loginWithGoogle')"></span>
           </button>
-          <button class="social-btn facebook-btn" @click="loginWithFacebook()" :disabled="isSubmitting">
-            <i class="fab fa-facebook-f"></i> Facebook
+          <button @click="loginWithFacebook()" class="btn btn-social facebook-btn">
+            <i class="fab fa-facebook-f"></i> <span x-text="$store.i18n.t('auth.loginWithFacebook')"></span>
           </button>
         </div>
       </div>
@@ -167,115 +337,135 @@
       <div x-show="activeTab === 'register' && !showResetPassword" class="auth-form">
         <form @submit.prevent="submitRegister()">
           <div class="form-group">
-            <label for="registerName" class="form-label">Ім'я</label>
-            <input
-                    type="text"
-                    id="registerName"
-                    class="form-input"
-                    placeholder="Введіть ваше ім'я"
-                    x-model="registerName"
-                    required
-            >
+            <label for="registerName" class="form-label" x-text="$store.i18n.t('auth.registerNameLabel')"></label>
+            <input type="text" id="registerName" class="form-input" :placeholder="$store.i18n.t('auth.registerNamePlaceholder')" x-model="registerName" required aria-required="true">
           </div>
-
           <div class="form-group">
-            <label for="registerEmail" class="form-label">Електронна пошта</label>
-            <input
-                    type="email"
-                    id="registerEmail"
-                    class="form-input"
-                    placeholder="Введіть вашу електронну пошту"
-                    x-model="registerEmail"
-                    required
-            >
+            <label for="registerEmail" class="form-label" x-text="$store.i18n.t('auth.emailLabel')"></label>
+            <input type="email" id="registerEmail" class="form-input" :placeholder="$store.i18n.t('auth.emailPlaceholder')" x-model="registerEmail" required aria-required="true">
           </div>
-
           <div class="form-group">
-            <label for="registerPassword" class="form-label">Пароль</label>
-            <input
-                    type="password"
-                    id="registerPassword"
-                    class="form-input"
-                    placeholder="Створіть пароль (мінімум 6 символів)"
-                    x-model="registerPassword"
-                    required
-            >
+            <label for="registerPassword" class="form-label" x-text="$store.i18n.t('auth.passwordLabel')"></label>
+            <input type="password" id="registerPassword" class="form-input" :placeholder="`${$store.i18n.t('auth.passwordPlaceholder')} (${$store.i18n.t('auth.passwordMinChars')})`" x-model="registerPassword" required aria-required="true" minlength="8">
           </div>
-
           <div class="form-group">
-            <label for="registerPasswordConfirm" class="form-label">Підтвердження паролю</label>
-            <input
-                    type="password"
-                    id="registerPasswordConfirm"
-                    class="form-input"
-                    placeholder="Повторіть пароль"
-                    x-model="registerPasswordConfirm"
-                    required
-            >
+            <label for="registerPasswordConfirm" class="form-label" x-text="$store.i18n.t('auth.confirmPasswordLabel')"></label>
+            <input type="password" id="registerPasswordConfirm" class="form-input" :placeholder="$store.i18n.t('auth.confirmPasswordPlaceholder')" x-model="registerPasswordConfirm" required aria-required="true">
           </div>
-
           <div class="form-group">
-            <input type="checkbox" id="agreeTerms" required>
-            <label for="agreeTerms">Я погоджуюсь з <a href="terms.html">умовами використання</a> та <a href="privacy.html">політикою конфіденційності</a>.</label>
+            <div class="checkbox-group">
+              <input type="checkbox" id="agreeTermsRegister" x-model="agreeTermsRegister" required aria-required="true">
+              <label for="agreeTermsRegister">
+                <span x-text="$store.i18n.t('auth.agreeTermsStart')"></span>
+                <a href="terms-page.html" target="_blank" x-text="$store.i18n.t('auth.termsLink')"></a>
+                <span x-text="$store.i18n.t('auth.agreeTermsAnd')"></span>
+                <a href="privacy-policy.html" target="_blank" x-text="$store.i18n.t('auth.privacyLink')"></a>.
+              </label>
+            </div>
           </div>
-
-          <button type="submit" class="btn btn-primary form-submit" :disabled="isSubmitting">
-            <span x-show="!isSubmitting">Зареєструватися</span>
-            <span x-show="isSubmitting">
-              <i class="fas fa-spinner fa-spin"></i> Обробка...
-            </span>
+          <button type="submit" class="btn btn-primary form-submit processing" :disabled="isSubmitting">
+            <span x-show="!isSubmitting" x-text="$store.i18n.t('general.register')"></span>
+            <span x-show="isSubmitting"><span x-text="$store.i18n.t('general.registering')"></span></span>
           </button>
         </form>
+        <div class="auth-divider" x-text="$store.i18n.t('auth.orRegisterWith')"></div>
+        <div class="social-login">
+          <button @click="loginWithGoogle()" class="btn btn-social google-btn">
+            <i class="fab fa-google"></i> <span x-text="$store.i18n.t('auth.loginWithGoogle')"></span>
+          </button>
+          <button @click="loginWithFacebook()" class="btn btn-social facebook-btn">
+            <i class="fab fa-facebook-f"></i> <span x-text="$store.i18n.t('auth.loginWithFacebook')"></span>
+          </button>
+        </div>
       </div>
 
       <!-- Форма відновлення паролю -->
       <div x-show="showResetPassword" class="reset-password-form">
-        <div class="reset-icon">
-          <i class="fas fa-key"></i>
-        </div>
-
-        <h2 class="reset-title">Відновлення паролю</h2>
-        <p class="reset-description">Введіть вашу електронну пошту, і ми надішлемо вам інструкції для відновлення паролю.</p>
-
+        <div class="reset-icon"><i class="fas fa-key"></i></div>
+        <h2 class="reset-title" x-text="$store.i18n.t('auth.resetPasswordTitle')"></h2>
+        <p class="reset-description" x-text="$store.i18n.t('auth.resetPasswordDescription')"></p>
         <form @submit.prevent="submitResetPassword()">
           <div class="form-group">
-            <input
-                    type="email"
-                    class="form-input"
-                    placeholder="Введіть вашу електронну пошту"
-                    x-model="resetEmail"
-                    required
-            >
+            <label for="resetEmail" class="form-label visually-hidden" x-text="$store.i18n.t('auth.emailLabel')"></label>
+            <input type="email" id="resetEmail" class="form-input" :placeholder="$store.i18n.t('auth.emailPlaceholder')" x-model="resetEmail" required aria-required="true">
           </div>
-
-          <button type="submit" class="btn btn-primary form-submit" :disabled="isSubmitting">
-            <span x-show="!isSubmitting">Відновити пароль</span>
-            <span x-show="isSubmitting">
-              <i class="fas fa-spinner fa-spin"></i> Обробка...
-            </span>
+          <button type="submit" class="btn btn-primary form-submit processing" :disabled="isSubmitting">
+            <span x-show="!isSubmitting" x-text="$store.i18n.t('auth.resetPasswordButton')"></span>
+            <span x-show="isSubmitting"><span x-text="$store.i18n.t('general.sending')"></span></span>
           </button>
         </form>
-
-        <a href="#" class="back-link" @click.prevent="showResetPassword = false">
-          <i class="fas fa-arrow-left"></i> Повернутися до входу
+        <a href="#" class="back-link" @click.prevent="toggleResetPassword()">
+          <i class="fas fa-arrow-left"></i> <span x-text="$store.i18n.t('auth.backToLogin')"></span>
         </a>
       </div>
 
       <!-- Футер авторизації -->
       <div class="auth-footer">
         <div x-show="activeTab === 'login' && !showResetPassword">
-          Не маєте облікового запису? <a href="#" @click.prevent="activeTab = 'register'">Зареєструйтеся</a>
+          <span x-text="$store.i18n.t('auth.noAccount')"></span> <a href="#" @click.prevent="switchToRegister()" x-text="$store.i18n.t('auth.createAccountLink')"></a>
         </div>
         <div x-show="activeTab === 'register' && !showResetPassword">
-          Вже маєте обліковий запис? <a href="#" @click.prevent="activeTab = 'login'">Увійдіть</a>
+          <span x-text="$store.i18n.t('auth.alreadyRegistered')"></span> <a href="#" @click.prevent="switchToLogin()" x-text="$store.i18n.t('auth.goToLoginLink')"></a>
         </div>
         <div class="copyright">
-          &copy; 2023 Таємний Світ. Всі права захищені. 18+
+          © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+
         </div>
       </div>
     </div>
   </div>
 </main>
 
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <!-- Код футера з i18n, як в index.html -->
+    <div class="footer-content">
+      <div class="footer-section footer-about">
+        <h4 x-text="$store.i18n.t('general.about')"></h4>
+        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <div class="social-links">
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <ul>
+          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <ul>
+          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <ul>
+          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+    </div>
+  </div>
+</footer>
+
+<!-- Клас для приховування елементів для скрін-рідерів -->
+<style>.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }</style>
 </body>
 </html>

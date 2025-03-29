@@ -1,660 +1,998 @@
 <!DOCTYPE html>
-<html lang="uk">
+<!-- Додано :lang -->
+<html lang="uk" x-data :lang="$store.i18n.selectedLang">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Особистий профіль — Таємний Світ</title>
-    
+    <!-- Title використовує i18n -->
+    <title x-text="`${$store.i18n.t('general.profile')} — ${$store.i18n.t('general.copyright')}`"></title>
+
+    <!-- Мета-теги (для профілю зазвичай noindex, nofollow) -->
+    <meta name="robots" content="noindex, nofollow">
+
     <!-- Шрифти -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome для іконок -->
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
-    
-    <!-- Alpine.js для інтерактивності -->
+
+    <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- Підключення CSS стилів -->
+
+    <!-- API Config & Utils -->
+    <script src="js/api-config.js" defer></script>
+    <script src="js/api-utils.js" defer></script>
+
+    <!-- Internationalization -->
+    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
+    <!-- CSS -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/profile_styles.css">
+
+    <style>
+        /* Додаткові стилі для завантаження та помилок */
+        .loading-indicator-small {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: var(--secondary-text);
+            min-height: 100px; /* Мінімальна висота для індикатора */
+        }
+        .loading-spinner-small {
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-left-color: var(--accent-red);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-message-small {
+            color: #ff6b6b;
+            background-color: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+        }
+        .error-message-small i { margin-right: 0.7rem; }
+        .error-message-small button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+
+        /* Анімація для форм */
+        .profile-form-container[x-show] { display: block !important; } /* Потрібно для transition */
+        .profile-form-container { transition: opacity 0.3s ease-out, max-height 0.4s ease-out; opacity: 1; max-height: 1000px; overflow: hidden;}
+        /* Стилі для закритого стану анімації */
+        .profile-form-container[x-transition\:leave],
+        .profile-form-container[x-transition\:leave-start],
+        .profile-form-container[x-transition\:leave-end] {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            overflow: hidden;
+        }
+        /* Стилі для відкритого стану анімації */
+        .profile-form-container[x-transition\:enter-start] { max-height: 0; opacity: 0; }
+        .profile-form-container[x-transition\:enter-end] { max-height: 1000px; opacity: 1; }
+
+
+        /* Стилі для кнопки видалення/відписки */
+        .action-btn.removing, button.removing {
+            opacity: 0.7;
+            pointer-events: none; /* Заборонити повторне натискання */
+        }
+        .action-btn.removing i:not(.fa-spinner), button.removing i:not(.fa-spinner) { display: none; } /* Ховаємо стару іконку */
+        .action-btn.removing::after, button.removing::after, button:disabled.processing::after {
+            content: '\f110'; /* Іконка спіннера */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            margin-left: 5px;
+        }
+        /* Специфічно для кнопки відписки */
+        .following-actions button.removing::after { margin-left: 0; margin-right: 5px; }
+
+        /* Сповіщення */
+        .notification {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            background-color: var(--card-color); color: var(--text-color);
+            padding: 1rem 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
+            opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
+            min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
+        }
+        .notification.show { opacity: 1; bottom: 20px; }
+        /* Класи для success/error сповіщень */
+        .notification.success { border-left: 4px solid #4cd964; }
+        .notification.error { border-left: 4px solid #ff6b6b; }
+
+        /* Порожній стан для вкладок */
+        .empty-tab-message {
+            color: var(--secondary-text);
+            text-align: center;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+        /* Стиль для превью аватара */
+        .avatar-upload-preview {
+            width: 120px; height: 120px; border-radius: 50%;
+            margin: 0 auto 1rem; background-size: cover; background-position: center;
+            border: 3px solid rgba(153, 0, 0, 0.3); position: relative;
+        }
+        .avatar-upload-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; background-color: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s; cursor: pointer;
+        }
+        .avatar-upload-preview:hover .avatar-upload-overlay { opacity: 1; }
+        .avatar-upload-overlay i { color: white; font-size: 1.5rem; }
+        .avatar-remove-button {
+            background: none; border: none; color: #ff6b6b;
+            cursor: pointer; font-size: 0.9rem; margin-top: 0.5rem;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            /* display: flex; align-items: center; gap: 0.3rem; margin-left: auto; margin-right: auto; */ /* Варіант для центрування */
+        }
+        .avatar-remove-button:hover { text-decoration: underline; }
+
+    </style>
 </head>
 <body x-data="{
+    // --- Стани UI ---
     activeTab: 'saved',
     showEditProfile: false,
     showChangePassword: false,
     showSubscriptionSettings: false,
-    isPremiumUser: false,
-    
-    userName: 'Олександр Петренко',
-    userEmail: 'alex.petrenko@gmail.com',
-    userBio: 'Любитель еротичних історій та книг. Віддаю перевагу романтичним та фантазійним жанрам.',
-    userAvatar: 'https://source.unsplash.com/random/200x200/?portrait,man',
-    
-    setTab(tab) {
-        this.activeTab = tab;
+    isLoadingProfile: true,
+    isLoadingActivity: false,
+    isSavingProfile: false,
+    isChangingPassword: false,
+    isCancellingSubscription: false,
+    profileError: null,
+    activityError: null,
+    editFormError: null,
+    passwordFormError: null,
+    subscriptionError: null,
+    notificationVisible: false,
+    notificationMessage: '',
+    notificationTimeout: null,
+    hasUnsavedChanges: false, // Прапорець незбережених змін
+
+    // --- Дані користувача ---
+    userId: null, userName: '', userEmail: '', userBio: '', userAvatar: 'https://source.unsplash.com/random/200x200/?profile-placeholder',
+    isPremiumUser: false, subscriptionEndDate: null, paymentMethodInfo: null,
+    savedStoriesCount: 0, readStoriesCount: 0, commentsCount: 0, followingCount: 0,
+
+    // --- Дані активності ---
+    savedStories: [], readingHistory: [], likedStories: [], userComments: [], followedAuthors: [],
+
+    // --- Дані форм ---
+    editUserName: '', editUserBio: '', editUserAvatarFile: null, avatarPreviewUrl: '',
+    currentPassword: '', newPassword: '', confirmPassword: '',
+
+    // --- Допоміжні функції ---
+    validatePasswordStrength(password) { return password && password.length >= 8; },
+    clearMessages() { this.editFormError = null; this.passwordFormError = null; this.subscriptionError = null; this.activityError = null; },
+    showNotification(message, isSuccess = true) {
+        this.notificationMessage = message;
+        const el = document.getElementById('global-notification');
+        if(el) { el.classList.toggle('success', isSuccess); el.classList.toggle('error', !isSuccess); }
+        this.notificationVisible = true;
+        if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
     },
-    
+
+    // --- Завантаження даних профілю (з i18n) ---
+    async fetchProfileData() {
+        this.isLoadingProfile = true; this.profileError = null;
+        try {
+            console.log('Simulating API call: getCurrentUser');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            // const userData = await api.users.getCurrentUser(); // Реальний виклик
+             const userData = { // Симуляція
+                 _id: 'user123abc', name: 'Тестовий Користувач', email: 'test@e.world',
+                 bio: 'Люблю читати та писати захопливі історії. Приєднуйтесь до мого світу фантазій!',
+                 avatarUrl: 'https://source.unsplash.com/random/200x200/?profile,user',
+                 isPremium: Math.random() < 0.3, // 30% шанс бути преміум
+                 subscriptionEndDate: Math.random() < 0.3 ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() : null, // Якщо преміум, то дата закінчення
+                 paymentMethodLast4: Math.random() < 0.3 ? '4242' : null,
+                 stats: { savedCount: 15, readCount: 48, commentsCount: 7, followingCount: 3 }
+             };
+
+            this.userId = userData._id; this.userName = userData.name; this.userEmail = userData.email;
+            this.userBio = userData.bio || ''; this.userAvatar = userData.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.isPremiumUser = userData.isPremium || false;
+            this.subscriptionEndDate = userData.subscriptionEndDate ? new Date(userData.subscriptionEndDate).toLocaleDateString($store.i18n.selectedLang || 'uk-UA') : null;
+            this.paymentMethodInfo = userData.paymentMethodLast4 ? `**** ${userData.paymentMethodLast4}` : $store.i18n.t('profile.paymentMethodNotSet'); // i18n
+            this.savedStoriesCount = userData.stats?.savedCount || 0; this.readStoriesCount = userData.stats?.readCount || 0;
+            this.commentsCount = userData.stats?.commentsCount || 0; this.followingCount = userData.stats?.followingCount || 0;
+            // Ініціалізуємо дані форм
+            this.editUserName = this.userName; this.editUserBio = this.userBio; this.avatarPreviewUrl = this.userAvatar;
+        } catch (error) {
+            this.profileError = error.message || $store.i18n.t('profile.errorLoadingProfile'); // i18n
+            console.error('Profile fetch error:', error);
+            // Якщо помилка авторизації, перенаправляємо на логін
+            if (error.message.includes('автентифікація') || error.message.toLowerCase().includes('unauthorized') || error.message.includes('401')) {
+                 this.showNotification($store.i18n.t('auth.sessionExpired') || 'Сесія застаріла. Будь ласка, увійдіть знову.', false);
+                 setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1500);
+            }
+        } finally { this.isLoadingProfile = false; }
+    },
+
+    // --- Завантаження даних активності (з i18n) ---
+    async fetchActivityData(tab) {
+        if (!this.userId || this.isLoadingActivity) return;
+        this.isLoadingActivity = true; this.activityError = null;
+        console.log(`Fetching data for tab: ${tab}`);
+        // Очищаємо відповідні масиви перед завантаженням
+        this.savedStories = tab === 'saved' ? [] : this.savedStories;
+        this.readingHistory = tab === 'history' ? [] : this.readingHistory;
+        this.likedStories = tab === 'likes' ? [] : this.likedStories;
+        this.userComments = tab === 'comments' ? [] : this.userComments;
+        this.followedAuthors = tab === 'following' ? [] : this.followedAuthors;
+
+        try {
+             console.log(`Simulating API call for tab: ${tab}`);
+             await new Promise(resolve => setTimeout(resolve, 650));
+            // --- Симуляція відповіді API ---
+            switch(tab) {
+                case 'saved':
+                    // await api.users.getBookmarks({ limit: 20 }); // Реальний виклик
+                    this.savedStories = [
+                         { _id: 's1', title: 'Ніч у потязі', category: { name: $store.i18n.t('createStory.categoryRomance') }, author: { name: 'Олександра', avatarUrl: '...' } },
+                         { _id: 's2', title: 'Гра на межі', category: { name: $store.i18n.t('createStory.categoryBDSM') }, author: { name: 'Максим', avatarUrl: '...' } }
+                    ];
+                    break;
+                case 'history':
+                    // await api.users.getReadingHistory({ limit: 30 }); // Реальний виклик
+                     this.readingHistory = [
+                         { _id: 's3', title: 'Перший досвід: Несподіванка', category: { name: $store.i18n.t('createStory.categoryFirstTime') }, viewedAt: new Date(Date.now() - 3600000).toISOString() },
+                         { _id: 's1', title: 'Ніч у потязі', category: { name: $store.i18n.t('createStory.categoryRomance') }, viewedAt: new Date(Date.now() - 2 * 3600000).toISOString() }
+                    ];
+                    break;
+                case 'likes':
+                     // await api.users.getLikedStories({ limit: 20 }); // Реальний виклик
+                     this.likedStories = [
+                         { _id: 's4', title: 'Офісний роман під прикриттям', category: { name: $store.i18n.t('createStory.categoryOffice') }, authorName: 'Анна К.', authorAvatar: '...' },
+                         { _id: 's1', title: 'Ніч у потязі', category: { name: $store.i18n.t('createStory.categoryRomance') }, authorName: 'Олександра', authorAvatar: '...' }
+                     ];
+                    break;
+                case 'comments':
+                    // await api.users.getMyComments({ limit: 20 }); // Реальний виклик
+                     this.userComments = [
+                         { _id: 'c1', text: 'Дуже сподобалось!', storyTitle: 'Ніч у потязі', storyId: 's1', createdAt: new Date(Date.now() - 86400000).toISOString(), likes: 3 },
+                         { _id: 'c2', text: 'Чекаю продовження!', storyTitle: 'Гра на межі', storyId: 's2', createdAt: new Date(Date.now() - 2 * 86400000).toISOString(), likes: 1 }
+                    ];
+                    break;
+                case 'following':
+                    // await api.users.getFollowing({ limit: 20 }); // Реальний виклик
+                    this.followedAuthors = [
+                         { _id: 'author1', name: 'Олександра', bio: 'Пишу романтичні історії.', avatarUrl: '...', stats: { storyCount: 5, averageRating: 4.8, followersCount: 120 } },
+                         { _id: 'author2', name: 'Максим', bio: 'Люблю гострі відчуття.', avatarUrl: '...', stats: { storyCount: 10, averageRating: 4.5, followersCount: 85 } }
+                    ];
+                    break;
+            }
+        } catch (error) {
+            this.activityError = error.message || $store.i18n.t('profile.errorLoadingActivityTab', { tab: $store.i18n.t(`profile.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`) }); // i18n
+            console.error(`Activity fetch error (${tab}):`, error);
+        } finally { this.isLoadingActivity = false; }
+    },
+
+    // --- Зміна вкладки ---
+    setTab(tab) {
+        if (this.activeTab !== tab) {
+            this.activeTab = tab;
+            // Закриваємо форми редагування при зміні вкладки
+            this.showEditProfile = false;
+            this.showChangePassword = false;
+            this.showSubscriptionSettings = false;
+            this.clearMessages(); // Очищаємо повідомлення
+            this.fetchActivityData(tab); // Завантажуємо дані для нової вкладки
+        }
+    },
+
+    // --- Керування формами ---
     toggleEditProfile() {
         this.showEditProfile = !this.showEditProfile;
-        this.showChangePassword = false;
+        this.showChangePassword = false; // Закриваємо інші форми
         this.showSubscriptionSettings = false;
+        this.clearMessages();
+        // Скидаємо дані форми редагування до поточних значень, якщо закриваємо
+         if (!this.showEditProfile) {
+             this.editUserName = this.userName;
+             this.editUserBio = this.userBio;
+             this.avatarPreviewUrl = this.userAvatar;
+             this.editUserAvatarFile = null;
+             if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
+             this.hasUnsavedChanges = false; // Скидаємо прапорець при закритті
+         }
     },
-    
     toggleChangePassword() {
         this.showChangePassword = !this.showChangePassword;
-        this.showEditProfile = false;
+        this.showEditProfile = false; // Закриваємо інші форми
         this.showSubscriptionSettings = false;
+        this.clearMessages();
+        // Скидаємо поля паролів, якщо закриваємо
+         if (!this.showChangePassword) {
+             this.currentPassword = '';
+             this.newPassword = '';
+             this.confirmPassword = '';
+             this.hasUnsavedChanges = false; // Скидаємо прапорець при закритті
+         }
     },
-    
     toggleSubscriptionSettings() {
         this.showSubscriptionSettings = !this.showSubscriptionSettings;
-        this.showEditProfile = false;
+        this.showEditProfile = false; // Закриваємо інші форми
         this.showChangePassword = false;
+        this.clearMessages();
     },
-    
-    saveProfile() {
-        // Тут буде AJAX запит для збереження даних профілю
-        alert('Профіль збережено успішно!');
-        this.showEditProfile = false;
-    },
-    
-    changePassword() {
-        // Тут буде AJAX запит для зміни пароля
-        alert('Пароль змінено успішно!');
-        this.showChangePassword = false;
-    },
-    
-    upgradeAccount() {
-        // Перенаправлення на сторінку оплати
-        window.location.href = 'premium.html';
-    },
-    
-    cancelSubscription() {
-        if (confirm('Ви впевнені, що хочете скасувати підписку? Ви втратите доступ до преміум-контенту.')) {
-            // Тут буде AJAX запит для скасування підписки
-            this.isPremiumUser = false;
-            alert('Підписку скасовано. Вона діятиме до кінця оплаченого періоду.');
+
+    // --- Обробка завантаження аватара (з i18n) ---
+    handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) { this.editFormError = null; return; } // Очищаємо помилку, якщо файл не вибрано
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const maxSize = 2 * 1024 * 1024; // 2MB
+
+        if (!allowedTypes.includes(file.type)) {
+            this.editFormError = $store.i18n.t('profile.errorAvatarType'); // i18n
+            event.target.value = null; // Скидаємо input file
+            return;
         }
-    },
-    
-    removeFromSaved(itemId) {
-        if (confirm('Ви впевнені, що хочете видалити цей елемент із збережених?')) {
-            // Тут буде AJAX запит для видалення елемента з збережених
-            console.log('Видалено елемент із збережених:', itemId);
-            
-            // Тут можна додати логіку видалення елемента з DOM
-            const element = document.getElementById('saved-item-' + itemId);
-            if (element) {
-                element.remove();
-            }
+        if (file.size > maxSize) {
+            this.editFormError = $store.i18n.t('profile.errorAvatarSize', { size: '2MB' }); // i18n
+            event.target.value = null; // Скидаємо input file
+            return;
         }
-    }
-}">
+        this.editFormError = null;
+        this.editUserAvatarFile = file;
+        this.storyImageUrl = null; // Скидаємо URL існуючого, якщо він був
+        // Превью
+        const reader = new FileReader();
+        reader.onload = (e) => { this.avatarPreviewUrl = e.target.result; };
+        reader.readAsDataURL(file);
+        this.setUnsavedChanges(); // Позначаємо зміни
+    },
+    removeAvatarPreview() {
+        this.avatarPreviewUrl = this.userAvatar; // Повертаємо старий аватар для превью
+        this.editUserAvatarFile = null;
+        if (this.$refs.avatarUploadInput) { this.$refs.avatarUploadInput.value = null; }
+        this.setUnsavedChanges(); // Позначаємо зміни (або можна вважати поверненням до початкового стану)
+    },
+    setUnsavedChanges() { if (this.showEditProfile || this.showChangePassword) this.hasUnsavedChanges = true; }, // Тільки для відкритих форм
 
-    <!-- Хедер -->
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-                
-                <ul class="nav-links">
-                    <li><a href="index.html">Головна</a></li>
-                    <li><a href="new-stories.html">Нові історії</a></li>
-                    <li><a href="top-stories.html">Топ рейтинг</a></li>
-                    <li><a href="categories.html">Категорії</a></li>
-                    <li><a href="authors.html">Автори</a></li>
-                </ul>
-                
-                <div class="auth-buttons">
-                    <div class="lang-dropdown">
-                        <span>UA</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <a href="#" class="btn btn-outline active">
-                        <i class="fas fa-user"></i> Профіль
-                    </a>
-                    <a href="index.html" class="btn btn-primary">
-                        <i class="fas fa-sign-out-alt"></i> Вийти
-                    </a>
-                </div>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Основний контент -->
-    <main class="container">
-        <!-- Хлібні крихти -->
-        <div class="breadcrumbs">
-            <a href="index.html">Головна</a>
-            <span class="separator">/</span>
-            <span class="current">Профіль</span>
-        </div>
-        
-        <!-- Секція профілю -->
-        <div class="profile-section">
-            <!-- Сайдбар профілю -->
-            <aside class="profile-sidebar">
-                <div class="profile-card">
-                    <div class="profile-header">
-                        <div class="profile-avatar" :style="{ backgroundImage: `url(${userAvatar})` }"></div>
-                        <div class="profile-status" :class="{ 'premium-status': isPremiumUser }">
-                            <i :class="isPremiumUser ? 'fas fa-crown' : 'fas fa-user'"></i>
-                            <span x-text="isPremiumUser ? 'Преміум' : 'Базовий'"></span>
-                        </div>
-                    </div>
-                    <div class="profile-info">
-                        <h1 class="profile-name" x-text="userName"></h1>
-                        <div class="profile-email" x-text="userEmail"></div>
-                        <div class="profile-bio" x-text="userBio"></div>
-                    </div>
-                    <div class="profile-stats">
-                        <div class="profile-stat">
-                            <div class="stat-value">42</div>
-                            <div class="stat-label">Збережено</div>
-                        </div>
-                        <div class="profile-stat">
-                            <div class="stat-value">126</div>
-                            <div class="stat-label">Прочитано</div>
-                        </div>
-                        <div class="profile-stat">
-                            <div class="stat-value">18</div>
-                            <div class="stat-label">Коментарів</div>
-                        </div>
-                    </div>
-                    <div class="profile-actions">
-                        <button @click="toggleEditProfile()" class="btn-action">
-                            <i class="fas fa-edit"></i> Редагувати профіль
-                        </button>
-                        <button @click="toggleChangePassword()" class="btn-action">
-                            <i class="fas fa-key"></i> Змінити пароль
-                        </button>
-                        <template x-if="!isPremiumUser">
-                            <button @click="upgradeAccount()" class="btn-action premium-action">
-                                <i class="fas fa-crown"></i> Отримати преміум
-                            </button>
-                        </template>
-                        <template x-if="isPremiumUser">
-                            <button @click="toggleSubscriptionSettings()" class="btn-action premium-action">
-                                <i class="fas fa-cog"></i> Налаштування підписки
-                            </button>
-                        </template>
-                    </div>
-                </div>
-                
-                <div class="profile-menu">
-                    <button @click="setTab('saved')" :class="{ 'active': activeTab === 'saved' }" class="menu-item">
-                        <i class="fas fa-bookmark"></i> Збережені історії
-                    </button>
-                    <button @click="setTab('history')" :class="{ 'active': activeTab === 'history' }" class="menu-item">
-                        <i class="fas fa-history"></i> Історія переглядів
-                    </button>
-                    <button @click="setTab('likes')" :class="{ 'active': activeTab === 'likes' }" class="menu-item">
-                        <i class="fas fa-heart"></i> Вподобані історії
-                    </button>
-                    <button @click="setTab('comments')" :class="{ 'active': activeTab === 'comments' }" class="menu-item">
-                        <i class="fas fa-comments"></i> Мої коментарі
-                    </button>
-                    <button @click="setTab('following')" :class="{ 'active': activeTab === 'following' }" class="menu-item">
-                        <i class="fas fa-users"></i> Мої підписки
-                    </button>
-                </div>
-            </aside>
-            
-            <!-- Вміст профілю -->
-            <div class="profile-content">
-                <!-- Форма редагування профілю -->
-                <div x-show="showEditProfile" class="profile-form-container">
-                    <div class="form-card">
-                        <h2 class="form-title">Редагування профілю</h2>
-                        <form @submit.prevent="saveProfile()" class="profile-form">
-                            <div class="form-group">
-                                <label for="userName" class="form-label">Ім'я користувача</label>
-                                <input type="text" id="userName" class="form-input" x-model="userName" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="userEmail" class="form-label">Електронна пошта</label>
-                                <input type="email" id="userEmail" class="form-input" x-model="userEmail" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="userBio" class="form-label">Про себе</label>
-                                <textarea id="userBio" class="form-textarea" x-model="userBio" rows="4"></textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="userAvatar" class="form-label">URL аватару</label>
-                                <input type="url" id="userAvatar" class="form-input" x-model="userAvatar">
-                                <div class="form-help">Залиште порожнім для використання аватару за замовчуванням</div>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="button" @click="showEditProfile = false" class="btn btn-outline">Скасувати</button>
-                                <button type="submit" class="btn btn-primary">Зберегти зміни</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                
-                <!-- Форма зміни пароля -->
-                <div x-show="showChangePassword" class="profile-form-container">
-                    <div class="form-card">
-                        <h2 class="form-title">Зміна пароля</h2>
-                        <form @submit.prevent="changePassword()" class="profile-form">
-                            <div class="form-group">
-                                <label for="currentPassword" class="form-label">Поточний пароль</label>
-                                <input type="password" id="currentPassword" class="form-input" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="newPassword" class="form-label">Новий пароль</label>
-                                <input type="password" id="newPassword" class="form-input" required>
-                                <div class="form-help">Мінімум 8 символів, хоча б одна цифра та одна велика літера</div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="confirmPassword" class="form-label">Підтвердження нового пароля</label>
-                                <input type="password" id="confirmPassword" class="form-input" required>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="button" @click="showChangePassword = false" class="btn btn-outline">Скасувати</button>
-                                <button type="submit" class="btn btn-primary">Змінити пароль</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                
-                <!-- Налаштування підписки -->
-                <div x-show="showSubscriptionSettings" class="profile-form-container">
-                    <div class="form-card subscription-card">
-                        <h2 class="form-title">Налаштування підписки</h2>
-                        <div class="subscription-details">
-                            <div class="subscription-status">
-                                <i class="fas fa-crown"></i>
-                                <div class="status-text">
-                                    <h3>Преміум план</h3>
-                                    <p>Активний до: 15 грудня 2023</p>
-                                </div>
-                            </div>
-                            
-                            <div class="subscription-info">
-                                <p>Ваша підписка буде автоматично продовжена 15 грудня 2023 року.</p>
-                                <p>Спосіб оплати: Visa **** 1234</p>
-                            </div>
-                            
-                            <div class="subscription-actions">
-                                <button class="btn btn-outline" @click="showSubscriptionSettings = false">Закрити</button>
-                                <button class="btn btn-primary" @click="upgradeAccount()">Змінити план</button>
-                                <button class="btn btn-danger" @click="cancelSubscription()">Скасувати підписку</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Збережені історії -->
-                <div x-show="activeTab === 'saved' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
-                    <h2 class="content-title">Збережені історії</h2>
-                    
-                    <!-- Історія 1 -->
-                    <div id="saved-item-1" class="saved-item">
-                        <div class="saved-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?train,night')"></div>
-                        <div class="saved-item-content">
-                            <div class="saved-item-category">Романтика</div>
-                            <h3 class="saved-item-title">
-                                <a href="story.html">Несподівана зустріч у нічному потязі</a>
-                            </h3>
-                            <div class="saved-item-meta">
-                                <div class="saved-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,woman')"></div>
-                                    <div class="author-name">Олександра Романенко</div>
-                                </div>
-                                <div class="saved-item-date">Збережено: 18 жовтня 2023</div>
-                            </div>
-                        </div>
-                        <div class="saved-item-actions">
-                            <button class="action-btn" title="Видалити із збережених" @click="removeFromSaved(1)">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Історія 2 -->
-                    <div id="saved-item-2" class="saved-item">
-                        <div class="saved-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?paris,night')"></div>
-                        <div class="saved-item-content">
-                            <div class="saved-item-category">Романтика</div>
-                            <h3 class="saved-item-title">
-                                <a href="story-paris.html">Одна ніч у Парижі</a>
-                            </h3>
-                            <div class="saved-item-meta">
-                                <div class="saved-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,girl')"></div>
-                                    <div class="author-name">Марія Ковальчук</div>
-                                </div>
-                                <div class="saved-item-date">Збережено: 15 жовтня 2023</div>
-                            </div>
-                        </div>
-                        <div class="saved-item-actions">
-                            <button class="action-btn" title="Видалити із збережених" @click="removeFromSaved(2)">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Історія 3 -->
-                    <div id="saved-item-3" class="saved-item">
-                        <div class="saved-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?hotel,luxury')"></div>
-                        <div class="saved-item-content">
-                            <div class="saved-item-category">Романтика</div>
-                            <h3 class="saved-item-title">
-                                <a href="story-hotel.html">Таємниця кімнати 512</a>
-                            </h3>
-                            <div class="saved-item-meta">
-                                <div class="saved-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,woman')"></div>
-                                    <div class="author-name">Олена Вознюк</div>
-                                </div>
-                                <div class="saved-item-date">Збережено: 10 жовтня 2023</div>
-                            </div>
-                        </div>
-                        <div class="saved-item-actions">
-                            <button class="action-btn" title="Видалити із збережених" @click="removeFromSaved(3)">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Історія переглядів -->
-                <div x-show="activeTab === 'history' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
-                    <h2 class="content-title">Історія переглядів</h2>
-                    
-                    <div class="history-section">
-                        <div class="history-date">Сьогодні</div>
-                        
-                        <div class="history-item">
-                            <div class="history-time">15:42</div>
-                            <div class="history-content">
-                                <div class="history-title">
-                                    <a href="story.html">Несподівана зустріч у нічному потязі</a>
-                                </div>
-                                <div class="history-category">Романтика</div>
-                            </div>
-                        </div>
-                        
-                        <div class="history-item">
-                            <div class="history-time">14:23</div>
-                            <div class="history-content">
-                                <div class="history-title">
-                                    <a href="story-paris.html">Одна ніч у Парижі</a>
-                                </div>
-                                <div class="history-category">Романтика</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="history-section">
-                        <div class="history-date">Вчора</div>
-                        
-                        <div class="history-item">
-                            <div class="history-time">21:15</div>
-                            <div class="history-content">
-                                <div class="history-title">
-                                    <a href="story-dance.html">Танець з незнайомцем</a>
-                                </div>
-                                <div class="history-category">Романтика</div>
-                            </div>
-                        </div>
-                        
-                        <div class="history-item">
-                            <div class="history-time">18:50</div>
-                            <div class="history-content">
-                                <div class="history-title">
-                                    <a href="story-hotel.html">Таємниця кімнати 512</a>
-                                </div>
-                                <div class="history-category">Романтика</div>
-                            </div>
-                        </div>
-                        
-                        <div class="history-item">
-                            <div class="history-time">16:30</div>
-                            <div class="history-content">
-                                <div class="history-title">
-                                    <a href="story-beach.html">Спекотний літній день</a>
-                                </div>
-                                <div class="history-category">Романтика</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Вподобані історії -->
-                <div x-show="activeTab === 'likes' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
-                    <h2 class="content-title">Вподобані історії</h2>
-                    
-                    <div class="likes-grid">
-                        <!-- Вподобана історія 1 -->
-                        <div class="liked-item">
-                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?beach,sunset')"></div>
-                            <div class="liked-item-content">
-                                <div class="liked-item-category">Романтика</div>
-                                <h3 class="liked-item-title">
-                                    <a href="story-beach.html">Спекотний літній день</a>
-                                </h3>
-                                <div class="liked-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,man')"></div>
-                                    <div class="author-name">Андрій Лисенко</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Вподобана історія 2 -->
-                        <div class="liked-item">
-                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?night,couple')"></div>
-                            <div class="liked-item-content">
-                                <div class="liked-item-category">Романтика</div>
-                                <h3 class="liked-item-title">
-                                    <a href="story-paris.html">Одна ніч у Парижі</a>
-                                </h3>
-                                <div class="liked-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,girl')"></div>
-                                    <div class="author-name">Марія Ковальчук</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Вподобана історія 3 -->
-                        <div class="liked-item">
-                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?hotel,luxury')"></div>
-                            <div class="liked-item-content">
-                                <div class="liked-item-category">Романтика</div>
-                                <h3 class="liked-item-title">
-                                    <a href="story-hotel.html">Таємниця кімнати 512</a>
-                                </h3>
-                                <div class="liked-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,woman')"></div>
-                                    <div class="author-name">Олена Вознюк</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Вподобана історія 4 -->
-                        <div class="liked-item">
-                            <div class="liked-item-image" style="background-image: url('https://source.unsplash.com/random/300x200/?dance,party')"></div>
-                            <div class="liked-item-content">
-                                <div class="liked-item-category">Романтика</div>
-                                <h3 class="liked-item-title">
-                                    <a href="story-dance.html">Танець з незнайомцем</a>
-                                </h3>
-                                <div class="liked-item-author">
-                                    <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/50x50/?portrait,girl')"></div>
-                                    <div class="author-name">Юлія Петренко</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Мої коментарі -->
-                <div x-show="activeTab === 'comments' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
-                    <h2 class="content-title">Мої коментарі</h2>
-                    
-                    <div class="comments-list">
-                        <!-- Коментар 1 -->
-                        <div class="comment-item">
-                            <div class="comment-story">
-                                <a href="story.html">Несподівана зустріч у нічному потязі</a>
-                            </div>
-                            <div class="comment-text">
-                                Дуже атмосферна історія! Автор чудово передав відчуття спонтанної зустрічі і тієї іскри, що виникає між незнайомцями. Хотілося б продовження!
-                            </div>
-                            <div class="comment-meta">
-                                <div class="comment-date">18 жовтня 2023, 15:45</div>
-                                <div class="comment-likes">12 людям подобається</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Коментар 2 -->
-                        <div class="comment-item">
-                            <div class="comment-story">
-                                <a href="story-paris.html">Одна ніч у Парижі</a>
-                            </div>
-                            <div class="comment-text">
-                                Париж дійсно місто кохання! Опис нічного Парижу з видом на Ейфелеву вежу дуже романтичний. Власні спогади нахлинули, дякую за таку чудову історію!
-                            </div>
-                            <div class="comment-meta">
-                                <div class="comment-date">15 жовтня 2023, 20:30</div>
-                                <div class="comment-likes">8 людям подобається</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Коментар 3 -->
-                        <div class="comment-item">
-                            <div class="comment-story">
-                                <a href="story-hotel.html">Таємниця кімнати 512</a>
-                            </div>
-                            <div class="comment-text">
-                                Містика і еротика - чудове поєднання! Весь час було відчуття, що щось незвичайне станеться, і розв'язка не розчарувала. Чекаю на нові історії від цього автора.
-                            </div>
-                            <div class="comment-meta">
-                                <div class="comment-date">10 жовтня 2023, 19:15</div>
-                                <div class="comment-likes">15 людям подобається</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Мої підписки -->
-                <div x-show="activeTab === 'following' && !showEditProfile && !showChangePassword && !showSubscriptionSettings" class="content-container">
-                    <h2 class="content-title">Мої підписки</h2>
-                    
-                    <div class="following-list">
-                        <!-- Автор 1 -->
-                        <div class="following-item">
-                            <div class="following-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,woman')"></div>
-                            <div class="following-info">
-                                <div class="following-name">Олександра Романенко</div>
-                                <div class="following-stats">
-                                    <div class="following-stat">28 історій</div>
-                                    <div class="following-stat">4.9 <i class="fas fa-star"></i></div>
-                                </div>
-                                <div class="following-bio">Автор еротичних історій, пише в жанрі романтика та фантазії.</div>
-                            </div>
-                            <div class="following-actions">
-                                <button class="btn btn-outline">Відписатися</button>
-                                <a href="author-profile.html" class="btn btn-primary">Профіль</a>
-                            </div>
-                        </div>
-                        
-                        <!-- Автор 2 -->
-                        <div class="following-item">
-                            <div class="following-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,girl')"></div>
-                            <div class="following-info">
-                                <div class="following-name">Марія Ковальчук</div>
-                                <div class="following-stats">
-                                    <div class="following-stat">19 історій</div>
-                                    <div class="following-stat">4.8 <i class="fas fa-star"></i></div>
-                                </div>
-                                <div class="following-bio">Спеціалізується на романтичних історіях у великих містах.</div>
-                            </div>
-                            <div class="following-actions">
-                                <button class="btn btn-outline">Відписатися</button>
-                                <a href="author-profile.html" class="btn btn-primary">Профіль</a>
-                            </div>
-                        </div>
-                        
-                        <!-- Автор 3 -->
-                        <div class="following-item">
-                            <div class="following-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?portrait,man')"></div>
-                            <div class="following-info">
-                                <div class="following-name">Андрій Лисенко</div>
-                                <div class="following-stats">
-                                    <div class="following-stat">15 історій</div>
-                                    <div class="following-stat">4.7 <i class="fas fa-star"></i></div>
-                                </div>
-                                <div class="following-bio">Автор захоплюючих історій про відпочинок і спонтанні зустрічі.</div>
-                            </div>
-                            <div class="following-actions">
-                                <button class="btn btn-outline">Відписатися</button>
-                                <a href="author-profile.html" class="btn btn-primary">Профіль</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Підказка для преміум-акаунту -->
-    <template x-if="!isPremiumUser">
-        <div class="premium-notification">
-            <div class="premium-notification-content">
-                <div class="premium-icon">
-                    <i class="fas fa-crown"></i>
-                </div>
-                <div class="premium-message">
-                    <h3>Розкрийте повний потенціал сайту!</h3>
-                    <p>Отримайте необмежений доступ до всіх історій та унікальних функцій з преміум-акаунтом.</p>
-                </div>
-                <button @click="upgradeAccount()" class="btn btn-premium">Отримати преміум</button>
-                <button class="close-notification"><i class="fas fa-times"></i></button>
-            </div>
-        </div>
-    </template>
-
-    <!-- JavaScript для додаткової функціональності -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Закриття преміум-підказки
-            const closeNotification = document.querySelector('.close-notification');
-            const premiumNotification = document.querySelector('.premium-notification');
-            
-            if (closeNotification && premiumNotification) {
-                closeNotification.addEventListener('click', function() {
-                    premiumNotification.style.display = 'none';
-                    
-                    // Зберігаємо інформацію, що користувач закрив повідомлення
-                    localStorage.setItem('premiumNotificationClosed', 'true');
-                });
-                
-                // Перевіряємо, чи користувач вже закривав повідомлення
-                if (localStorage.getItem('premiumNotificationClosed') === 'true') {
-                    premiumNotification.style.display = 'none';
+    // --- Збереження профілю (з i18n) ---
+    async saveProfile() {
+        this.editFormError = null;
+        if (!this.editUserName.trim()) { this.editFormError = $store.i18n.t('profile.errorNameRequired'); return; } // i18n
+        this.isSavingProfile = true;
+        try {
+            let profileData; const useFormData = !!this.editUserAvatarFile;
+            if (useFormData) {
+                profileData = new FormData();
+                profileData.append('name', this.editUserName.trim());
+                profileData.append('bio', this.editUserBio);
+                profileData.append('avatar', this.editUserAvatarFile); // 'avatar' - ключ для файлу
+            } else {
+                profileData = { name: this.editUserName.trim(), bio: this.editUserBio };
+                // Перевіряємо, чи користувач видалив існуючий аватар
+                if (!this.avatarPreviewUrl || this.avatarPreviewUrl === 'https://source.unsplash.com/random/200x200/?profile-placeholder') {
+                    profileData.removeAvatar = true; // Прапорець для бекенда
                 }
             }
-            
-            // Обробка зміни аватару (можна додати реальну функціональність завантаження)
-            const avatarInput = document.getElementById('userAvatar');
-            if (avatarInput) {
-                avatarInput.addEventListener('change', function() {
-                    // Тут може бути логіка для зміни аватару
-                    console.log('Змінено URL аватару:', this.value);
-                });
-            }
+            console.log('Simulating API call: updateUser', useFormData ? 'with FormData' : profileData);
+            await new Promise(resolve => setTimeout(resolve, 1100));
+            // const updatedUser = await api.users.updateUser(profileData); // Реальний виклик
+            const updatedUser = { // Симуляція
+                 ...userData, // Копіюємо старі дані
+                 name: this.editUserName.trim(),
+                 bio: this.editUserBio,
+                 // Симулюємо URL нового аватара (в реальності прийде з бекенда)
+                 avatarUrl: this.editUserAvatarFile ? URL.createObjectURL(this.editUserAvatarFile) : (profileData.removeAvatar ? 'https://source.unsplash.com/random/200x200/?profile-placeholder' : this.userAvatar)
+            };
+            // Оновлюємо дані на сторінці
+            this.userName = updatedUser.name; this.userBio = updatedUser.bio || ''; this.userAvatar = updatedUser.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.editUserAvatarFile = null; if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
+            this.showNotification($store.i18n.t('notifications.profileUpdated'), true); // i18n
+            this.showEditProfile = false;
+            this.hasUnsavedChanges = false; // Скидаємо прапорець
+        } catch (error) {
+            this.editFormError = error.message || $store.i18n.t('profile.errorSavingProfile'); // i18n
+            console.error('Save profile error:', error);
+        } finally { this.isSavingProfile = false; }
+    },
+
+    // --- Зміна пароля (з i18n) ---
+    async changePassword() {
+        this.passwordFormError = null;
+        if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
+            this.passwordFormError = $store.i18n.t('profile.errorPasswordFieldsRequired'); return; // i18n
+        }
+        if (!this.validatePasswordStrength(this.newPassword)) {
+            this.passwordFormError = $store.i18n.t('auth.passwordInvalid'); return; // i18n
+        }
+        if (this.newPassword !== this.confirmPassword) {
+            this.passwordFormError = $store.i18n.t('auth.passwordsDontMatch'); return; // i18n
+        }
+        if (this.currentPassword === this.newPassword) {
+            this.passwordFormError = $store.i18n.t('profile.errorNewPasswordSameAsOld'); return; // i18n
+        }
+        this.isChangingPassword = true;
+        try {
+             console.log('Simulating API call: changePassword');
+             await new Promise(resolve => setTimeout(resolve, 900));
+            // await api.users.changePassword(this.currentPassword, this.newPassword); // Реальний виклик
+            this.showNotification($store.i18n.t('notifications.passwordChanged'), true); // i18n
+            this.showChangePassword = false; this.currentPassword = ''; this.newPassword = ''; this.confirmPassword = '';
+            this.hasUnsavedChanges = false; // Скидаємо прапорець
+        } catch (error) {
+            this.passwordFormError = error.message || $store.i18n.t('profile.errorChangingPassword'); // i18n
+            console.error('Change password error:', error);
+        } finally { this.isChangingPassword = false; }
+    },
+
+    // --- Керування підпискою (з i18n) ---
+    upgradeAccount() { window.location.href = 'premium.html'; },
+    async cancelSubscription() {
+        if (confirm($store.i18n.t('profile.confirmCancelSubscription'))) { // i18n
+            this.isCancellingSubscription = true; this.subscriptionError = null;
+            try {
+                console.log('Simulating API call: cancelSubscription');
+                await new Promise(resolve => setTimeout(resolve, 700));
+                // await api.premium.cancel(); // Реальний виклик
+                this.isPremiumUser = false; api.utils.setPremiumStatus(false);
+                this.subscriptionEndDate = null; this.paymentMethodInfo = $store.i18n.t('profile.paymentMethodNotSet');
+                this.showNotification($store.i18n.t('notifications.subscriptionCancelled'), true); // i18n
+                this.showSubscriptionSettings = false; // Закриваємо вікно після успішного скасування
+            } catch (error) {
+                this.subscriptionError = error.message || $store.i18n.t('notifications.errorCancelSubscription'); // i18n
+                console.error('Cancel subscription error:', error);
+            } finally { this.isCancellingSubscription = false; }
+        }
+    },
+
+    // --- Видалення зі збережених (з i18n) ---
+    async removeFromSaved(storyId, event) {
+        if (!storyId || !this.userId) return;
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        try {
+             console.log(`Simulating API call: toggleBookmark(${storyId})`);
+             await new Promise(resolve => setTimeout(resolve, 400));
+            // await api.users.toggleBookmark(storyId); // Реальний виклик
+            this.savedStories = this.savedStories.filter(story => (story._id || story.id) !== storyId);
+            this.savedStoriesCount = Math.max(0, this.savedStoriesCount - 1);
+            this.showNotification($store.i18n.t('notifications.removedFromBookmarks'), true); // i18n
+        } catch (error) {
+            // Показуємо помилку в активній вкладці
+            this.activityError = error.message || $store.i18n.t('profile.errorRemovingSaved'); // i18n
+            console.error('Remove from saved error:', error);
+            if (button) button.classList.remove('removing'); // Знімаємо спінер при помилці
+        }
+        // Спінер знімається автоматично при успіху, бо елемент видаляється з DOM
+    },
+
+    // --- Відписка від автора (з i18n) ---
+    async unfollowAuthor(authorId, event) {
+        if (!authorId || !this.userId) return;
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        try {
+             console.log(`Simulating API call: toggleFollow(${authorId})`);
+             await new Promise(resolve => setTimeout(resolve, 400));
+            // await api.users.toggleFollow(authorId); // Реальний виклик
+            this.followedAuthors = this.followedAuthors.filter(author => author._id !== authorId);
+            this.followingCount = Math.max(0, this.followingCount - 1);
+            this.showNotification($store.i18n.t('notifications.unfollowingAuthor'), true); // i18n
+        } catch (error) {
+            this.activityError = error.message || $store.i18n.t('profile.errorUnfollowing'); // i18n
+            console.error('Unfollow error:', error);
+            if (button) button.classList.remove('removing'); // Знімаємо спінер при помилці
+        }
+        // Спінер знімається автоматично при успіху
+    }
+
+}" x-init="
+    isLoggedIn = api.utils.isAuthenticated();
+    if (!isLoggedIn) {
+        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+    } else {
+        fetchProfileData().then(() => {
+            if (!profileError) { fetchActivityData(activeTab); }
         });
-    </script>
+    }
+     // Додаємо слухач для попередження про незбережені зміни
+     window.addEventListener('beforeunload', (event) => {
+         if (hasUnsavedChanges) {
+             const message = $store.i18n.t('createStory.beforeUnloadWarning'); // Використаємо ключ з createStory
+             event.preventDefault();
+             event.returnValue = message;
+             return message;
+         }
+     });
+     // Відслідковування змін у формах
+     $watch('editUserName', () => { if(showEditProfile) setUnsavedChanges() });
+     $watch('editUserBio', () => { if(showEditProfile) setUnsavedChanges() });
+     $watch('currentPassword', () => { if(showChangePassword) setUnsavedChanges() });
+     $watch('newPassword', () => { if(showChangePassword) setUnsavedChanges() });
+     $watch('confirmPassword', () => { if(showChangePassword) setUnsavedChanges() });
+">
+
+<!-- Хедер -->
+<header>
+    <div class="container">
+        <nav class="navbar">
+            <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+            <!-- Навігація з i18n -->
+            <ul class="nav-links">
+                <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+                <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+                <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+                <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+                <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+            </ul>
+            <div class="auth-buttons">
+                <!-- Мовний перемикач -->
+                <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+                    <div class="lang-dropdown-button" @click="open = !open">
+                        <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+                    </div>
+                    <div class="lang-dropdown-menu" x-show="open" x-transition>
+                        <template x-for="lang in $store.i18n.available" :key="lang.code">
+                            <div class="lang-dropdown-item"
+                                 :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                                 @click="$store.i18n.setLanguage(lang.code); open = false;">
+                                <span x-text="lang.name"></span>
+                                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <!-- Кнопки авторизації -->
+                <template x-if="!isLoggedIn">
+                    <div>
+                        <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span> </a>
+                        <a href="register-page.html" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span> </a>
+                    </div>
+                </template>
+                <template x-if="isLoggedIn">
+                    <div>
+                        <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
+                        <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary"> <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> </a>
+                    </div>
+                </template>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<!-- Індикатор завантаження профілю -->
+<div x-show="isLoadingProfile" class="loading-indicator-small container" style="margin-top: 2rem;">
+    <div class="loading-spinner-small"></div> <span x-text="$store.i18n.t('profile.loadingProfile')"></span>
+</div>
+<!-- Повідомлення про помилку завантаження профілю -->
+<div x-show="profileError && !isLoadingProfile" class="error-message-small container" style="margin-top: 1rem;">
+    <i class="fas fa-exclamation-circle"></i> <span x-text="profileError"></span>
+    <button @click="fetchProfileData()" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+</div>
+
+
+<!-- Основний контент -->
+<main class="container" x-show="!isLoadingProfile && !profileError">
+    <!-- Хлібні крихти -->
+    <div class="breadcrumbs">
+        <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+        <span class="separator">/</span>
+        <span class="current" x-text="$store.i18n.t('general.profile')"></span>
+    </div>
+
+    <!-- Секція профілю -->
+    <div class="profile-section">
+        <!-- Сайдбар профілю -->
+        <aside class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar" :style="{ backgroundImage: `url(${userAvatar})` }"></div>
+                    <div class="profile-status" :class="{ 'premium-status': isPremiumUser }">
+                        <i :class="isPremiumUser ? 'fas fa-crown' : 'fas fa-user'"></i>
+                        <span x-text="isPremiumUser ? $store.i18n.t('profile.premiumStatus') : $store.i18n.t('profile.basicStatus')"></span>
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name" x-text="userName || $store.i18n.t('general.anonymous')"></h1>
+                    <div class="profile-email" x-text="userEmail || $store.i18n.t('general.notSpecified')"></div>
+                    <div class="profile-bio" x-text="userBio || $store.i18n.t('profile.addInfoPlaceholder')"></div>
+                </div>
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="savedStoriesCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.saved')"></div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="readStoriesCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.read')"></div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="commentsCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.commentsCount')"></div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="followingCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.following')"></div>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button @click="toggleEditProfile()" class="btn-action"> <i class="fas fa-edit"></i> <span x-text="$store.i18n.t('profile.editProfile')"></span> </button>
+                    <button @click="toggleChangePassword()" class="btn-action"> <i class="fas fa-key"></i> <span x-text="$store.i18n.t('profile.changePassword')"></span> </button>
+                    <template x-if="!isPremiumUser">
+                        <button @click="upgradeAccount()" class="btn-action premium-action"> <i class="fas fa-crown"></i> <span x-text="$store.i18n.t('profile.upgradeAccount')"></span> </button>
+                    </template>
+                    <template x-if="isPremiumUser">
+                        <button @click="toggleSubscriptionSettings()" class="btn-action premium-action"> <i class="fas fa-cog"></i> <span x-text="$store.i18n.t('profile.subscriptionSettings')"></span> </button>
+                    </template>
+                </div>
+            </div>
+
+            <div class="profile-menu">
+                <button @click="setTab('saved')" :class="{ 'active': activeTab === 'saved' }" class="menu-item"> <i class="fas fa-bookmark"></i> <span x-text="$store.i18n.t('profile.savedStories')"></span> </button>
+                <button @click="setTab('history')" :class="{ 'active': activeTab === 'history' }" class="menu-item"> <i class="fas fa-history"></i> <span x-text="$store.i18n.t('profile.readingHistory')"></span> </button>
+                <button @click="setTab('likes')" :class="{ 'active': activeTab === 'likes' }" class="menu-item"> <i class="fas fa-heart"></i> <span x-text="$store.i18n.t('profile.likedStories')"></span> </button>
+                <button @click="setTab('comments')" :class="{ 'active': activeTab === 'comments' }" class="menu-item"> <i class="fas fa-comments"></i> <span x-text="$store.i18n.t('profile.myComments')"></span> </button>
+                <button @click="setTab('following')" :class="{ 'active': activeTab === 'following' }" class="menu-item"> <i class="fas fa-users"></i> <span x-text="$store.i18n.t('profile.myFollowing')"></span> </button>
+            </div>
+        </aside>
+
+        <!-- Вміст профілю -->
+        <div class="profile-content">
+            <!-- Форма редагування профілю -->
+            <div x-show="showEditProfile" class="profile-form-container" x-collapse>
+                <div class="form-card">
+                    <h2 class="form-title" x-text="$store.i18n.t('profile.editFormTitle')"></h2>
+                    <div x-show="editFormError" class="error-message-small" style="margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-circle"></i> <span x-text="editFormError"></span>
+                    </div>
+                    <form @submit.prevent="saveProfile()" class="profile-form">
+                        <div class="form-group">
+                            <label class="form-label" x-text="$store.i18n.t('profile.editAvatarLabel')"></label>
+                            <div class="avatar-upload-preview" :style="{ backgroundImage: `url(${avatarPreviewUrl})` }">
+                                <label for="avatar-upload-input" class="avatar-upload-overlay">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                            </div>
+                            <input type="file" id="avatar-upload-input" @change="handleAvatarUpload($event)" accept="image/jpeg, image/png, image/gif, image/webp" style="display: none;" x-ref="avatarUploadInput">
+                            <div style="text-align: center;">
+                                <button type="button" class="avatar-remove-button" x-show="avatarPreviewUrl !== userAvatar || editUserAvatarFile" @click="removeAvatarPreview()">
+                                    <i class="fas fa-times"></i> <span x-text="$store.i18n.t('general.cancel')"></span>
+                                </button>
+                            </div>
+                            <div class="form-help" x-text="$store.i18n.t('profile.editAvatarHelp')"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserName" class="form-label" x-text="$store.i18n.t('profile.editNameLabel')"></label>
+                            <input type="text" id="editUserName" class="form-input" x-model="editUserName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserEmail" class="form-label" x-text="$store.i18n.t('profile.editEmailLabel')"></label>
+                            <input type="email" id="editUserEmail" class="form-input" :value="userEmail" disabled readonly :title="$store.i18n.t('profile.emailNotEditable')">
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserBio" class="form-label" x-text="$store.i18n.t('profile.editBioLabel')"></label>
+                            <textarea id="editUserBio" class="form-textarea" x-model="editUserBio" rows="4"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" @click="toggleEditProfile()" class="btn btn-outline" x-text="$store.i18n.t('general.cancel')"></button>
+                            <button type="submit" class="btn btn-primary processing" :disabled="isSavingProfile">
+                                <span x-show="!isSavingProfile" x-text="$store.i18n.t('profile.saveChangesButton')"></span>
+                                <span x-show="isSavingProfile"><span x-text="$store.i18n.t('profile.saving')"></span></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Форма зміни пароля -->
+            <div x-show="showChangePassword" class="profile-form-container" x-collapse>
+                <div class="form-card">
+                    <h2 class="form-title" x-text="$store.i18n.t('profile.changePasswordFormTitle')"></h2>
+                    <div x-show="passwordFormError" class="error-message-small" style="margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-circle"></i> <span x-text="passwordFormError"></span>
+                    </div>
+                    <form @submit.prevent="changePassword()" class="profile-form">
+                        <div class="form-group">
+                            <label for="currentPassword" class="form-label" x-text="$store.i18n.t('profile.currentPasswordLabel')"></label>
+                            <input type="password" id="currentPassword" class="form-input" x-model="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword" class="form-label" x-text="$store.i18n.t('profile.newPasswordLabel')"></label>
+                            <input type="password" id="newPassword" class="form-input" x-model="newPassword" required minlength="8">
+                            <div class="form-help" x-text="$store.i18n.t('profile.passwordMinHelp')"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword" class="form-label" x-text="$store.i18n.t('profile.confirmNewPasswordLabel')"></label>
+                            <input type="password" id="confirmPassword" class="form-input" x-model="confirmPassword" required minlength="8">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" @click="toggleChangePassword()" class="btn btn-outline" x-text="$store.i18n.t('general.cancel')"></button>
+                            <button type="submit" class="btn btn-primary processing" :disabled="isChangingPassword">
+                                <span x-show="!isChangingPassword" x-text="$store.i18n.t('profile.changePasswordButton')"></span>
+                                <span x-show="isChangingPassword"><span x-text="$store.i18n.t('profile.changingPassword')"></span></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Налаштування підписки -->
+            <div x-show="showSubscriptionSettings" class="profile-form-container" x-collapse>
+                <div class="form-card subscription-card">
+                    <h2 class="form-title" x-text="$store.i18n.t('profile.subscriptionSettingsTitle')"></h2>
+                    <div x-show="subscriptionError" class="error-message-small" style="margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-circle"></i> <span x-text="subscriptionError"></span>
+                    </div>
+                    <div class="subscription-details" x-show="isPremiumUser">
+                        <div class="subscription-status">
+                            <i class="fas fa-crown"></i>
+                            <div class="status-text">
+                                <h3 x-text="$store.i18n.t('profile.premiumPlan')"></h3>
+                                <p><span x-text="$store.i18n.t('profile.activeUntil')"></span> <span x-text="subscriptionEndDate || $store.i18n.t('profile.notSpecified')"></span></p>
+                            </div>
+                        </div>
+                        <div class="subscription-info">
+                            <p x-show="subscriptionEndDate" x-text="$store.i18n.t('profile.subscriptionWillRenew')"></p>
+                            <p><span x-text="$store.i18n.t('profile.paymentMethod')"></span> <span x-text="paymentMethodInfo || $store.i18n.t('profile.notSpecified')"></span></p>
+                        </div>
+                        <div class="subscription-actions">
+                            <button type="button" class="btn btn-outline" @click="toggleSubscriptionSettings()" x-text="$store.i18n.t('profile.closeButton')"></button>
+                            <button type="button" class="btn btn-primary" @click="upgradeAccount()" x-text="$store.i18n.t('profile.changePlanButton')"></button>
+                            <button type="button" class="btn btn-danger processing" @click="cancelSubscription()" :disabled="isCancellingSubscription">
+                                <span x-show="!isCancellingSubscription" x-text="$store.i18n.t('profile.cancelSubscriptionButton')"></span>
+                                <span x-show="isCancellingSubscription"><span x-text="$store.i18n.t('profile.cancelling')"></span></span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="subscription-details" x-show="!isPremiumUser">
+                        <p x-text="$store.i18n.t('profile.noActiveSubscription')"></p>
+                        <div class="subscription-actions">
+                            <button type="button" class="btn btn-outline" @click="toggleSubscriptionSettings()" x-text="$store.i18n.t('profile.closeButton')"></button>
+                            <button type="button" class="btn btn-primary" @click="upgradeAccount()" x-text="$store.i18n.t('profile.getPremium')"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Індикатор завантаження активності -->
+            <div x-show="isLoadingActivity" class="loading-indicator-small">
+                <div class="loading-spinner-small"></div> <span x-text="$store.i18n.t('profile.loadingActivity')"></span>
+            </div>
+            <!-- Помилка завантаження активності -->
+            <div x-show="activityError && !isLoadingActivity" class="error-message-small">
+                <i class="fas fa-exclamation-circle"></i> <span x-text="activityError"></span>
+                <button @click="fetchActivityData(activeTab)" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+            </div>
+
+            <!-- Вкладки активності -->
+            <div x-show="!isLoadingActivity && !activityError && !showEditProfile && !showChangePassword && !showSubscriptionSettings">
+
+                <!-- Збережені історії -->
+                <div x-show="activeTab === 'saved'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.savedStories')"></h2>
+                    <div x-show="savedStories.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noSavedStories')"></div>
+                    <template x-for="story in savedStories" :key="story._id || story.id">
+                        <div :id="'saved-item-' + (story._id || story.id)" class="saved-item">
+                            <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;">
+                                <div class="saved-item-image" :style="{ backgroundImage: `url(${story.imageUrl || 'https://source.unsplash.com/random/300x200/?placeholder'})` }"></div>
+                            </a>
+                            <div class="saved-item-content">
+                                <div class="saved-item-category" x-text="story.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+                                <h3 class="saved-item-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
+                                <div class="saved-item-meta">
+                                    <div class="saved-item-author">
+                                        <a :href="story.author?._id ? `author-profile.html?id=${story.author._id}` : '#'" style="display: contents;">
+                                            <div class="author-avatar" :style="{ backgroundImage: `url(${story.author?.avatarUrl || 'https://source.unsplash.com/random/50x50/?profile'})` }"></div>
+                                            <div class="author-name" x-text="story.author?.name || $store.i18n.t('general.anonymous')"></div>
+                                        </a>
+                                    </div>
+                                    <!-- Дата збереження (якщо є) -->
+                                    <!-- <div class="saved-item-date" x-text="story.savedAt ? `${$store.i18n.t('profile.savedOn')}: ${new Date(story.savedAt).toLocaleDateString()}` : ''"></div> -->
+                                </div>
+                            </div>
+                            <div class="saved-item-actions">
+                                <button type="button" class="action-btn" :title="$store.i18n.t('profile.removeFromSavedAction')" @click="removeFromSaved(story._id || story.id, $event)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Історія переглядів -->
+                <div x-show="activeTab === 'history'" class="content-container history-section"> <!-- Додав клас -->
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.readingHistory')"></h2>
+                    <div x-show="readingHistory.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noHistory')"></div>
+                    <template x-for="(item, index) in readingHistory" :key="item._id || item.id">
+                        <!-- Групування за датою, якщо потрібно (приклад логіки) -->
+                        <!-- <template x-if="index === 0 || new Date(item.viewedAt).toLocaleDateString() !== new Date(readingHistory[index-1].viewedAt).toLocaleDateString()">
+                             <h3 class="history-date" x-text="new Date(item.viewedAt).toLocaleDateString($store.i18n.selectedLang || 'uk-UA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></h3>
+                        </template> -->
+                        <div class="history-item">
+                            <div class="history-time" x-text="new Date(item.viewedAt).toLocaleTimeString($store.i18n.selectedLang || 'uk-UA', { hour: '2-digit', minute: '2-digit' })"></div>
+                            <div class="history-content">
+                                <div class="history-title"><a :href="`story-detailed.html?id=${item._id || item.id}`" x-text="item.title"></a></div>
+                                <div class="history-category" x-text="item.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Вподобані історії -->
+                <div x-show="activeTab === 'likes'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.likedStories')"></h2>
+                    <div x-show="likedStories.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noLikedStories')"></div>
+                    <div class="likes-grid">
+                        <template x-for="story in likedStories" :key="story._id || story.id">
+                            <div class="liked-item">
+                                <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;">
+                                    <div class="liked-item-image" :style="{ backgroundImage: `url(${story.imageUrl || 'https://source.unsplash.com/random/300x200/?love'})` }"></div>
+                                </a>
+                                <div class="liked-item-content">
+                                    <div class="liked-item-category" x-text="story.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+                                    <h3 class="liked-item-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
+                                    <div class="liked-item-author">
+                                        <a :href="story.authorId ? `author-profile.html?id=${story.authorId}` : '#'" style="display: contents;">
+                                            <div class="author-avatar" :style="{ backgroundImage: `url(${story.authorAvatar || 'https://source.unsplash.com/random/50x50/?profile'})` }"></div>
+                                            <div class="author-name" x-text="story.authorName || $store.i18n.t('general.anonymous')"></div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Мої коментарі -->
+                <div x-show="activeTab === 'comments'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.myComments')"></h2>
+                    <div x-show="userComments.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noComments')"></div>
+                    <div class="comments-list"> <!-- Використовуємо клас зі story.css -->
+                        <template x-for="comment in userComments" :key="comment._id || comment.id">
+                            <div class="comment-item"> <!-- Додав клас для стилізації -->
+                                <div class="comment-story">
+                                    <span x-text="$store.i18n.t('profile.commentToStory')"></span>:
+                                    <a :href="`story-detailed.html?id=${comment.storyId}`" x-text="comment.storyTitle || '...' "></a>
+                                </div>
+                                <div class="comment-text" x-text="comment.text"></div>
+                                <div class="comment-meta">
+                                    <div class="comment-date" x-text="new Date(comment.createdAt).toLocaleString($store.i18n.selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' })"></div>
+                                    <div class="comment-likes"><span x-text="comment.likes || 0"></span> <span x-text="$store.i18n.t('general.likesSuffix')"></span></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Мої підписки -->
+                <div x-show="activeTab === 'following'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.myFollowing')"></h2>
+                    <div x-show="followedAuthors.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noFollowing')"></div>
+                    <div class="following-list">
+                        <template x-for="author in followedAuthors" :key="author._id">
+                            <div class="following-item">
+                                <a :href="`author-profile.html?id=${author._id}`" style="display:contents;">
+                                    <div class="following-avatar" :style="{ backgroundImage: `url(${author.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile'})` }"></div>
+                                </a>
+                                <div class="following-info">
+                                    <div class="following-name"><a :href="`author-profile.html?id=${author._id}`" style="color: inherit; text-decoration:none;" x-text="author.name"></a></div>
+                                    <div class="following-stats">
+                                        <div class="following-stat"><span x-text="author.stats?.storyCount || 0"></span> <span x-text="$store.i18n.t('profile.storiesWrittenShort') || 'іст.'"></span></div>
+                                        <div class="following-stat"><span x-text="(author.stats?.averageRating || 0).toFixed(1)"></span> <i class="fas fa-star"></i></div>
+                                        <div class="following-stat" x-show="author.stats?.followersCount"><span x-text="author.stats.followersCount"></span> <span x-text="$store.i18n.t('profile.followersShort') || 'підп.'"></span></div>
+                                    </div>
+                                    <div class="following-bio" x-text="author.bio || $store.i18n.t('authorsPage.bioMissing')"></div>
+                                </div>
+                                <div class="following-actions">
+                                    <button type="button" class="btn btn-outline" @click="unfollowAuthor(author._id, $event)" x-text="$store.i18n.t('profile.unfollowAction')"></button>
+                                    <a :href="`author-profile.html?id=${author._id}`" class="btn btn-primary" x-text="$store.i18n.t('profile.viewProfileAction')"></a>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div> <!-- Кінець вкладок активності -->
+        </div> <!-- Кінець profile-content -->
+    </div> <!-- Кінець profile-section -->
+</main>
+
+<!-- Підказка для преміум-акаунту -->
+<template x-if="!isPremiumUser && !isLoadingProfile">
+    <div class="premium-notification" x-show="!showEditProfile && !showChangePassword && !showSubscriptionSettings" x-transition>
+        <div class="premium-notification-content">
+            <div class="premium-icon"><i class="fas fa-crown"></i></div>
+            <div class="premium-message">
+                <h3 x-text="$store.i18n.t('profile.premiumBannerTitle')"></h3>
+                <p x-text="$store.i18n.t('profile.premiumBannerText')"></p>
+            </div>
+            <a href="premium.html" class="btn-premium" x-text="$store.i18n.t('profile.premiumBannerButton')"></a>
+            <!-- Кнопка закриття (опціонально) -->
+            <!-- <button @click="localStorage.setItem('hidePremiumBanner', 'true')" class="close-notification" title="Закрити">×</button> -->
+        </div>
+    </div>
+</template>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <!-- Код футера з i18n, як в index.html -->
+        <div class="footer-content">
+            <div class="footer-section footer-about">
+                <h4 x-text="$store.i18n.t('general.about')"></h4>
+                <p x-text="$store.i18n.t('general.aboutText')"></p>
+                <div class="social-links">
+                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+                    <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+                <ul>
+                    <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+                    <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+                    <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+                    <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+                    <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4 x-text="$store.i18n.t('general.support')"></h4>
+                <ul>
+                    <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+                    <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+                    <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+                    <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4 x-text="$store.i18n.t('general.join')"></h4>
+                <ul>
+                    <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+                    <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+                    <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+                    <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+            <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+        </div>
+    </div>
+</footer>
+
+<!-- Елемент сповіщення -->
+<div x-show="notificationVisible"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-2"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 -translate-y-full"
+     class="notification"
+     style="display: none;"
+     id="global-notification">
+    <span x-text="notificationMessage"></span>
+</div>
+
 </body>
 </html>

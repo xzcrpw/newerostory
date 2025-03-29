@@ -1,26 +1,4 @@
 /* css/login.css */
-:root {
-    /* Основні кольори */
-    --bg-color: #0f0a0c;
-    --card-color: #1a1114;
-    --text-color: #ffffff;
-    --secondary-text: rgba(255, 255, 255, 0.7);
-
-    /* Градієнти */
-    --primary-gradient: linear-gradient(135deg, #800020 0%, #cc0033 100%);
-    --button-gradient: linear-gradient(135deg, #990000 0%, #cc0033 70%, #e30043 100%);
-    --card-gradient: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(25, 17, 20, 0.2) 100%);
-
-    /* Акцентні кольори */
-    --accent-red: #cc0033;
-    --accent-burgundy: #800020;
-    --accent-gold: #d9a45b;
-
-    /* Розміри */
-    --container-width: 1240px;
-    --border-radius: 12px;
-    --button-radius: 30px;
-}
 
 * {
     margin: 0;
@@ -331,34 +309,6 @@ header:after {
     margin-bottom: 2rem;
 }
 
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-}
-
-.form-input {
-    width: 100%;
-    padding: 1rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius);
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
-    background-color: rgba(255, 255, 255, 0.08);
-}
 
 .form-help {
     margin-top: 0.5rem;
@@ -508,40 +458,6 @@ header:after {
 
 .back-link:hover {
     color: var(--accent-red);
-}
-
-/* Повідомлення про помилку */
-.error-message {
-    background-color: rgba(255, 50, 50, 0.1);
-    border: 1px solid rgba(255, 50, 50, 0.3);
-    border-radius: var(--border-radius);
-    padding: 0.8rem;
-    margin-bottom: 1.5rem;
-    color: #ff6b6b;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-}
-
-.error-message i {
-    margin-right: 8px;
-}
-
-/* Повідомлення про успіх */
-.success-message {
-    background-color: rgba(50, 255, 50, 0.1);
-    border: 1px solid rgba(50, 255, 50, 0.3);
-    border-radius: var(--border-radius);
-    padding: 0.8rem;
-    margin-bottom: 1.5rem;
-    color: #4cd964;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-}
-
-.success-message i {
-    margin-right: 8px;
 }
 
 /* Відповідність для мобільних пристроїв */

@@ -1,212 +1,279 @@
 <!DOCTYPE html>
-<html lang="uk">
+<!-- Додано x-data та :lang -->
+<html lang="uk" x-data :lang="$store.i18n.selectedLang" xmlns:x-transition="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Категорії еротичних історій — Таємний Світ</title>
+  <!-- Title використовує i18n -->
+  <title x-text="`${$store.i18n.t('general.categories')} — ${$store.i18n.t('general.copyright')}`"></title>
 
-  <link rel="stylesheet" href="css/categories.css">
+  <!-- Мета-теги використовують i18n -->
+  <meta name="description" :content="$store.i18n.t('categoriesPage.metaDescription') || 'Знайдіть історії за вашими улюбленими темами та жанрами. Від романтичних зустрічей до гарячих фантазій — у нас є все для втілення ваших еротичних мрій.'">
+  <meta property="og:title" :content="`${$store.i18n.t('general.categories')} — ${$store.i18n.t('general.copyright')}`">
+  <meta property="og:description" :content="$store.i18n.t('categoriesPage.metaDescription') || 'Знайдіть історії за вашими улюбленими темами та жанрами.'">
+  <!-- Залишаємо статичне зображення або зробимо динамічне на бекенді -->
+  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?books,dark">
+  <meta property="og:type" content="website">
 
   <!-- Шрифти -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Font Awesome для іконок -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
 
-  <!-- Alpine.js для інтерактивності -->
+  <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- API Config & Utils -->
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/categories.css"> <!-- Використовуємо цей CSS -->
+
+  <style>
+    /* Стилі для завантаження/помилок */
+    .loading-indicator { text-align: center; padding: 2rem; color: var(--secondary-text); }
+    .error-message {
+      background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3);
+      border-radius: var(--border-radius); padding: 1rem; margin-bottom: 1.5rem;
+      color: #ff6b6b; font-size: 0.9rem; display: flex; align-items: center;
+    }
+    .error-message i { margin-right: 8px; }
+    /* Стиль для кнопки Retry в повідомленні про помилку */
+    .error-message button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+    .empty-state {
+      text-align: center; padding: 3rem; background-color: var(--card-color);
+      border-radius: var(--border-radius); margin: 2rem 0; color: var(--secondary-text);
+      grid-column: 1 / -1; /* Для відображення на всю ширину гріда */
+    }
+    .empty-state .highlight-query { /* Стиль для підсвітки пошукового запиту */
+      font-weight: 600;
+      color: var(--accent-gold);
+    }
+    /* Плавна поява карток */
+    .category-card { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+    .category-card.visible { opacity: 1; transform: translateY(0); }
+    /* Стилі для сповіщень підписки */
+    .newsletter-section .form-notification {
+      padding: 0.8rem 1rem; margin-bottom: 1rem; border-radius: var(--border-radius);
+      font-size: 0.9rem; max-width: 600px; margin-left: auto; margin-right: auto;
+      text-align: left; display: flex; align-items: center;
+    }
+    .newsletter-section .form-notification.error { background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3); color: #ff6b6b; }
+    .newsletter-section .form-notification.success { background-color: rgba(50, 200, 50, 0.1); border: 1px solid rgba(50, 200, 50, 0.3); color: #4cd964; }
+    .newsletter-section .form-notification i { margin-right: 0.7rem; }
+  </style>
 
 </head>
 <body x-data="{
+    // --- Стани UI ---
+    isLoggedIn: false,
+    isLoadingCategories: true,
+    isLoadingTags: true,
+    categoriesError: null,
+    tagsError: null,
     searchQuery: '',
-    categories: [
-        {
-            id: 1,
-            name: 'Романтика',
-            link: 'category-romance.html',
-            image: 'https://source.unsplash.com/random/600x400/?couple,romantic',
-            description: 'Чуттєві історії про кохання, пристрасть та романтичні зустрічі, які залишають незабутні враження.',
-            views: '25.3k',
-            likes: '12.1k',
-            count: '156'
-        },
-        {
-            id: 2,
-            name: 'Фантазії',
-            link: 'category-fantasy.html',
-            image: 'https://source.unsplash.com/random/600x400/?fantasy,dark',
-            description: 'Еротичні фантазії і мрії, які виходять за межі реальності та дозволяють зануритися у світ бажань.',
-            views: '18.6k',
-            likes: '9.5k',
-            count: '89'
-        },
-        {
-            id: 3,
-            name: 'Курортний роман',
-            link: 'category-vacation.html',
-            image: 'https://source.unsplash.com/random/600x400/?beach,vacation',
-            description: 'Гарячі зустрічі під палючим сонцем на екзотичних пляжах та у розкішних готелях. Відпустка, яку неможливо забути.',
-            views: '14.2k',
-            likes: '7.8k',
-            count: '72'
-        },
-        {
-            id: 4,
-            name: 'Випадкові зустрічі',
-            link: 'category-chance.html',
-            image: 'https://source.unsplash.com/random/600x400/?train,travel',
-            description: 'Несподівані знайомства з незнайомцями, які переростають у пристрасні пригоди. Коли доля зводить двох людей разом.',
-            views: '20.9k',
-            likes: '11.3k',
-            count: '105'
-        },
-        {
-            id: 5,
-            name: 'Службовий роман',
-            link: 'category-office.html',
-            image: 'https://source.unsplash.com/random/600x400/?office,work',
-            description: 'Гарячі історії про заборонені стосунки на робочому місці: між колегами, босом і підлеглою, клієнтами і обслуговуючим персоналом.',
-            views: '16.4k',
-            likes: '8.2k',
-            count: '64'
-        },
-        {
-            id: 6,
-            name: 'БДСМ',
-            link: 'category-bdsm.html',
-            image: 'https://source.unsplash.com/random/600x400/?dark,shadow',
-            description: 'Історії про домінування, підкорення, обмеження і особливі відчуття. Коли задоволення переплітається з грою влади.',
-            views: '13.8k',
-            likes: '7.5k',
-            count: '53'
-        },
-        {
-            id: 7,
-            name: 'Перший досвід',
-            link: 'category-first.html',
-            image: 'https://source.unsplash.com/random/600x400/?youth,young',
-            description: 'Зворушливі та відверті історії про перші інтимні дослідження, перший раз і нові незвідані відчуття.',
-            views: '19.7k',
-            likes: '10.2k',
-            count: '78'
-        },
-        {
-            id: 8,
-            name: 'Групові історії',
-            link: 'category-group.html',
-            image: 'https://source.unsplash.com/random/600x400/?group,party',
-            description: 'Спекотні розповіді про пристрасть між більш ніж двома партнерами. Вечірки, знайомства і нові горизонти насолоди.',
-            views: '15.3k',
-            likes: '8.9k',
-            count: '61'
-        },
-        {
-            id: 9,
-            name: 'Зрада',
-            link: 'category-cheating.html',
-            image: 'https://source.unsplash.com/random/600x400/?secret,mystery',
-            description: 'Історії про заборонені пристрасті, таємні побачення і спокуси, яким неможливо протистояти, незважаючи на все.',
-            views: '12.6k',
-            likes: '6.3k',
-            count: '47'
-        }
-    ],
-    popularTags: [
-        { name: 'Спонтанний секс', count: 128 },
-        { name: 'У літаку', count: 75 },
-        { name: 'Ніч у готелі', count: 103 },
-        { name: 'Масаж', count: 94 },
-        { name: 'На пляжі', count: 82 },
-        { name: 'З незнайомцем', count: 144 },
-        { name: 'Колишні', count: 67 },
-        { name: 'Друзі', count: 91 },
-        { name: 'Рольові ігри', count: 86 },
-        { name: 'Домінування', count: 72 },
-        { name: 'У потязі', count: 58 },
-        { name: 'Вечірка', count: 114 },
-        { name: 'Спокуса', count: 137 },
-        { name: 'Секс втрьох', count: 83 },
-        { name: 'Подруга', count: 95 }
-    ],
     newsletterEmail: '',
     newsletterSubmitted: false,
     newsletterError: '',
+    newsletterSubmitting: false,
 
+    // --- Дані ---
+    allCategories: [], // Всі завантажені категорії
+    popularTags: [],   // Популярні теги
+
+    // --- Фільтровані категорії ---
     get filteredCategories() {
         if (!this.searchQuery.trim()) {
-            return this.categories; // Повертаємо всі категорії, якщо пошуковий запит порожній
+            return this.allCategories;
         }
-
         const query = this.searchQuery.toLowerCase().trim();
-        return this.categories.filter(category =>
-            category.name.toLowerCase().includes(query) ||
-            category.description.toLowerCase().includes(query)
+        // Шукаємо по імені, опису та slug
+        return this.allCategories.filter(category =>
+            (category.name && category.name.toLowerCase().includes(query)) ||
+            (category.description && category.description.toLowerCase().includes(query)) ||
+            (category.slug && category.slug.toLowerCase().includes(query))
         );
     },
 
-    submitSearch() {
-        if (!this.searchQuery.trim()) {
-            return; // Якщо запит порожній, не робимо нічого
+    // --- Завантаження даних ---
+    async fetchCategories() {
+        this.isLoadingCategories = true;
+        this.categoriesError = null;
+        try {
+            const response = await api.categories.getCategories();
+            // Припускаємо, що API повертає масив категорій
+            this.allCategories = response || [];
+            this.$nextTick(() => this.initCardAnimation()); // Ініціалізуємо анімацію після оновлення DOM
+        } catch (error) {
+            this.categoriesError = error.message || $store.i18n.t('categoriesPage.errorLoadingCategories'); // i18n
+            console.error('Categories fetch error:', error);
+        } finally {
+            this.isLoadingCategories = false;
         }
-
-        // Показуємо результати (фільтрація відбувається через обчислювану властивість)
-        console.log('Пошук категорій:', this.searchQuery);
-
-        // Перемотуємо до результатів
-        document.querySelector('.categories-grid').scrollIntoView({ behavior: 'smooth' });
+    },
+    async fetchPopularTags() {
+        this.isLoadingTags = true;
+        this.tagsError = null;
+        try {
+             // Симуляція затримки
+             await new Promise(resolve => setTimeout(resolve, 800));
+             // Симуляція даних
+             this.popularTags = [
+                 { name: $store.i18n.t('tags.spontaneousSex') || 'Спонтанний секс', count: 128, slug: 'spontaneous-sex' },
+                 { name: $store.i18n.t('tags.hotelNight') || 'Ніч у готелі', count: 103, slug: 'hotel-night' },
+                 { name: $store.i18n.t('tags.strangerSex') || 'З незнайомцем', count: 144, slug: 'stranger-sex' },
+                 { name: $store.i18n.t('tags.massage') || 'Масаж', count: 94, slug: 'massage' },
+                 { name: $store.i18n.t('tags.party') || 'Вечірка', count: 114, slug: 'party' },
+                 { name: $store.i18n.t('tags.roleplay') || 'Рольові ігри', count: 86, slug: 'roleplay' },
+            ];
+             // TODO: Замінити на реальний API запит, напр.:
+             // this.popularTags = await api.tags.getPopularTags({ limit: 10 });
+        } catch (error) {
+            this.tagsError = error.message || $store.i18n.t('categoriesPage.errorLoadingTags'); // i18n
+            console.error('Tags fetch error:', error);
+        } finally {
+            this.isLoadingTags = false;
+        }
     },
 
-    subscribeNewsletter() {
-        // Валідація пошти
+    // --- Пошук ---
+    submitSearch() {
+        // Плавний скрол до секції категорій
+        const grid = document.querySelector('.categories-grid');
+        if (grid) { grid.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        console.log('Searching categories for:', this.searchQuery);
+        // Фільтрація відбувається автоматично через get filteredCategories()
+    },
+     searchByTag(tagName) {
+         // Встановлюємо пошуковий запит і викликаємо submitSearch
+         this.searchQuery = tagName;
+         this.submitSearch();
+     },
+
+    // --- Підписка на розсилку ---
+    async subscribeNewsletter() {
+        this.newsletterError = '';
+        this.newsletterSubmitted = false;
+        // Валідація з використанням i18n ключів
         if (!this.newsletterEmail) {
-            this.newsletterError = 'Будь ласка, введіть електронну пошту';
+            this.newsletterError = $store.i18n.t('newsletter.errorEmailRequired');
             return;
         }
-
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(this.newsletterEmail)) {
-            this.newsletterError = 'Будь ласка, введіть коректну електронну пошту';
+            this.newsletterError = $store.i18n.t('newsletter.errorEmailInvalid');
             return;
         }
 
-        // В реальному додатку тут був би AJAX запит
-        console.log('Підписка на розсилку:', this.newsletterEmail);
+        this.newsletterSubmitting = true;
+        try {
+             // Симуляція виклику API
+             console.log('API call: subscribeNewsletter', this.newsletterEmail);
+             await new Promise(resolve => setTimeout(resolve, 1000)); // Симуляція затримки
+             // await api.newsletter.subscribe(this.newsletterEmail); // Реальний виклик
+            this.newsletterSubmitted = true;
+            this.newsletterEmail = ''; // Очищаємо поле після успіху
+            // Ховаємо повідомлення про успіх через 5 секунд
+            setTimeout(() => { this.newsletterSubmitted = false; }, 5000);
+        } catch (error) {
+             // Обробка помилки з використанням i18n
+             this.newsletterError = error.message || $store.i18n.t('newsletter.errorGeneral');
+             console.error('Newsletter subscribe error:', error);
+        } finally {
+             this.newsletterSubmitting = false;
+        }
+    },
 
-        // Імітація успішної підписки
-        this.newsletterError = '';
-        this.newsletterSubmitted = true;
+     // --- Анімація карток ---
+     initCardAnimation() {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target); // Відключаємо спостереження після появи
+                    }
+                });
+            },
+            { threshold: 0.1 } // Картка стає видимою, коли 10% її видно
+        );
+        // Важливо: шукаємо елементи всередині поточного Alpine компонента ($el)
+        this.$el.querySelectorAll('.category-card:not(.visible)').forEach(card => {
+            observer.observe(card);
+        });
+     }
 
-        // Очистити форму через 3 секунди
-        setTimeout(() => {
-            this.newsletterEmail = '';
-            this.newsletterSubmitted = false;
-        }, 3000);
-    }
-}">
+}" x-init="
+    isLoggedIn = api.utils.isAuthenticated(); // Перевірка статусу логіну
+    $nextTick(() => { // Запускаємо завантаження після ініціалізації Alpine
+        Promise.all([fetchCategories(), fetchPopularTags()]);
+    });
+    // Зчитування параметра пошуку з URL при завантаженні сторінки
+    const urlParams = new URLSearchParams(window.location.search);
+    const search = urlParams.get('search');
+    if (search) { searchQuery = decodeURIComponent(search); }
+">
 
 <!-- Хедер -->
 <header>
   <div class="container">
     <nav class="navbar">
       <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-
+      <!-- Навігація з i18n -->
       <ul class="nav-links">
-        <li><a href="index.html">Головна</a></li>
-        <li><a href="new-stories.html">Нові історії</a></li>
-        <li><a href="top-stories.html">Топ рейтинг</a></li>
-        <li><a href="categories.html" class="active">Категорії</a></li>
-        <li><a href="authors.html">Автори</a></li>
+        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
-
       <div class="auth-buttons">
-        <div class="lang-dropdown">
-          <span>UA</span>
-          <i class="fas fa-chevron-down"></i>
+        <!-- Мовний перемикач -->
+        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+          <div class="lang-dropdown-button" @click="open = !open">
+            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          </div>
+          <div class="lang-dropdown-menu" x-show="open" x-transition>
+            <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <div class="lang-dropdown-item"
+                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                <span x-text="lang.name"></span>
+                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+              </div>
+            </template>
+          </div>
         </div>
-        <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
-        <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+        <!-- Кнопки авторизації -->
+        <template x-if="!isLoggedIn">
+          <div>
+            <a href="login.html" class="btn btn-outline">
+              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
+            </a>
+            <a href="register-page.html" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
+            </a>
+          </div>
+        </template>
+        <template x-if="isLoggedIn">
+          <div>
+            <a href="profile.html" class="btn btn-outline">
+              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
+            </a>
+            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            </a>
+          </div>
+        </template>
       </div>
     </nav>
   </div>
@@ -216,15 +283,15 @@
 <main class="container">
   <!-- Хлібні крихти -->
   <div class="breadcrumbs">
-    <a href="index.html">Головна</a>
+    <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
     <span class="separator">/</span>
-    <span class="current">Категорії</span>
+    <span class="current" x-text="$store.i18n.t('general.categories')"></span>
   </div>
 
   <!-- Заголовок сторінки -->
   <div class="page-header">
-    <h1 class="page-title">Категорії</h1>
-    <p class="page-description">Знайдіть історії за вашими улюбленими темами та жанрами. Від романтичних зустрічей до гарячих фантазій — у нас є все для втілення ваших еротичних мрій.</p>
+    <h1 class="page-title" x-text="$store.i18n.t('categoriesPage.title')"></h1>
+    <p class="page-description" x-text="$store.i18n.t('categoriesPage.description')"></p>
   </div>
 
   <!-- Пошук категорій -->
@@ -236,161 +303,159 @@
           <input
                   type="text"
                   class="search-input"
-                  placeholder="Пошук категорій та тегів..."
+                  :placeholder="$store.i18n.t('categoriesPage.searchPlaceholder')"
                   x-model="searchQuery"
+                  :aria-label="$store.i18n.t('categoriesPage.searchPlaceholder')"
           >
         </div>
-        <button type="submit" class="search-button">Знайти</button>
+        <button type="submit" class="search-button" x-text="$store.i18n.t('general.search')"></button>
       </form>
     </div>
   </div>
 
-  <!-- Сітка категорій -->
-  <div class="categories-grid">
-    <template x-if="filteredCategories.length === 0">
-      <div style="text-align: center; grid-column: 1 / -1; padding: 2rem;">
-        <p>За вашим запитом "<span x-text="searchQuery"></span>" не знайдено категорій.</p>
-      </div>
-    </template>
+  <!-- Індикатори завантаження та помилки для категорій -->
+  <div x-show="isLoadingCategories" class="loading-indicator" x-text="$store.i18n.t('categoriesPage.loadingCategories')"></div>
+  <div x-show="categoriesError" class="error-message">
+    <i class="fas fa-exclamation-circle"></i> <span x-text="categoriesError"></span>
+    <button @click="fetchCategories()" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.retryButton')"></button>
+  </div>
 
-    <template x-for="category in filteredCategories" :key="category.id">
-      <div class="category-card">
-        <div class="category-count" x-text="`${category.count} історій`"></div>
-        <div class="category-card-image">
-          <img :src="category.image" :alt="category.name">
-        </div>
-        <div class="category-card-content">
-          <h3 class="category-name"><a :href="category.link" x-text="category.name"></a></h3>
-          <div class="category-description" x-text="category.description"></div>
-          <div class="category-meta">
-            <div class="category-meta-item"><i class="far fa-eye"></i> <span x-text="category.views"></span> переглядів</div>
-            <div class="category-meta-item"><i class="far fa-heart"></i> <span x-text="category.likes"></span> вподобань</div>
+  <!-- Сітка категорій -->
+  <div class="categories-grid" x-show="!isLoadingCategories && !categoriesError">
+    <!-- Повідомлення, якщо пошук не дав результатів -->
+    <div x-show="filteredCategories.length === 0 && searchQuery.trim()" class="empty-state" x-html="$store.i18n.t('categoriesPage.noResultsFound', { query: `<span class='highlight-query'>${searchQuery}</span>` }) || `За запитом \'<span class='highlight-query'>${searchQuery}</span>\' нічого не знайдено.`">
+    </div>
+    <!-- Повідомлення, якщо взагалі немає категорій -->
+    <div x-show="allCategories.length === 0 && !searchQuery.trim()" class="empty-state" x-text="$store.i18n.t('categoriesPage.noCategoriesAvailable')">
+    </div>
+
+    <template x-for="category in filteredCategories" :key="category._id || category.id">
+      <div class="category-card"> <!-- Анімація додається через JS -->
+        <a :href="`category-page.html?slug=${category.slug}`" style="display: contents;">
+          <!-- Кількість історій з використанням суфікса з i18n -->
+          <div class="category-count" x-text="`${category.storyCount || 0} ${$store.i18n.t('general.storiesSuffix')}`"></div>
+          <div class="category-card-image">
+            <img :src="category.imageUrl || 'https://source.unsplash.com/random/600x400/?placeholder'" :alt="category.name">
           </div>
-        </div>
+          <div class="category-card-content">
+            <h3 class="category-name"><span x-text="category.name"></span></h3>
+            <div class="category-description" x-text="category.description || $store.i18n.t('general.descriptionMissing')"></div>
+            <div class="category-meta">
+              <!-- Суфікси для переглядів і лайків з i18n -->
+              <div class="category-meta-item"><i class="far fa-eye"></i> <span x-text="category.stats?.views || 0"></span> <span x-text="$store.i18n.t('general.viewsSuffix')"></span></div>
+              <div class="category-meta-item"><i class="far fa-heart"></i> <span x-text="category.stats?.likes || 0"></span> <span x-text="$store.i18n.t('general.likesSuffix')"></span></div>
+            </div>
+          </div>
+        </a>
       </div>
     </template>
   </div>
 
   <!-- Популярні теги -->
   <div class="tags-section">
-    <h2 class="section-title">Популярні теги</h2>
-    <div class="tags-cloud">
-      <template x-for="tag in popularTags" :key="tag.name">
-        <a href="#" @click.prevent="searchQuery = tag.name; submitSearch()" class="tag-item">
-          <span x-text="tag.name"></span> <span class="tag-count" x-text="'(' + tag.count + ')'"></span>
+    <h2 class="section-title" x-text="$store.i18n.t('categoriesPage.popularTagsTitle')"></h2>
+    <!-- Індикатори завантаження та помилки для тегів -->
+    <div x-show="isLoadingTags" class="loading-indicator" x-text="$store.i18n.t('categoriesPage.loadingTags')"></div>
+    <div x-show="tagsError" class="error-message">
+      <i class="fas fa-exclamation-circle"></i> <span x-text="tagsError"></span>
+      <button @click="fetchPopularTags()" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.retryButton')"></button>
+    </div>
+
+    <div class="tags-cloud" x-show="!isLoadingTags && !tagsError && popularTags.length > 0">
+      <template x-for="tag in popularTags" :key="tag.slug || tag.name">
+        <!-- Посилання на пошук за тегом -->
+        <a href="#" @click.prevent="searchByTag(tag.name)" class="tag-item">
+          <span x-text="tag.name"></span>
+          <span class="tag-count" x-text="'(' + (tag.count || 0) + ')'"></span>
         </a>
       </template>
+    </div>
+    <div x-show="!isLoadingTags && !tagsError && popularTags.length === 0" class="empty-state" style="padding: 1rem; margin: 1rem 0;" x-text="$store.i18n.t('categoriesPage.noTagsFound')">
     </div>
   </div>
 
   <!-- Підписка на розсилку -->
   <div class="newsletter-section">
-    <h2 class="newsletter-title">Підпишіться на ексклюзивні історії</h2>
-    <p class="newsletter-description">Отримуйте найкращі історії прямо на вашу електронну пошту. Ми не розсилаємо спам, тільки найгарячіші новинки.</p>
+    <h2 class="newsletter-title" x-text="$store.i18n.t('newsletter.title')"></h2>
+    <p class="newsletter-description" x-text="$store.i18n.t('newsletter.description')"></p>
 
-    <!-- Повідомлення про помилку -->
-    <div
-            x-show="newsletterError"
-            x-transition
-            style="background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3);
-             border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; color: #ff6b6b; font-size: 0.9rem;
-             max-width: 600px; margin-left: auto; margin-right: auto; text-align: left;"
-    >
+    <!-- Повідомлення про помилку/успіх -->
+    <div x-show="newsletterError" x-transition class="form-notification error">
       <i class="fas fa-exclamation-circle"></i> <span x-text="newsletterError"></span>
     </div>
-
-    <!-- Повідомлення про успіх -->
-    <div
-            x-show="newsletterSubmitted"
-            x-transition
-            style="background-color: rgba(50, 255, 50, 0.1); border: 1px solid rgba(50, 255, 50, 0.3);
-             border-radius: 12px; padding: 0.8rem; margin-bottom: 1rem; color: #4cd964; font-size: 0.9rem;
-             max-width: 600px; margin-left: auto; margin-right: auto; text-align: left;"
-    >
-      <i class="fas fa-check-circle"></i> Дякуємо за підписку! Ми надіслали лист із підтвердженням на вашу пошту.
+    <div x-show="newsletterSubmitted" x-transition class="form-notification success">
+      <i class="fas fa-check-circle"></i> <span x-text="$store.i18n.t('newsletter.successMessage')"></span>
     </div>
 
-    <div class="newsletter-form">
+    <form class="newsletter-form" @submit.prevent="subscribeNewsletter()">
       <input
               type="email"
               id="newsletterEmail"
               class="newsletter-input"
-              placeholder="Ваша електронна пошта"
+              :placeholder="$store.i18n.t('newsletter.emailPlaceholder')"
               x-model="newsletterEmail"
+              required
+              :aria-label="$store.i18n.t('newsletter.emailPlaceholder')"
+              :disabled="newsletterSubmitting"
       >
-      <button @click="subscribeNewsletter()" class="btn btn-primary" :disabled="newsletterSubmitted">
-        <span x-show="!newsletterSubmitted">Підписатися</span>
-        <span x-show="newsletterSubmitted"><i class="fas fa-check"></i> Підписано</span>
+      <button type="submit" class="btn btn-primary" :disabled="newsletterSubmitting || newsletterSubmitted">
+        <span x-show="!newsletterSubmitting && !newsletterSubmitted" x-text="$store.i18n.t('newsletter.subscribeButton')"></span>
+        <span x-show="newsletterSubmitting"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('general.subscribing')"></span></span>
+        <span x-show="newsletterSubmitted"><i class="fas fa-check"></i> <span x-text="$store.i18n.t('newsletter.subscribed')"></span></span>
       </button>
-    </div>
+    </form>
   </div>
 </main>
 
-<!-- JavaScript для додаткової функціональності -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Оптимізована анімація появи категорій при прокрутці
-    const categoryCards = document.querySelectorAll('.category-card');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-          observer.unobserve(entry.target); // Перестаємо спостерігати після анімації
-        }
-      });
-    }, {
-      root: null, // viewport
-      rootMargin: '0px',
-      threshold: 0.1 // Ефект починається, коли 10% елементу видно
-    });
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <!-- Код футера з i18n, як в index.html -->
+    <div class="footer-content">
+      <div class="footer-section footer-about">
+        <h4 x-text="$store.i18n.t('general.about')"></h4>
+        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <div class="social-links">
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <ul>
+          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <ul>
+          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <ul>
+          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+    </div>
+  </div>
+</footer>
 
-    // Ініціалізація стилів і спостереження
-    categoryCards.forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px)';
-      card.style.transition = 'opacity 0.5s, transform 0.5s';
-      observer.observe(card);
-    });
-
-    // Перевірка параметрів URL для пошуку
-    const urlParams = new URLSearchParams(window.location.search);
-    const searchQuery = urlParams.get('search');
-    if (searchQuery) {
-      // Якщо є параметр пошуку в URL, заповнюємо поле пошуку
-      document.querySelector('.search-input').value = searchQuery;
-
-      // І запускаємо пошук через Alpine.js
-      const alpine = document.querySelector('body').__x;
-      if (alpine) {
-        alpine.$data.searchQuery = searchQuery;
-        alpine.$data.submitSearch();
-      }
-    }
-
-    // Обробка переходів між категоріями
-    document.querySelectorAll('.category-name a').forEach(link => {
-      link.addEventListener('click', function(e) {
-        const categoryName = this.textContent;
-        localStorage.setItem('lastVisitedCategory', categoryName);
-      });
-    });
-
-    // Обробка кліків за тегами
-    document.querySelectorAll('.tag-item').forEach(tag => {
-      tag.addEventListener('click', function(e) {
-        e.preventDefault();
-        const tagName = this.querySelector('span').textContent;
-
-        // Оновлюємо пошуковий запит і викликаємо пошук через Alpine.js
-        const alpine = document.querySelector('body').__x;
-        if (alpine) {
-          alpine.$data.searchQuery = tagName;
-          alpine.$data.submitSearch();
-        }
-      });
-    });
-  });
-</script>
 </body>
 </html>

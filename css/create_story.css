@@ -1,27 +1,5 @@
+/* css/create_story.css */
 /* CSS для сторінки створення/редагування історії */
-
-:root {
-    /* Основні кольори */
-    --bg-color: #0f0a0c;
-    --card-color: #1a1114;
-    --text-color: #ffffff;
-    --secondary-text: rgba(255, 255, 255, 0.7);
-    
-    /* Градієнти */
-    --primary-gradient: linear-gradient(135deg, #800020 0%, #cc0033 100%);
-    --button-gradient: linear-gradient(135deg, #990000 0%, #cc0033 70%, #e30043 100%);
-    --card-gradient: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(25, 17, 20, 0.2) 100%);
-    
-    /* Акцентні кольори */
-    --accent-red: #cc0033;
-    --accent-burgundy: #800020;
-    --accent-gold: #d9a45b;
-    
-    /* Розміри */
-    --container-width: 1240px;
-    --border-radius: 12px;
-    --button-radius: 30px;
-}
 
 .editor-container {
     max-width: 1000px;
@@ -85,54 +63,7 @@
     margin-bottom: 1.5rem;
 }
 
-.form-group {
-    flex: 1;
-    margin-bottom: 1.5rem;
-}
 
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.form-input,
-.form-select,
-.form-textarea {
-    width: 100%;
-    padding: 1rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius);
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.form-help {
-    font-size: 0.85rem;
-    color: var(--secondary-text);
-    margin-top: 0.5rem;
-}
-
-.checkbox-group {
-    display: flex;
-    align-items: center;
-    margin-top: 1rem;
-}
-
-.checkbox-group input[type="checkbox"] {
-    margin-right: 0.5rem;
-}
 
 .image-upload {
     border: 2px dashed rgba(255, 255, 255, 0.2);

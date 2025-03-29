@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Несподівана зустріч у нічному потязі — Таємний Світ</title>
 
+  <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/story.css">
+
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
   <!-- Мета-теги для SEO і соцмереж -->
   <meta name="description" content="Еротична історія про несподівану зустріч у нічному потязі, яка змінила життя двох незнайомців.">
@@ -113,25 +117,26 @@
     },
 
     setRating(rating) {
-        if (!this.isLoggedIn) {
-            window.location.href = 'login.html';
-            return;
-        }
+    if (!this.isLoggedIn) {
+        window.location.href = 'login.html';
+        return;
+    }
 
-        if (this.userRating === rating) {
-            // Якщо користувач натискає на ту саму зірку, скасування оцінки
-            this.userRating = 0;
-        } else {
-            this.userRating = rating;
+    // Перевіряємо, чи користувач натискає на ту саму зірку
+    const previousRating = this.userRating;
+    this.userRating = previousRating === rating ? 0 : rating;
 
-            // Тут буде AJAX запит для збереження рейтингу на сервер
-            console.log('Збереження рейтингу:', rating);
+    // Тут буде AJAX запит для збереження рейтингу
+    console.log('Збереження рейтингу:', this.userRating);
 
-            // Показуємо сповіщення про успішну оцінку
-            setTimeout(() => {
-                alert(`Дякуємо за вашу оцінку: ${rating} зірок!`);
-            }, 300);
-        }
+    // Показуємо сповіщення лише якщо рейтинг змінився
+    if (previousRating !== this.userRating) {
+        setTimeout(() => {
+            const message = this.userRating > 0
+                ? `Дякуємо за вашу оцінку: ${this.userRating} зірок!`
+                : 'Вашу оцінку скасовано';
+            alert(message);
+        }, 300);
     },
 
     toggleBookmark() {
@@ -258,30 +263,50 @@
   <div class="container">
     <nav class="navbar">
       <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-
+      <!-- Новий варіант з i18n -->
       <ul class="nav-links">
-        <li><a href="index.html">Головна</a></li>
-        <li><a href="new-stories.html">Нові історії</a></li>
-        <li><a href="top-stories.html">Топ рейтинг</a></li>
-        <li><a href="categories.html">Категорії</a></li>
-        <li><a href="authors.html">Автори</a></li>
+        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
-
       <div class="auth-buttons">
-        <div class="lang-dropdown">
-          <span>UA</span>
-          <i class="fas fa-chevron-down"></i>
+        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+          <div class="lang-dropdown-button" @click="open = !open">
+            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          </div>
+          <div class="lang-dropdown-menu" x-show="open" x-transition>
+            <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <div class="lang-dropdown-item"
+                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                <span x-text="lang.name"></span>
+                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+              </div>
+            </template>
+          </div>
         </div>
+
         <template x-if="!isLoggedIn">
           <div>
-            <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
-            <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+            <a href="login.html" class="btn btn-outline">
+              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
+            </a>
+            <a href="register-page.html" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
+            </a>
           </div>
         </template>
         <template x-if="isLoggedIn">
           <div>
-            <a href="profile.html" class="btn btn-outline"><i class="fas fa-user"></i> Профіль</a>
-            <a href="#" @click.prevent="isLoggedIn = false" class="btn btn-primary"><i class="fas fa-sign-out-alt"></i> Вийти</a>
+            <a href="profile.html" class="btn btn-outline">
+              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
+            </a>
+            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            </a>
           </div>
         </template>
       </div>
@@ -642,5 +667,56 @@
     });
   });
 </script>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-section footer-about">
+        <h4>Про Таємний Світ</h4>
+        <p>Платформа для читання та публікації ексклюзивних еротичних історій. Зануртеся у світ фантазій та пристрасті.</p>
+        <div class="social-links">
+          <a href="#" class="social-link" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" title="Telegram"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Навігація</h4>
+        <ul>
+          <li><a href="index.html">Головна</a></li>
+          <li><a href="categories.html">Категорії</a></li>
+          <li><a href="new-stories.html">Нові історії</a></li>
+          <li><a href="top-stories.html">Топ рейтинг</a></li>
+          <li><a href="authors.html">Автори</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Підтримка</h4>
+        <ul>
+          <li><a href="faq.html">Часті запитання (FAQ)</a></li>
+          <li><a href="contact.html">Зворотний зв'язок</a></li>
+          <li><a href="terms-page.html">Правила та умови</a></li>
+          <li><a href="privacy-policy.html">Політика конфіденційності</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Приєднуйтесь</h4>
+        <ul>
+          <li><a href="login.html">Вхід</a></li>
+          <li><a href="register-page.html">Реєстрація</a></li>
+          <li><a href="premium.html">Преміум-підписка</a></li>
+          <li><a href="create_story.html">Написати історію</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; <span x-text="new Date().getFullYear()"></span> Таємний Світ (erostory.world). Всі права захищені. 18+ <br>
+      <a href="terms-page.html">Умови використання</a> | <a href="privacy-policy.html">Політика конфіденційності</a>
+    </div>
+  </div>
+</footer>
+
+
 </body>
 </html>

@@ -1,57 +1,124 @@
 <!DOCTYPE html>
-<html lang="uk" xmlns:x-on="http://www.w3.org/1999/xhtml">
+<html lang="uk" xmlns:x-on="http://www.w3.org/1999/xhtml" x-data :lang="$store.i18n.selectedLang"> <!-- Додано :lang -->
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Таємний світ — ексклюзивні еротичні історії</title>
+  <!-- Title використовує i18n -->
+  <title x-text="`${$store.i18n.t('general.home')} — ${$store.i18n.t('general.copyright')}`"></title>
+  <!-- Meta description використовує i18n -->
+  <meta name="description" :content="$store.i18n.t('home.metaDescription')">
 
+  <!-- Стилі, Шрифти, API, i18n, FontAwesome, Alpine.js -->
   <link rel="stylesheet" href="css/main.css">
-
-  <!-- Шрифти: Cormorant Garamond (елегантний) + Montserrat (сучасний) -->
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+  <script type="module" src="js/i18n.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Font Awesome для іконок -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
-
-  <!-- Alpine.js для інтерактивності -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
+  <!-- Додав OG теги, які можна буде оновити на бекенді -->
+  <meta property="og:title" :content="`${$store.i18n.t('general.home')} — ${$store.i18n.t('general.copyright')}`">
+  <meta property="og:description" :content="$store.i18n.t('home.metaDescription')">
+  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?sensual,dark"> <!-- Приклад OG Image -->
+  <meta property="og:type" content="website">
 
 </head>
 <body x-data="{
     showAgeVerification: true,
     searchQuery: '',
+    isLoggedIn: false,
+    categories: [],
+    popularStories: [],
+    isLoadingCategories: true, // Додав індикатор завантаження
+    isLoadingStories: true,  // Додав індикатор завантаження
 
     verifyAge() {
         this.showAgeVerification = false;
         localStorage.setItem('ageVerified', 'true');
+        // Встановлюємо кукі на 30 днів
+        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+        document.cookie = `ageVerified=true; path=/; expires=${expires}; SameSite=Lax`;
     },
 
     submitSearch() {
-        if (!this.searchQuery || this.searchQuery.trim() === '') {
-            return;
-        }
-
-        // Перенаправлення на сторінку результатів пошуку
+        if (!this.searchQuery || this.searchQuery.trim() === '') return;
+        // Перенаправляємо на сторінку категорій з параметром пошуку
         window.location.href = `categories.html?search=${encodeURIComponent(this.searchQuery)}`;
+    },
+
+    checkLoginStatus() {
+        this.isLoggedIn = api.utils.isAuthenticated(); // Використовуємо функцію з api-utils
+    },
+
+    async loadCategories() {
+        this.isLoadingCategories = true;
+        try {
+            // Симуляція API
+            await new Promise(resolve => setTimeout(resolve, 300));
+            this.categories = [
+                { name: $store.i18n.t('createStory.categoryRomance') || 'Романтика', slug: 'romance', count: 125 },
+                { name: $store.i18n.t('createStory.categoryFantasy') || 'Фантазії', slug: 'fantasy', count: 98 },
+                { name: $store.i18n.t('createStory.categoryBDSM') || 'БДСМ', slug: 'bdsm', count: 76 },
+                { name: $store.i18n.t('createStory.categoryFirstTime') || 'Перший досвід', slug: 'first-time', count: 84 },
+                { name: $store.i18n.t('createStory.categoryVacation') || 'Курортний роман', slug: 'vacation', count: 42 },
+                { name: $store.i18n.t('createStory.categoryChanceEncounters') || 'Випадкові зустрічі', slug: 'chance-encounters', count: 63 }
+            ];
+            // TODO: Замінити на реальний API-запит:
+            // this.categories = await api.categories.getCategories({ limit: 6 }); // Обмежуємо кількість на головній
+        } catch (e) {
+             console.error('Failed to load categories', e);
+             // Можна показати повідомлення про помилку
+        } finally {
+             this.isLoadingCategories = false;
+        }
+    },
+
+    async loadPopularStories() {
+         this.isLoadingStories = true;
+        try {
+            // Симуляція API
+             await new Promise(resolve => setTimeout(resolve, 400));
+            this.popularStories = [
+                { _id: '1', title: $store.i18n.t('home.simStory1Title') || 'Випадкова зустріч', excerpt: $store.i18n.t('home.simStory1Excerpt') || 'Це мала бути звичайна ділова поїздка, але один погляд змінив усе', readingTime: '6', views: 2456, averageRating: 4.8, category: { name: $store.i18n.t('createStory.categoryRomance') || 'Романтика', slug: 'romance' } },
+                { _id: '2', title: $store.i18n.t('home.simStory2Title') || 'Спогади минулого літа', excerpt: $store.i18n.t('home.simStory2Excerpt') || 'Вона з\'явилася в його житті на один сезон, але залишила слід назавжди', readingTime: '8', views: 1892, averageRating: 4.6, category: { name: $store.i18n.t('createStory.categoryVacation') || 'Курортний роман', slug: 'vacation' } },
+                { _id: '3', title: $store.i18n.t('home.simStory3Title') || 'Таємниця готельного номера', excerpt: $store.i18n.t('home.simStory3Excerpt') || 'Коли двері зачинилися, реальність перестала існувати', readingTime: '5', views: 3150, averageRating: 4.9, category: { name: $store.i18n.t('createStory.categoryChanceEncounters') || 'Випадкові зустрічі', slug: 'chance-encounters' }, isPremium: true } // Додав преміум для прикладу
+            ];
+            // TODO: Замінити на реальний API-запит:
+            // const response = await api.stories.getStories({ sort: '-views', limit: 3, populate: 'category' }); // Запитуємо категорію
+            // this.popularStories = response.data || [];
+        } catch (e) {
+             console.error('Failed to load popular stories', e);
+             // Можна показати повідомлення про помилку
+        } finally {
+             this.isLoadingStories = false;
+        }
+    },
+    getCookie(name) { // Допоміжна функція для кукі
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
     }
 }" x-init="
-    showAgeVerification = localStorage.getItem('ageVerified') !== 'true';
+    showAgeVerification = !(localStorage.getItem('ageVerified') === 'true' || getCookie('ageVerified') === 'true');
+    checkLoginStatus();
+    loadCategories();
+    loadPopularStories();
 ">
 
 <!-- Віковий контроль -->
-<div class="age-verification" x-show="showAgeVerification">
+<div class="age-verification" x-show="showAgeVerification" x-transition.opacity>
   <div class="age-verification-content">
     <div class="age-verification-icon">
       <i class="fas fa-exclamation-circle"></i>
     </div>
-    <h2>Віковий контроль</h2>
-    <p>Вміст сайту містить еротичний контент, призначений виключно для дорослої аудиторії. Продовжуючи, ви підтверджуєте, що вам виповнилося 18 років, і ви бажаєте переглядати матеріали для дорослих.</p>
+    <h2 x-text="$store.i18n.t('auth.ageVerificationTitle')"></h2>
+    <p x-text="$store.i18n.t('auth.ageVerificationText')"></p>
     <div class="age-buttons">
-      <a href="https://google.com" class="btn btn-outline">Мені менше 18</a>
-      <button class="btn btn-primary" @click="verifyAge()">Мені 18+ років</button>
+      <a href="https://google.com" class="btn btn-outline" x-text="$store.i18n.t('general.under18')"></a>
+      <button class="btn btn-primary" @click="verifyAge()" x-text="$store.i18n.t('general.ageConfirmation')"></button>
     </div>
   </div>
 </div>
@@ -60,23 +127,53 @@
 <header>
   <div class="container">
     <nav class="navbar">
-      <a href="#" class="logo">Таємний<span>Світ</span></a>
-
+      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
       <ul class="nav-links">
-        <li><a href="index.html">Головна</a></li>
-        <li><a href="new-stories.html">Нові історії</a></li>
-        <li><a href="top-stories.html">Топ рейтинг</a></li>
-        <li><a href="categories.html">Категорії</a></li>
-        <li><a href="authors.html">Автори</a></li>
+        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
-
       <div class="auth-buttons">
-        <div class="lang-dropdown">
-          <span>UA</span>
-          <i class="fas fa-chevron-down"></i>
+        <!-- Мовний перемикач -->
+        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+          <div class="lang-dropdown-button" @click="open = !open">
+            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          </div>
+          <div class="lang-dropdown-menu" x-show="open" x-transition>
+            <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <div class="lang-dropdown-item"
+                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                <span x-text="lang.name"></span>
+                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+              </div>
+            </template>
+          </div>
         </div>
-        <a href="#" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Увійти</a>
-        <a href="#" class="btn btn-primary"><i class="fas fa-user-plus"></i> Реєстрація</a>
+        <!-- Кнопки входу/профілю -->
+        <template x-if="!isLoggedIn">
+          <div>
+            <a href="login.html" class="btn btn-outline">
+              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
+            </a>
+            <a href="login.html?tab=register" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
+            </a>
+          </div>
+        </template>
+        <template x-if="isLoggedIn">
+          <div>
+            <a href="profile.html" class="btn btn-outline">
+              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
+            </a>
+            <a href="#" @click.prevent="api.auth.logout(); isLoggedIn = false; window.location.reload();" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            </a>
+          </div>
+        </template>
       </div>
     </nav>
   </div>
@@ -88,12 +185,16 @@
   <section class="hero">
     <div class="container">
       <div class="hero-content">
-        <div class="hero-subtitle">Відчуй насолоду від кожного слова</div>
-        <h1>Увійди у світ заборонених фантазій</h1>
-        <p>Ексклюзивні інтимні історії, написані з пристрастю. Відкрий нові грані чуттєвості та еротизму у нашій унікальній колекції для справжніх поціновувачів.</p>
+        <div class="hero-subtitle" x-text="$store.i18n.t('home.heroSubtitle')"></div>
+        <h1 x-text="$store.i18n.t('home.heroTitle')"></h1>
+        <p x-text="$store.i18n.t('home.heroText')"></p>
         <div class="hero-buttons">
-          <a href="#" class="btn btn-primary"><i class="fas fa-book-open"></i> Почати читання</a>
-          <a href="#" class="btn btn-outline"><i class="fas fa-fire"></i> Гарячі історії</a>
+          <a href="new-stories.html" class="btn btn-primary">
+            <i class="fas fa-book-open"></i> <span x-text="$store.i18n.t('home.heroButtonStart')"></span>
+          </a>
+          <a href="top-stories.html" class="btn btn-outline">
+            <i class="fas fa-fire"></i> <span x-text="$store.i18n.t('home.heroButtonHot')"></span>
+          </a>
         </div>
       </div>
     </div>
@@ -103,12 +204,12 @@
   <section class="search-section">
     <div class="container">
       <div class="search-container">
-        <form class="search-form" x-on:submit.prevent="submitSearch()">
+        <form class="search-form" @submit.prevent="submitSearch()">
           <div class="search-input-container">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" x-model="searchQuery" placeholder="Знайти історію або автора...">
+            <input type="text" class="search-input" x-model="searchQuery" :placeholder="$store.i18n.t('home.searchPlaceholder')">
           </div>
-          <button type="submit" class="search-button">Пошук</button>
+          <button type="submit" class="search-button" x-text="$store.i18n.t('general.search')"></button>
         </form>
       </div>
     </div>
@@ -118,20 +219,28 @@
   <section class="categories-section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Категорії</h2>
+        <h2 class="section-title" x-text="$store.i18n.t('general.categories')"></h2>
       </div>
-
-      <div class="categories-container">
-        <a href="#" class="category-tag">Романтика <span>(124)</span></a>
-        <a href="#" class="category-tag">Перший досвід <span>(78)</span></a>
-        <a href="#" class="category-tag">Фантазії <span>(96)</span></a>
-        <a href="#" class="category-tag">БДСМ <span>(53)</span></a>
-        <a href="#" class="category-tag">Службовий роман <span>(42)</span></a>
-        <a href="#" class="category-tag">Групові історії <span>(61)</span></a>
-        <a href="#" class="category-tag">Курортний роман <span>(39)</span></a>
-        <a href="#" class="category-tag">Випадкові зустрічі <span>(84)</span></a>
-        <a href="#" class="category-tag">Зрада <span>(47)</span></a>
-        <a href="#" class="category-tag">Секс з незнайомцями <span>(69)</span></a>
+      <!-- Індикатор завантаження категорій -->
+      <div x-show="isLoadingCategories" class="loading-indicator-small" style="justify-content: flex-start;">
+        <div class="loading-spinner-small"></div> <span x-text="$store.i18n.t('categoriesPage.loadingCategories')"></span>
+      </div>
+      <!-- Список категорій -->
+      <div class="categories-container" x-show="!isLoadingCategories && categories.length > 0">
+        <template x-for="category in categories" :key="category.slug">
+          <a :href="`category-page.html?slug=${category.slug}`" class="category-tag">
+            <span x-text="category.name"></span>
+            <span x-text="`(${category.count || 0})`"></span>
+          </a>
+        </template>
+        <!-- Посилання для перегляду всіх категорій -->
+        <a href="categories.html" class="category-tag view-all-tag">
+          <span x-text="$store.i18n.t('home.viewAll')"></span> <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+      <!-- Повідомлення, якщо категорії не завантажено -->
+      <div x-show="!isLoadingCategories && categories.length === 0" class="empty-tab-message">
+        <span x-text="$store.i18n.t('categoriesPage.noCategoriesAvailable')"></span>
       </div>
     </div>
   </section>
@@ -140,174 +249,105 @@
   <section class="stories-section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Популярні історії</h2>
-        <a href="top-stories.html" class="view-all">Переглянути всі <i class="fas fa-arrow-right"></i></a>
+        <h2 class="section-title" x-text="$store.i18n.t('home.popularStories')"></h2>
+        <a href="top-stories.html" class="view-all">
+          <span x-text="$store.i18n.t('home.viewAll')"></span> <i class="fas fa-arrow-right"></i>
+        </a>
       </div>
-
-      <div class="stories-grid">
-        <!-- Історія 1 -->
-        <div class="story-card">
-          <div class="story-card-image">
-            <img src="https://source.unsplash.com/random/600x400/?silhouette" alt="Story image">
-            <div class="story-badge">18+</div>
-          </div>
-          <div class="story-card-content">
-            <div class="story-tags">
-              <span class="story-tag">Романтика</span>
-              <span class="story-tag">Пристрасть</span>
-            </div>
-            <h3 class="story-title"><a href="#">Несподівана зустріч у нічному потязі</a></h3>
-            <p class="story-excerpt">
-              Я не очікував, що ця поїздка затягнеться до пізньої ночі. Вагон був майже порожній, коли вона сіла навпроти мене. Наші погляди зустрілися, і в її очах я побачив щось більше, ніж просто цікавість...
-            </p>
-            <div class="story-meta">
-              <div class="story-meta-item"><i class="far fa-clock"></i> 12 хв.</div>
-              <div class="story-meta-item"><i class="far fa-eye"></i> 2.5k</div>
-              <div class="story-meta-item rating"><i class="fas fa-star"></i> 4.8</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Історія 2 -->
-        <div class="story-card">
-          <div class="story-card-image">
-            <img src="https://source.unsplash.com/random/600x400/?dark,night" alt="Story image">
-            <div class="story-badge">21+</div>
-          </div>
-          <div class="story-card-content">
-            <div class="story-tags">
-              <span class="story-tag">БДСМ</span>
-              <span class="story-tag">Фантазії</span>
-            </div>
-            <h3 class="story-title"><a href="#">Таємниця червоної кімнати</a></h3>
-            <p class="story-excerpt">
-              Вона довго готувалася до цього вечора. Її запросили у приватний клуб, про який ходили лише чутки. Коли їй зав'язали очі та провели через оксамитову завісу, вона зрозуміла, що назад дороги немає...
-            </p>
-            <div class="story-meta">
-              <div class="story-meta-item"><i class="far fa-clock"></i> 18 хв.</div>
-              <div class="story-meta-item"><i class="far fa-eye"></i> 4.7k</div>
-              <div class="story-meta-item rating"><i class="fas fa-star"></i> 4.9</div>
+      <!-- Індикатор завантаження історій -->
+      <div x-show="isLoadingStories" class="loading-indicator">
+        <span x-text="$store.i18n.t('storyLists.loadingStories')"></span>
+      </div>
+      <!-- Сітка історій -->
+      <div class="stories-grid" x-show="!isLoadingStories && popularStories.length > 0">
+        <template x-for="story in popularStories" :key="story._id">
+          <div class="story-card">
+            <a :href="`story-detailed.html?id=${story._id}`" style="display: contents;">
+              <div class="story-card-image">
+                <img :src="story.imageUrl || `https://source.unsplash.com/random/600x400/?story,${story._id}`" :alt="story.title">
+                <div :class="story.isPremium ? 'story-badge premium-badge' : 'story-badge'" x-text="story.ageRestriction || (story.isPremium ? '21+' : '18+')"></div>
+              </div>
+            </a>
+            <div class="story-card-content">
+              <!-- Теги/категорія з API -->
+              <div class="story-tags">
+                <a :href="`category-page.html?slug=${story.category?.slug || story.category}`" class="story-tag" x-text="story.category?.name || story.category || $store.i18n.t('general.defaultCategory')"></a>
+              </div>
+              <h3 class="story-title">
+                <a :href="`story-detailed.html?id=${story._id}`" x-text="story.title"></a>
+              </h3>
+              <p class="story-excerpt" x-text="story.excerpt ? story.excerpt + '...' : ''"></p>
+              <div class="story-meta">
+                <div class="story-meta-item"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="$store.i18n.t('general.readingTimeSuffix')"></span></div>
+                <div class="story-meta-item"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
+                <div class="story-meta-item rating"><i class="fas fa-star"></i> <span x-text="(story.averageRating || 0).toFixed(1)"></span></div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Історія 3 -->
-        <div class="story-card">
-          <div class="story-card-image">
-            <img src="https://source.unsplash.com/random/600x400/?beach,sunset" alt="Story image">
-            <div class="story-badge">18+</div>
-          </div>
-          <div class="story-card-content">
-            <div class="story-tags">
-              <span class="story-tag">Курортний роман</span>
-              <span class="story-tag">Пристрасть</span>
-            </div>
-            <h3 class="story-title"><a href="#">П'ять днів у райському куточку</a></h3>
-            <p class="story-excerpt">
-              Вона прилетіла на цей острів, щоб забути своє минуле. Він працював інструктором з дайвінгу і знав кожен потаємний куточок узбережжя. Їхня перша зустріч під час заходу сонця змінила все...
-            </p>
-            <div class="story-meta">
-              <div class="story-meta-item"><i class="far fa-clock"></i> 15 хв.</div>
-              <div class="story-meta-item"><i class="far fa-eye"></i> 3.2k</div>
-              <div class="story-meta-item rating"><i class="fas fa-star"></i> 4.7</div>
-            </div>
-          </div>
-        </div>
+        </template>
+      </div>
+      <!-- Повідомлення, якщо історії не завантажено -->
+      <div x-show="!isLoadingStories && popularStories.length === 0" class="empty-tab-message">
+        <span x-text="$store.i18n.t('storyLists.noStoriesFound') || 'Наразі немає популярних історій.'"></span>
       </div>
     </div>
   </section>
 </main>
 
 <!-- Плаваюча кнопка -->
-<div class="floating-button">
+<a href="create_story.html" class="floating-button" :title="$store.i18n.t('createStory.title')">
   <i class="fas fa-plus"></i>
-</div>
+</a>
 
-<!-- Оновлення функції перевірки віку -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Функція для встановлення cookie
-    function setCookie(name, value, days) {
-      var expires = "";
-      if (days) {
-        var date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
-        expires = "; expires=" + date.toUTCString();
-      }
-      document.cookie = name + "=" + (value || "")  + expires + "; path=/";
-    }
-
-    // Функція для отримання cookie
-    function getCookie(name) {
-      var nameEQ = name + "=";
-      var ca = document.cookie.split(';');
-      for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
-      }
-      return null;
-    }
-
-    // Перевірка чи був вік верифікований
-    var ageVerified = getCookie("ageVerified") || localStorage.getItem('ageVerified');
-    if (!ageVerified) {
-      document.querySelector('.age-verification').style.display = "flex";
-    } else {
-      document.querySelector('.age-verification').style.display = "none";
-    }
-
-    // Додаємо обробник для кнопки верифікації
-    document.querySelector('.age-verification .btn-primary').addEventListener('click', function() {
-      localStorage.setItem('ageVerified', 'true');
-      setCookie("ageVerified", "true", 30); // Зберігаємо на 30 днів
-      document.querySelector('.age-verification').style.display = "none";
-    });
-
-    // Додаємо функціонал для форми пошуку
-    document.querySelector('.search-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var searchQuery = document.querySelector('.search-input').value.trim();
-      if (searchQuery) {
-        window.location.href = 'categories.html?search=' + encodeURIComponent(searchQuery);
-      }
-    });
-
-    // Додаємо функціонал для плаваючої кнопки
-    document.querySelector('.floating-button').addEventListener('click', function() {
-      window.location.href = 'create_story.html';
-    });
-  });
-
-  document.addEventListener('DOMContentLoaded', function() {
-    // Додаємо функціонал для плаваючої кнопки
-    document.querySelector('.floating-button').addEventListener('click', function() {
-      window.location.href = 'create_story.html';
-    });
-
-    // Фіксуємо посилання в меню, щоб вони вели на правильні сторінки
-    document.querySelectorAll('a[href="new-stories.html"]').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Сторінка "Нові історії" знаходиться в розробці');
-      });
-    });
-
-    document.querySelectorAll('a[href="top-stories.html"]').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Сторінка "Топ рейтинг" знаходиться в розробці');
-      });
-    });
-
-    document.querySelectorAll('a[href="authors.html"]').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Сторінка "Автори" знаходиться в розробці');
-      });
-    });
-  });
-</script>
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <!-- Код футера як раніше -->
+    <div class="footer-content">
+      <div class="footer-section footer-about">
+        <h4 x-text="$store.i18n.t('general.about')"></h4>
+        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <div class="social-links">
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <ul>
+          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <ul>
+          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <ul>
+          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+    </div>
+  </div>
+</footer>
 
 </body>
 </html>

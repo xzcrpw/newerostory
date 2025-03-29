@@ -7,9 +7,8 @@
     <!-- Title використовує i18n -->
     <title x-text="isEditMode ? `${$store.i18n.t('createStory.pageTitleEdit')} — ${$store.i18n.t('general.copyright')}` : `${$store.i18n.t('createStory.pageTitleCreate')} — ${$store.i18n.t('general.copyright')}`"></title>
 
-    <!-- Мета-теги використовують i18n -->
+    <!-- Мета-теги (краще генерувати динамічно на бекенді для SEO) -->
     <meta name="description" :content="$store.i18n.t('createStory.metaDescription')">
-    <!-- Інші мета-теги (OG) краще генерувати динамічно на бекенді -->
 
     <!-- Шрифти -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,21 +31,124 @@
     <script src="js/api-utils.js" defer></script>
 
     <!-- Internationalization -->
-    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+    <script type="module" src="js/i18n.js" defer></script>
 
     <!-- jQuery (потрібен для Select2) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- TinyMCE -->
-    <!-- ЗАМІНИ YOUR_API_KEY на свій ключ Tiny Cloud -->
-    <script src="https://cdn.tiny.cloud/1/YOUR_API_KEY/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/YOUR_API_KEY/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script> <!-- ЗАМІНИТИ YOUR_API_KEY -->
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/create_story.css">
 
     <style>
+        /* Стилі для сповіщення (змінено позиціонування) */
+        .notification {
+            position: fixed;
+            bottom: -100px; /* Початкова позиція за межами екрану */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-color);
+            color: var(--text-color);
+            padding: 1rem 1.5rem; /* Трохи збільшив */
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); /* Посилив тінь */
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-out, bottom 0.4s ease-out; /* Плавний перехід */
+            min-width: 250px; /* Мінімальна ширина */
+            text-align: center;
+            border: 1px solid rgba(153, 0, 0, 0.2);
+        }
+        .notification.show {
+            opacity: 1;
+            bottom: 20px; /* Кінцева позиція */
+        }
+        /* Стилі для індикатора завантаження */
+        .loading-indicator-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 10, 12, 0.8); /* Напівпрозорий фон */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998; /* Нижче ніж сповіщення */
+            backdrop-filter: blur(5px);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: var(--accent-red);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Стиль для кнопки під час обробки */
+        button.removing { opacity: 0.7; pointer-events: none; }
+        button.removing i:not(.fa-spinner) { display: none; }
+        button.removing::after {
+            content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
+        }
+        .action-btn.removing { opacity: 0.7; pointer-events: none; }
+        .action-btn.removing i:not(.fa-spinner) { display: none; }
+        .action-btn.removing::after {
+            content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            display: inline-block; animation: spin 1s linear infinite; font-size: 0.9em;
+        }
+
+        /* Додаткові стилі для перекладу */
+        .translation-controls {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap; /* Дозволити перенос */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .translation-label {
+            font-weight: 500;
+            color: var(--secondary-text);
+        }
+        .translation-select {
+            padding: 0.5rem 0.8rem;
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+        }
+        .translation-status {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .translation-error-inline {
+            color: #ff6b6b;
+        }
+        /* Помилка коментаря */
+        .error-message-inline {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: -0.5rem; /* Підняти трохи вище */
+            margin-bottom: 0.5rem;
+        }
         /* Стилі для сповіщень */
         .notification {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
@@ -57,71 +159,65 @@
             min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
         }
         .notification.show { opacity: 1; bottom: 20px; }
-        .notification.success { border-left: 4px solid #4cd964; }
-        .notification.error { border-left: 4px solid #ff6b6b; }
-
-        /* Стилі для індикатора завантаження */
-        .loading-indicator-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(15, 10, 12, 0.8); display: flex;
-            align-items: center; justify-content: center; z-index: 9998;
-            backdrop-filter: blur(5px);
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: var(--accent-red);
-            border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Стиль для кнопки під час обробки */
-        button.removing, button:disabled { opacity: 0.7; pointer-events: none; }
-        button.removing i:not(.fa-spinner), button:disabled i:not(.fa-spinner) { display: none; }
-        button.removing::after, button:disabled.processing::after { /* Додав клас .processing для загального використання */
-            content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
-            display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
-        }
-
-        /* Стилі для повідомлень про помилки/успіх форми */
-        .error-message, .success-message {
-            margin-bottom: 1.5rem;
-            padding: 0.8rem 1.2rem;
-            border-radius: var(--border-radius);
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            border: 1px solid transparent;
-        }
-        .error-message {
-            background-color: rgba(255, 50, 50, 0.1);
-            border-color: rgba(255, 50, 50, 0.3);
+        /* Стилі для помилок валідації */
+        .validation-error {
             color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 5px;
         }
-        .success-message {
-            background-color: rgba(50, 200, 50, 0.1);
-            border-color: rgba(50, 200, 50, 0.3);
-            color: #4cd964;
-        }
-        .error-message i, .success-message i { margin-right: 0.8rem; font-size: 1.1em; }
-        .error-message button, .success-message button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
-
         /* Стилі для Select2 dark theme (базові, можливо потребують доопрацювання) */
-        /* Перенесено в create_story.css */
-
-        /* Стилі для превью аватара */
-        .image-preview { display: block; } /* Зробити видимим за замовчуванням, керувати через x-show */
-        .image-preview img { max-width: 100%; max-height: 300px; object-fit: cover; border-radius: var(--border-radius); }
-        .image-preview-remove { position: absolute; top: 10px; right: 10px; /* ... решта стилів ... */ }
-
+        .select2-container--bootstrap4 .select2-selection {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            border-radius: var(--border-radius);
+            min-height: 3.4rem; /* Схоже на form-input */
+            padding: .7rem .75rem;
+            line-height: 1.5;
+        }
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+            background-color: rgba(153, 0, 0, 0.2);
+            border: 1px solid rgba(153, 0, 0, 0.3);
+            color: var(--text-color);
+            border-radius: 20px;
+        }
+        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove {
+            color: var(--secondary-text);
+        }
+        .select2-container--bootstrap4.select2-container--focus .select2-selection,
+        .select2-container--bootstrap4.select2-container--open .select2-selection {
+            border-color: rgba(153, 0, 0, 0.3);
+            box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1);
+        }
+        .select2-dropdown {
+            background-color: var(--card-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        .select2-container--bootstrap4 .select2-results__option {
+            color: var(--text-color);
+        }
+        .select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected] {
+            background-color: rgba(153, 0, 0, 0.2);
+        }
+        .select2-container--bootstrap4 .select2-search--dropdown .select2-search__field {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+        }
+        /* Стилі для TinyMCE темної теми (можна перенести в create_story.css) */
+        .tox .tox-edit-area__iframe { background-color: var(--card-color); }
+        /* Додайте інші стилі TinyMCE з main.css, якщо вони були переміщені */
     </style>
 </head>
 <body x-data="{
     // --- Стани UI ---
     currentTab: 'editor', // 'editor', 'preview'
-    isLoading: false, // Завантаження даних для редагування
+    isLoading: false,
     isSavingDraft: false,
     isPublishing: false,
-    errorMessage: null, // Загальна помилка
-    successMessage: null, // Загальне повідомлення про успіх
+    errorMessage: null,
+    successMessage: null,
     notificationVisible: false,
     notificationMessage: '',
     notificationTimeout: null,
@@ -147,17 +243,7 @@
     // availableTags: [], // Select2 tags дозволяє вводити нові
 
     // --- Функція сповіщень ---
-    showNotification(message, isSuccess = true) {
-        this.notificationMessage = message;
-        const notificationElement = document.getElementById('global-notification');
-        if (notificationElement) {
-            notificationElement.classList.toggle('success', isSuccess);
-            notificationElement.classList.toggle('error', !isSuccess);
-        }
-        this.notificationVisible = true;
-        if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
-    },
+    showNotification(message, isSuccess = true) { /* ... */ },
 
     // --- Функція валідації ---
     validateForm() {
@@ -176,11 +262,6 @@
             this.errorMessage = $store.i18n.t('createStory.errorContentRequired');
             return false;
         }
-        // Додаткова перевірка довжини контенту (наприклад, мін 100 символів)
-        if (content.length < 100) {
-            this.errorMessage = $store.i18n.t('createStory.errorContentLength') || 'Текст історії занадто короткий (мін. 100 символів).';
-            return false;
-        }
         return true;
     },
 
@@ -196,7 +277,7 @@
         try {
             console.log(`Simulating API call: getStoryById(${this.storyId})`);
             await new Promise(resolve => setTimeout(resolve, 700));
-            // const storyData = await api.stories.getStoryById(this.storyId); // Реальний виклик
+            // const storyData = await api.stories.getStoryById(this.storyId);
              const storyData = { // Симуляція
                  _id: this.storyId, title: `Редагована історія ${this.storyId}`, category: 'romance',
                  tags: ['потяг', 'редагування'], ageRating: '18+', isPremium: false, isAnonymous: false,
@@ -211,8 +292,7 @@
             }
 
             this.storyTitle = storyData.title;
-            // Якщо категорія повертається як об'єкт, беремо її ID/slug
-            this.storyCategory = storyData.category?._id || storyData.category;
+            this.storyCategory = storyData.category; // Може бути об'єкт або slug
             this.storyTags = storyData.tags || [];
             this.ageRating = storyData.ageRating || '18+';
             this.storyImageUrl = storyData.imageUrl; // Зберігаємо URL існуючого зображення
@@ -221,7 +301,7 @@
             this.isAnonymous = storyData.isAnonymous || false;
             this.authorId = storyData.author._id;
 
-            // Оновлюємо TinyMCE та Select2 ПІСЛЯ завантаження даних
+            // Оновлюємо TinyMCE та Select2
             tinymce.get('storyContentEditor')?.setContent(this.storyContent);
             $(this.$refs.tagsSelect).val(this.storyTags).trigger('change');
             // Встановлюємо прев'ю для існуючого зображення
@@ -240,22 +320,16 @@
         try {
             console.log('Simulating API call: getCategories');
             await new Promise(resolve => setTimeout(resolve, 300));
-            // const categories = await api.categories.getCategories(); // Реальний виклик
-            this.availableCategories = [ // Симуляція з використанням ключів i18n
+            // const categories = await api.categories.getCategories();
+            this.availableCategories = [ // Симуляція
                 { id: 'romance', name: $store.i18n.t('createStory.categoryRomance') },
                 { id: 'fantasy', name: $store.i18n.t('createStory.categoryFantasy') },
                 { id: 'bdsm', name: $store.i18n.t('createStory.categoryBDSM') },
-                { id: 'first-time', name: $store.i18n.t('createStory.categoryFirstTime') },
-                { id: 'vacation', name: $store.i18n.t('createStory.categoryVacation') },
-                { id: 'chance-encounters', name: $store.i18n.t('createStory.categoryChanceEncounters') },
-                { id: 'office', name: $store.i18n.t('createStory.categoryOffice') },
-                { id: 'group', name: $store.i18n.t('createStory.categoryGroup') },
-                { id: 'cheating', name: $store.i18n.t('createStory.categoryCheating') },
-                { id: 'other', name: $store.i18n.t('createStory.categoryOther') }
+                // ... додати інші згідно з uk.js
             ];
         } catch (error) {
             console.error('Error loading categories:', error);
-            this.errorMessage = $store.i18n.t('createStory.errorLoadingCategories') || 'Не вдалося завантажити категорії.';
+            this.errorMessage = 'Не вдалося завантажити категорії.';
         }
     },
 
@@ -267,18 +341,14 @@
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (!allowedTypes.includes(file.type)) {
-            this.errorMessage = $store.i18n.t('createStory.errorImageFormat');
-            event.target.value = null; // Скидаємо input
-            return;
+            this.errorMessage = $store.i18n.t('createStory.errorImageFormat'); return;
         }
         if (file.size > maxSize) {
-            this.errorMessage = $store.i18n.t('createStory.errorImageSize', { size: '5MB' });
-            event.target.value = null; // Скидаємо input
-            return;
+            this.errorMessage = $store.i18n.t('createStory.errorImageSize'); return;
         }
         this.errorMessage = null;
         this.storyImageFile = file;
-        this.storyImageUrl = null; // Скидаємо URL, якщо завантажується новий файл
+        this.storyImageUrl = null; // Скидаємо URL, якщо завантажується файл
         // Превью
         const reader = new FileReader();
         reader.onload = (e) => { this.imagePreviewUrl = e.target.result; }
@@ -289,18 +359,13 @@
         this.storyImageFile = null;
         this.storyImageUrl = null; // Також скидаємо URL існуючого
         this.imagePreviewUrl = null;
-        if (this.$refs.imageUploadInput) { // Перевіряємо наявність refs
-             this.$refs.imageUploadInput.value = null; // Скидаємо input file
-        }
+        this.$refs.imageUploadInput.value = null; // Скидаємо input file
         this.setUnsavedChanges();
     },
 
     // --- Збереження/Публікація ---
     async saveDraft() {
-        if (!this.validateForm()) {
-             this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
-             return;
-        }
+        if (!this.validateForm()) return;
         this.isSavingDraft = true; this.errorMessage = null; this.successMessage = null;
         try {
             const formData = this.prepareFormData();
@@ -312,176 +377,155 @@
             if (this.isEditMode) {
                 // result = await api.stories.updateStory(this.storyId, formData);
                  result = { _id: this.storyId, title: this.storyTitle }; // Симуляція
-                 console.log('Updated draft:', result);
-            } else {
-                // result = await api.stories.createStory(formData);
-                result = { _id: 'newStory' + Date.now(), title: this.storyTitle }; // Симуляція
-                console.log('Created draft:', result);
-                this.storyId = result._id; // Зберігаємо ID нової історії
-                this.isEditMode = true; // Переходимо в режим редагування
-                // Оновлюємо URL без перезавантаження
-                window.history.pushState({}, '', `?id=${this.storyId}`);
-            }
+                 console.log(\'Updated draft:\', result);
+} else {
+// result = await api.stories.createStory(formData);
+result = { _id: 'newStory' + Date.now(), title: this.storyTitle }; // Симуляція
+console.log(\'Created draft:\', result);
+this.storyId = result._id; // Зберігаємо ID нової історії
+this.isEditMode = true; // Переходимо в режим редагування
+// Оновлюємо URL без перезавантаження
+window.history.pushState({}, '', `?id=${this.storyId}`);
+}
 
-            this.successMessage = $store.i18n.t('createStory.draftSaved');
-            this.hasUnsavedChanges = false; // Скидаємо прапорець змін
-            // Оновлюємо дані на сторінці (напр. URL зображення, якщо воно було завантажене)
-             if (result.imageUrl) {
-                 this.storyImageUrl = result.imageUrl;
-                 this.imagePreviewUrl = result.imageUrl;
-                 this.storyImageFile = null;
-                 if (this.$refs.imageUploadInput) this.$refs.imageUploadInput.value = null;
-             }
-        } catch (error) {
-            this.errorMessage = `${$store.i18n.t('createStory.errorSavingDraft')} ${error.message || $store.i18n.t('general.unknownError')}`;
-            console.error('Save draft error:', error);
-        } finally { this.isSavingDraft = false; }
-    },
-    async publishStory() {
-        if (!this.validateForm()) {
-            this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
-            return;
-        }
+this.successMessage = $store.i18n.t('createStory.draftSaved');
+this.hasUnsavedChanges = false; // Скидаємо прапорець змін
+} catch (error) {
+this.errorMessage = `${$store.i18n.t('createStory.errorSavingDraft')} ${error.message || $store.i18n.t('general.unknownError')}`;
+console.error('Save draft error:', error);
+} finally { this.isSavingDraft = false; }
+},
+async publishStory() {
+if (!this.validateForm()) return;
 
-        // Попередження про відсутність зображення
-        if (!this.storyImageFile && !this.storyImageUrl) {
-            if (!confirm($store.i18n.t('createStory.confirmPublishNoImage'))) {
-                return;
-            }
-        }
+// Попередження про відсутність зображення
+if (!this.storyImageFile && !this.storyImageUrl) {
+if (!confirm($store.i18n.t('createStory.confirmPublishNoImage'))) {
+return;
+}
+}
 
-        this.isPublishing = true; this.errorMessage = null; this.successMessage = null;
-        try {
-            const formData = this.prepareFormData();
-            formData.append('status', 'published'); // Встановлюємо статус
+this.isPublishing = true; this.errorMessage = null; this.successMessage = null;
+try {
+const formData = this.prepareFormData();
+formData.append('status', 'published'); // Встановлюємо статус
 
-            console.log('Simulating API call: publishStory');
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            let result;
-            if (this.isEditMode) {
-                // result = await api.stories.updateStory(this.storyId, formData);
-                result = { _id: this.storyId }; // Симуляція
-                console.log('Published updated story:', result);
-            } else {
-                // result = await api.stories.createStory(formData);
-                result = { _id: 'newStory' + Date.now() }; // Симуляція
-                console.log('Published new story:', result);
-            }
-            this.hasUnsavedChanges = false; // Скидаємо прапорець
-            this.showNotification($store.i18n.t('createStory.storyPublishedSuccess'), true);
-            // Перенаправлення на сторінку історії
-            setTimeout(() => { window.location.href = `story-detailed.html?id=${result._id}`; }, 1500);
+console.log('Simulating API call: publishStory');
+await new Promise(resolve => setTimeout(resolve, 1200));
+let result;
+if (this.isEditMode) {
+// result = await api.stories.updateStory(this.storyId, formData);
+result = { _id: this.storyId }; // Симуляція
+console.log(\'Published updated story:\', result);
+} else {
+// result = await api.stories.createStory(formData);
+result = { _id: 'newStory' + Date.now() }; // Симуляція
+console.log(\'Published new story:\', result);
+}
+this.hasUnsavedChanges = false; // Скидаємо прапорець
+this.showNotification($store.i18n.t('createStory.storyPublishedSuccess'), true);
+// Перенаправлення на сторінку історії
+setTimeout(() => { window.location.href = `story-detailed.html?id=${result._id}`; }, 1500);
 
-        } catch (error) {
-            this.errorMessage = `${$store.i18n.t('createStory.errorPublishing')} ${error.message || $store.i18n.t('general.unknownError')}`;
-            console.error('Publish story error:', error);
-            this.isPublishing = false; // Знімаємо блокування при помилці
-        }
-        // Не знімаємо isPublishing при успіху, бо йде редірект
-    },
-    // Допоміжна функція для підготовки даних форми
-    prepareFormData() {
-        const formData = new FormData();
-        formData.append('title', this.storyTitle.trim());
-        formData.append('category', this.storyCategory);
-        this.storyTags.forEach(tag => formData.append('tags', tag));
-        formData.append('ageRating', this.ageRating);
-        // Оновлюємо контент з TinyMCE перед відправкою
-        this.storyContent = tinymce.get('storyContentEditor')?.getContent() || '';
-        formData.append('content', this.storyContent);
-        formData.append('isPremium', this.isPremium);
-        formData.append('isAnonymous', this.isAnonymous);
-        if (this.storyImageFile) {
-            formData.append('image', this.storyImageFile);
-        } else if (this.isEditMode && !this.storyImageUrl && !this.imagePreviewUrl) { // Надсилаємо тільки якщо і URL, і превью видалені
-             formData.append('removeImage', 'true');
-        }
-        // Не відправляємо storyImageUrl напряму, бекенд має сам вирішити, чи оновлювати
-        return formData;
-    },
+} catch (error) {
+this.errorMessage = `${$store.i18n.t('createStory.errorPublishing')} ${error.message || $store.i18n.t('general.unknownError')}`;
+console.error('Publish story error:', error);
+this.isPublishing = false; // Знімаємо блокування при помилці
+}
+// Не знімаємо isPublishing при успіху, бо йде редірект
+},
+// Допоміжна функція для підготовки даних форми
+prepareFormData() {
+const formData = new FormData();
+formData.append('title', this.storyTitle.trim());
+formData.append('category', this.storyCategory);
+this.storyTags.forEach(tag => formData.append('tags', tag));
+formData.append('ageRating', this.ageRating);
+// Оновлюємо контент з TinyMCE перед відправкою
+this.storyContent = tinymce.get('storyContentEditor')?.getContent() || '';
+formData.append('content', this.storyContent);
+formData.append('isPremium', this.isPremium);
+formData.append('isAnonymous', this.isAnonymous);
+if (this.storyImageFile) {
+formData.append('image', this.storyImageFile);
+} else if (this.isEditMode && !this.storyImageUrl) {
+// Якщо в режимі редагування видалили зображення і не завантажили нове
+formData.append('removeImage', 'true');
+}
+// Не відправляємо storyImageUrl напряму, бекенд має сам вирішити, чи оновлювати
+return formData;
+},
 
-    // --- Інше ---
-    setUnsavedChanges() { this.hasUnsavedChanges = true; },
-    handleBeforeUnload(event) {
-        if (this.hasUnsavedChanges) {
-            const message = $store.i18n.t('createStory.beforeUnloadWarning');
-            event.preventDefault(); // Standard for most browsers
-            event.returnValue = message; // For older browsers
-            return message;
-        }
-    },
-    initEditor() {
-        // Ініціалізація TinyMCE
-        tinymce.init({
-            selector: '#storyContentEditor',
-            plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount help', // Додав help
-            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | help', // Додав help
-            skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
-            content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
-            content_style: 'body { font-family:Montserrat,sans-serif; font-size:16px; color: var(--text-color); background-color: var(--card-color); } p {margin-bottom: 1em;}', // Додав стилі для контенту
-            placeholder: $store.i18n.t('createStory.contentPlaceholder'),
-            height: 500,
-            setup: (editor) => {
-                editor.on('change keyup Undo Redo', () => { // Додав Undo Redo
-                    this.storyContent = editor.getContent();
-                    this.setUnsavedChanges();
-                });
-                // Завантаження контенту, якщо він є (для редагування)
-                editor.on('init', () => {
-                    if (this.isEditMode && this.storyContent) {
-                        editor.setContent(this.storyContent);
-                        // Скидаємо прапорець незбережених змін після початкового завантаження
-                         setTimeout(() => { this.hasUnsavedChanges = false; }, 50);
-                    }
-                });
-            },
-            // Додаємо мову інтерфейсу, якщо є відповідний мовний пакет
-            language: $store.i18n.selectedLang === 'uk' ? 'uk' : ($store.i18n.selectedLang === 'ru' ? 'ru' : 'en'), // Приклад
-             language_url: `/tinymce/langs/${$store.i18n.selectedLang}.js` // Шлях до мовних пакетів TinyMCE - ПОТРІБНО ЗАВАНТАЖИТИ ПАКЕТИ
-        });
+// --- Інше ---
+setUnsavedChanges() { this.hasUnsavedChanges = true; },
+handleBeforeUnload(event) {
+if (this.hasUnsavedChanges) {
+const message = $store.i18n.t('createStory.beforeUnloadWarning');
+event.preventDefault(); // Standard for most browsers
+event.returnValue = message; // For older browsers
+return message;
+}
+},
+initEditor() {
+// Ініціалізація TinyMCE
+tinymce.init({
+selector: '#storyContentEditor',
+plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
+content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
+content_style: 'body { font-family:Montserrat,sans-serif; font-size:16px; color: #fff; background-color: var(--card-color); }', // Стилі для контенту
+placeholder: $store.i18n.t('createStory.contentPlaceholder'),
+height: 500,
+setup: (editor) => {
+editor.on('change keyup', () => {
+this.storyContent = editor.getContent();
+this.setUnsavedChanges();
+});
+// Завантаження контенту, якщо він є (для редагування)
+editor.on('init', () => {
+if (this.isEditMode && this.storyContent) {
+editor.setContent(this.storyContent);
+}
+});
+},
+// Додаємо мову інтерфейсу, якщо є відповідний мовний пакет
+language: $store.i18n.selectedLang === 'uk' ? 'uk' : ($store.i18n.selectedLang === 'ru' ? 'ru' : 'en'), // Приклад
+language_url: `/tinymce/langs/${$store.i18n.selectedLang}.js` // Шлях до мовних пакетів TinyMCE
+});
 
-        // Ініціалізація Select2
-        $(this.$refs.tagsSelect).select2({
-            theme: 'bootstrap4', // Використовуємо темну тему
-            tags: true, // Дозволити створення нових тегів
-            tokenSeparators: [',', ' '], // Роздільники для створення тегів
-            maximumSelectionLength: 5, // Максимум 5 тегів
-            placeholder: $store.i18n.t('createStory.tagsPlaceholder'),
-            language: { // Базова локалізація Select2
-                noResults: () => $store.i18n.t('select2.noResults') || 'Нічого не знайдено',
-                searching: () => $store.i18n.t('select2.searching') || 'Пошук...',
-                maximumSelected: (args) => $store.i18n.t('createStory.tagsMaxSelected', { count: args.maximum }) || `Ви можете вибрати лише ${args.maximum} тегів`
-            }
-        }).on('change', (e) => {
-            // Перевірка, чи значення дійсно змінилося, щоб уникнути зайвих спрацювань
-             const currentVal = JSON.stringify(this.storyTags);
-             const newVal = JSON.stringify($(e.target).val() || []);
-             if(currentVal !== newVal) {
-                 this.storyTags = $(e.target).val() || [];
-                 this.setUnsavedChanges();
-             }
-        });
+// Ініціалізація Select2
+$(this.$refs.tagsSelect).select2({
+theme: 'bootstrap4', // Використовуємо темну тему
+tags: true, // Дозволити створення нових тегів
+tokenSeparators: [',', ' '], // Роздільники для створення тегів
+maximumSelectionLength: 5, // Максимум 5 тегів
+placeholder: $store.i18n.t('createStory.tagsPlaceholder'),
+language: { // Базова локалізація Select2
+noResults: () => $store.i18n.t('select2.noResults') || \'Нічого не знайдено\',
+searching: () => $store.i18n.t('select2.searching') || \'Пошук...\',
+maximumSelected: (args) => $store.i18n.t('createStory.tagsMaxSelected') || `Ви можете вибрати лише ${args.maximum} тегів`
+}
+}).on('change', (e) => {
+this.storyTags = $(e.target).val();
+this.setUnsavedChanges();
+});
 
-        // Додаємо слухач для попередження про незбережені зміни
-        window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-    }
+// Додаємо слухач для попередження про незбережені зміни
+window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
+}
 
 }" x-init="
-    loadCategories(); // Завантажуємо категорії
-    initEditor();     // Ініціалізуємо редактори
-    loadStoryForEdit(); // Спробуємо завантажити історію для редагування
-    // Спостерігаємо за змінами в полях для прапорця hasUnsavedChanges
-    $watch('storyTitle', () => setUnsavedChanges());
-    $watch('storyCategory', () => setUnsavedChanges());
-    $watch('ageRating', () => setUnsavedChanges());
-    $watch('isPremium', () => setUnsavedChanges());
-    $watch('isAnonymous', () => setUnsavedChanges());
+loadCategories(); // Завантажуємо категорії
+initEditor();     // Ініціалізуємо редактори
+loadStoryForEdit(); // Спробуємо завантажити історію для редагування
+// Спостерігаємо за змінами в полях для прапорця hasUnsavedChanges
+$watch('storyTitle', () => setUnsavedChanges());
+$watch('storyCategory', () => setUnsavedChanges());
+$watch('ageRating', () => setUnsavedChanges());
+$watch('isPremium', () => setUnsavedChanges());
+$watch('isAnonymous', () => setUnsavedChanges());
 " @beforeunload="handleBeforeUnload($event)">
-
-<!-- Індикатор завантаження -->
-<div x-show="isLoading" class="loading-indicator-overlay" x-transition.opacity>
-    <div class="loading-spinner"></div>
-</div>
 
 <!-- Хедер -->
 <header>
@@ -550,11 +594,11 @@
     </div>
 
     <!-- Повідомлення про помилки/успіх -->
-    <div x-show="errorMessage" class="error-message">
+    <div x-show="errorMessage" class="error-message" style="margin-bottom: 1.5rem;">
         <i class="fas fa-exclamation-circle"></i> <span x-text="errorMessage"></span>
         <button @click="errorMessage = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.close')"></button>
     </div>
-    <div x-show="successMessage" class="success-message">
+    <div x-show="successMessage" class="success-message" style="margin-bottom: 1.5rem;">
         <i class="fas fa-check-circle"></i> <span x-text="successMessage"></span>
         <button @click="successMessage = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.close')"></button>
     </div>
@@ -663,9 +707,9 @@
                 </div>
                 <div class="action-right">
                     <button type="button" class="btn btn-outline" @click="window.location.href='index.html'" :disabled="isSavingDraft || isPublishing" x-text="$store.i18n.t('general.cancel')"></button>
-                    <button type="button" class="btn btn-primary processing" @click="publishStory()" :disabled="isPublishing || isSavingDraft">
+                    <button type="button" class="btn btn-primary" @click="publishStory()" :disabled="isPublishing || isSavingDraft">
                         <span x-show="!isPublishing" x-text="$store.i18n.t('createStory.publishButton')"></span>
-                        <span x-show="isPublishing"><span x-text="$store.i18n.t('createStory.publishing')"></span></span> <!-- Спінер додається через CSS -->
+                        <span x-show="isPublishing"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('createStory.publishing')"></span></span>
                     </button>
                 </div>
             </div>
@@ -705,7 +749,7 @@
 <!-- Footer -->
 <footer>
     <div class="container">
-        <!-- Код футера з i18n, як в index.html -->
+        <!-- ... (Код футера як у index.html) ... -->
         <div class="footer-content">
             <div class="footer-section footer-about">
                 <h4 x-text="$store.i18n.t('general.about')"></h4>
@@ -746,7 +790,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+            &copy; <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
             <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
         </div>
     </div>
@@ -755,10 +799,10 @@
 <!-- Елемент сповіщення -->
 <div x-show="notificationVisible"
      x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 translate-y-2"
-     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:enter-start="opacity-0 transform translate-y-2"
+     x-transition:enter-end="opacity-100 transform translate-y-0"
      x-transition:leave="transition ease-in duration-300"
-     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-start="opacity-100 transform translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
      style="display: none;"

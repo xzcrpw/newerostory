@@ -1,0 +1,146 @@
+/* css/author-profile.css */
+
+/* Секція профілю автора */
+.author-profile-section {
+    margin-bottom: 3rem;
+}
+
+.author-profile-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    background-image: var(--card-gradient);
+    display: grid;
+    grid-template-columns: auto 1fr; /* Аватар + Інфо/Статистика/Кнопки */
+    gap: 2rem;
+    padding: 2rem;
+    align-items: start; /* Вирівнюємо по верху */
+}
+
+.author-profile-header {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    text-align: center;
+}
+
+.author-profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin: 0 auto;
+    background-size: cover;
+    background-position: center;
+    border: 4px solid rgba(153, 0, 0, 0.3);
+}
+
+.author-profile-info {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+}
+
+.author-profile-name {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.author-profile-bio {
+    color: var(--secondary-text);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.author-profile-joined {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+    font-style: italic;
+}
+
+.author-profile-stats {
+    grid-column: 1 / 2; /* Розміщуємо під аватаром */
+    grid-row: 2 / 3;
+    display: flex;
+    flex-direction: column; /* Статистика стовпчиком */
+    gap: 1rem;
+    padding-top: 1rem;
+}
+
+/* Використовуємо стилі .profile-stat з profile_styles.css */
+.profile-stat {
+    text-align: left; /* Вирівнюємо текст статистики ліворуч */
+}
+.profile-stat .stat-value {
+    font-size: 1.8rem; /* Збільшуємо значення */
+    font-family: 'Montserrat', sans-serif;
+}
+.profile-stat .stat-label {
+    font-size: 0.9rem;
+}
+
+.author-profile-actions {
+    grid-column: 2 / 3; /* Розміщуємо під інфо */
+    grid-row: 2 / 3;
+    align-self: end; /* Вирівнюємо по низу */
+}
+
+/* Секція історій автора */
+.author-stories-section {
+    margin-bottom: 3rem;
+}
+
+.author-section-title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    border-left: 4px solid var(--accent-red);
+    padding-left: 1rem;
+}
+
+/* Використовуємо .stories-grid та .story-card з main.css */
+/* Додаємо лише необхідні перекриття або доповнення */
+
+.stories-grid {
+    margin-bottom: 2rem; /* Відступ після сітки перед пагінацією */
+}
+
+
+/* Адаптивність */
+@media (max-width: 768px) {
+    .author-profile-card {
+        grid-template-columns: 1fr; /* Все в одну колонку */
+        gap: 1.5rem;
+        text-align: center; /* Центруємо контент */
+    }
+
+    .author-profile-header,
+    .author-profile-info,
+    .author-profile-stats,
+    .author-profile-actions {
+        grid-column: 1 / -1; /* Займаємо всю ширину */
+        grid-row: auto; /* Автоматичний порядок */
+        align-self: auto; /* Скидаємо вирівнювання */
+    }
+
+    .author-profile-stats {
+        flex-direction: row; /* Статистика в рядок на мобільних */
+        justify-content: space-around;
+        padding-top: 0;
+        margin-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 1rem;
+    }
+    .profile-stat {
+        text-align: center;
+    }
+
+    .author-profile-actions button {
+        width: 100%;
+        max-width: 300px; /* Обмежуємо ширину кнопки */
+        margin: 0 auto;
+    }
+
+    .author-section-title {
+        font-size: 1.8rem;
+    }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uk"> <!-- Можна додати x-data, якщо потрібен доступ до $store для title -->
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=login.html?tab=register">
+    <!-- Додав title з i18n, якщо $store доступний -->
+    <title x-data :lang="$store.i18n.selectedLang" x-text="`${$store.i18n.t('general.register')} — ${$store.i18n.t('general.copyright')}` || 'Перенаправлення на реєстрацію...'"></title>
+    <link rel="canonical" href="login.html?tab=register"/>
+    <!-- Internationalization (для title та тексту fallback) -->
+    <script type="module" src="js/i18n.js" defer></script>
+    <!-- Alpine.js (потрібен для title) -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // Редірект через JavaScript для надійності
+        window.location.replace("login.html?tab=register");
+    </script>
+    <!-- Мінімальні стилі, якщо редірект не спрацює -->
+    <link rel="stylesheet" href="css/main.css">
+    <style> body { padding: 2rem; text-align: center; } </style>
+</head>
+<body>
+<!-- Текст з i18n на випадок, якщо редірект не спрацює -->
+<p x-data x-html="$store.i18n.t('auth.redirectText', { link: `<a href='login.html?tab=register'>${$store.i18n.t('auth.redirectLinkText')}</a>` }) || `Якщо вас не перенаправлено автоматично, будь ласка, перейдіть за <a href='login.html?tab=register'>цим посиланням для реєстрації</a>.`"></p>
+</body>
+</html>

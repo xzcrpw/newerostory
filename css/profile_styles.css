@@ -1,3 +1,5 @@
+/* css/profile_styles.css */
+
 /* Стилі для сторінки профілю */
 
 /* Загальна структура профілю */
@@ -266,44 +268,6 @@
     gap: 1.5rem;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-label {
-    font-size: 0.95rem;
-    color: var(--secondary-text);
-}
-
-.form-input, .form-textarea {
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-.form-input:focus, .form-textarea:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.form-textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.form-help {
-    font-size: 0.8rem;
-    color: var(--secondary-text);
-    margin-top: 0.3rem;
-}
 
 .form-actions {
     display: flex;
@@ -449,13 +413,7 @@
 }
 
 .saved-item-author .author-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
     margin-right: 0.8rem;
-    background-size: cover;
-    background-position: center;
-    border: none;
 }
 
 .saved-item-author .author-name {
@@ -617,12 +575,7 @@
 }
 
 .liked-item-author .author-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
     margin-right: 0.8rem;
-    background-size: cover;
-    background-position: center;
 }
 
 .liked-item-author .author-name {
