@@ -1,5 +1,7 @@
 export default {
     general: {
+        siteNamePart1: "Mondo",
+        siteNamePart2: "Segreto",
         welcome: "Benvenuto", // PHT: Welcome
         login: "Accedi", // PHT: Login
         register: "Registrati", // PHT: Register
@@ -54,7 +56,7 @@ export default {
         aboutText: "Una piattaforma per leggere e pubblicare storie erotiche esclusive. Immergiti in un mondo di fantasia e passione.", // PHT: A platform for reading and publishing exclusive erotic stories. Immerse yourself in a world of fantasy and passion.
         terms: "Termini di utilizzo", // PHT: Terms of Use
         privacy: "Informativa sulla privacy", // PHT: Privacy Policy
-        copyright: "Secret World (e.world)", // PHT: Secret World (e.world)
+        copyright: "Secret World (erostory.world)", // PHT: Secret World (e.world)
         language: "Lingua", // PHT: Language
         shareFacebook: "Condividi su Facebook", // PHT: Share on Facebook
         shareTwitter: "Condividi su Twitter", // PHT: Share on Twitter
@@ -711,7 +713,7 @@ export default {
         formTitle: "Invia un Messaggio", // PHT: Send a Message
         formNameLabel: "Il Tuo Nome *", // PHT: Your Name *
         formNamePlaceholder: "Inserisci il tuo nome", // PHT: Enter your name
-        formEmailLabel: "La Tua Email *", // PHT: Your Email *
+        formEmailLabel: "E-Mail *", // PHT: Your Email *
         formEmailPlaceholder: "Inserisci la tua email", // PHT: Enter your email
         formSubjectLabel: "Oggetto *", // PHT: Subject *
         formSubjectPlaceholder: "Specifica l'oggetto", // PHT: Specify the subject
@@ -735,6 +737,8 @@ export default {
         privacyDescription: "La tua privacy è importante per noi. Questa informativa spiega come raccogliamo, utilizziamo, divulghiamo e proteggiamo le tue informazioni.", // PHT: Your privacy is important to us. This policy explains how we collect, use, disclose, and protect your information.
         privacyMetaDescription: "Informativa sulla privacy del sito Secret World. Scopri come raccogliamo, utilizziamo e proteggiamo i tuoi dati personali.", // PHT: Secret World website privacy policy. Learn how we collect, use, and protect your personal data.
         lastUpdated: "Ultimo aggiornamento:", // PHT: Last updated:
+        downloadPdf: "Scarica PDF",    // Перекласти для кожної мови
+        printPage: "Stampa Pagina",        // Перекласти для кожної мови
         backToHomeButton: "Torna alla Homepage", // PHT: Back to Homepage
         footerText: "Grazie per usare Secret World!", // PHT: Thank you for using Secret World!
         contactUsText: "Se hai domande, {link}.", // PHT: If you have questions, {link}.

@@ -73,7 +73,7 @@
       display: flex;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 3рем;
+      margin-bottom: 3rem;
       flex-wrap: wrap;
     }
     .faq-category {
@@ -97,25 +97,25 @@
       color: var(--text-color);
     }
     .faq-list {
-      margin-bottom: 3рем;
+      margin-bottom: 3rem;
     }
     .faq-section-title {
       font-size: 1.8rem;
-      margin-bottom: 1.5рем;
+      margin-bottom: 1.5rem;
       color: var(--accent-gold);
     }
     .faq-item {
       background-color: var(--card-color);
       border-radius: var(--border-radius);
-      margin-bottom: 1рем;
+      margin-bottom: 1rem;
       border: 1px solid rgba(153, 0, 0, 0.1);
       overflow: hidden;
     }
     .faq-question {
-      padding: 1.2рем 1.5рем;
+      padding: 1.2rem 1.5rem;
       cursor: pointer;
       font-weight: 500;
-      font-size: 1.1рем;
+      font-size: 1.1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -142,7 +142,7 @@
       transform: rotate(45deg);
     }
     .faq-answer {
-      padding: 0 1.5рем;
+      padding: 0 1.5rem;
       color: var(--secondary-text);
       line-height: 1.6;
       overflow: hidden; /* Для анімації */
@@ -151,7 +151,7 @@
     }
 
     .faq-answer p {
-      margin-bottom: 1рем;
+      margin-bottom: 1rem;
     }
 
     .faq-answer p:last-child {
@@ -161,22 +161,22 @@
     .more-questions {
       background-color: var(--card-color);
       border-radius: var(--border-radius);
-      padding: 2рем;
+      padding: 2rem;
       text-align: center;
       border: 1px solid rgba(153, 0, 0, 0.1);
     }
     .more-questions-title {
-      font-size: 1.5рем;
-      margin-bottom: 1рем;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
     }
     .more-questions-text {
       color: var(--secondary-text);
-      margin-bottom: 1.5рем;
+      margin-bottom: 1.5rem;
     }
     @media (max-width: 768px) {
       .faq-categories { flex-wrap: wrap; justify-content: center; }
       .faq-category { width: auto; /* Автоширина */ }
-      .faq-title { font-size: 2.2рем; }
+      .faq-title { font-size: 2.2rem; }
     }
   </style>
 </head>
@@ -201,7 +201,7 @@
     // Функція для відкриття/закриття питання з анімацією
     toggleQuestion(index) {
         // Закриваємо всі відкриті питання спочатку
-        document.querySelectorAll('.faq-item[x-data*="open: true"]').forEach(item => {
+        document.querySelectorAll('.faq-item[x-data*=\'open: true\']').forEach(item => {
             const itemData = item.__x.$data;
             if (itemData && itemData.globalIndex !== index) {
                 itemData.open = false;

@@ -1,0 +1,272 @@
+/* css/terms-page.css */
+
+/* Загальний контейнер для сторінок правил */
+.terms-container {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem 3rem; /* Збільшив бокові відступи */
+    margin: 2rem 0 4rem; /* Додав відступи */
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    background-image: var(--card-gradient);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Заголовок сторінки правил */
+.terms-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terms-title {
+    font-size: 2.8rem; /* Трохи збільшив */
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block; /* Щоб :after працював коректно */
+}
+
+/* Підкреслення для заголовка */
+.terms-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: var(--accent-red);
+}
+
+.terms-description {
+    color: var(--secondary-text);
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto 1rem; /* Відступ знизу */
+    line-height: 1.7;
+}
+
+.last-updated {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+    font-style: italic;
+}
+
+/* Навігація по розділах */
+.terms-navigation {
+    display: flex;
+    flex-direction: column; /* Вертикальна навігація */
+    gap: 0.8rem;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* Можна додати position: sticky для прилипання сайдбару, якщо сторінка буде двоколонковою */
+}
+
+.terms-navigation a {
+    color: var(--secondary-text);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--button-radius);
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    position: relative; /* Для псевдоелементів */
+    display: block; /* Щоб займали всю ширину */
+}
+
+.terms-navigation a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+}
+
+/* Стилі для активного пункту (додаються через JS) */
+.terms-navigation a.active {
+    color: var(--accent-red);
+    font-weight: 600;
+    background-color: rgba(153, 0, 0, 0.1);
+}
+
+/* Вміст правил */
+.terms-content {
+    line-height: 1.8; /* Збільшив міжрядковий інтервал для читабельності */
+    font-size: 1.05rem; /* Трохи збільшив шрифт */
+}
+
+.section {
+    margin-bottom: 3rem;
+}
+
+.section-title {
+    font-size: 1.8rem; /* Зменшив заголовки секцій */
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(153, 0, 0, 0.2);
+    color: var(--accent-gold); /* Акцентний колір для заголовків секцій */
+}
+
+.subsection {
+    margin-bottom: 1.5rem;
+}
+
+.subsection-title {
+    font-size: 1.3rem; /* Зменшив заголовки підсекцій */
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+    color: var(--text-color); /* Стандартний колір тексту */
+    position: relative;
+    cursor: pointer; /* Для мобільної версії */
+    padding-right: 30px; /* Місце для іконки */
+}
+
+.toggle-icon {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-text);
+    transition: transform 0.3s ease;
+}
+
+/* Обертання іконки при розгортанні */
+.subsection-title:not(.collapsed) + div .toggle-icon {
+    /* Цей селектор не спрацює, бо іконка всередині заголовка.
+       Керування іконкою має бути через клас на батьківському елементі або заголовку.
+       В HTML файлі використовується :class на самій іконці, що коректно. */
+}
+
+.terms-content p {
+    margin-bottom: 1.2rem;
+    color: var(--secondary-text); /* Стандартний колір тексту параграфів */
+}
+
+.terms-content ul,
+.terms-content ol {
+    margin-bottom: 1.2rem;
+    padding-left: 1.8rem; /* Відступ для маркерів/нумерації */
+    color: var(--secondary-text);
+}
+
+.terms-content li {
+    margin-bottom: 0.6rem;
+}
+
+/* Блок попередження (з terms-page.html) */
+.warning-box {
+    background-color: rgba(255, 193, 7, 0.1); /* Жовтуватий фон */
+    border: 1px solid rgba(255, 193, 7, 0.3); /* Жовтуватий бордер */
+    border-left: 4px solid var(--accent-gold); /* Акцентна лінія */
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    display: flex;
+    align-items: flex-start; /* Вирівнювання по верху */
+    gap: 1rem;
+}
+
+.warning-icon {
+    font-size: 1.8rem;
+    color: var(--accent-gold);
+    padding-top: 0.2rem; /* Невеликий відступ для іконки */
+}
+
+.warning-content p {
+    color: var(--text-color); /* Текст всередині блоку - основний */
+    margin-bottom: 0; /* Прибираємо зайвий відступ для параграфа всередині */
+}
+
+/* Дії та футер сторінки */
+.terms-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terms-footer {
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.terms-footer p {
+    color: var(--secondary-text);
+    margin-bottom: 1.5rem;
+}
+
+/* Адаптивність */
+@media (max-width: 992px) {
+    .terms-container {
+        padding: 1.5rem 2rem;
+    }
+    .terms-title {
+        font-size: 2.2rem;
+    }
+    .section-title {
+        font-size: 1.6rem;
+    }
+    .subsection-title {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .terms-container {
+        padding: 1.5rem;
+        margin: 1rem 0 2rem;
+    }
+    .terms-title {
+        font-size: 2rem;
+    }
+    /* Можна зробити навігацію горизонтальною на мобільних */
+    .terms-navigation {
+        flex-direction: row;
+        overflow-x: auto; /* Дозволити прокрутку, якщо не вміщається */
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+        /* Стилі для скролбару (опціонально) */
+        scrollbar-width: thin;
+        scrollbar-color: var(--accent-red) rgba(255, 255, 255, 0.1);
+    }
+    .terms-navigation::-webkit-scrollbar {
+        height: 5px;
+    }
+    .terms-navigation::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .terms-navigation::-webkit-scrollbar-thumb {
+        background-color: var(--accent-red);
+        border-radius: 10px;
+    }
+    .terms-navigation a {
+        white-space: nowrap; /* Заборонити перенос тексту в кнопках */
+    }
+    .terms-actions {
+        flex-direction: column;
+    }
+    .terms-actions .btn {
+        width: 100%; /* Кнопки на всю ширину */
+        max-width: 300px; /* Обмеження максимальної ширини */
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media (min-width: 769px) {
+    /* Ховаємо іконку розгортання на десктопі */
+    .toggle-icon {
+        display: none;
+    }
+    /* Відкриваємо всі підсекції на десктопі */
+    .subsection > div[x-show] {
+        display: block !important; /* Перекриваємо дію x-show */
+        max-height: none !important;
+        opacity: 1 !important;
+    }
+    .subsection-title {
+        cursor: default; /* Забираємо курсор-палець */
+    }
+}
