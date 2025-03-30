@@ -1,60 +1,80 @@
 // js/api-config.js
 
-const API_BASE_URL = 'http://localhost:5000/api'; // Базовий URL нашого майбутнього API (змінимо на реальний URL пізніше)
+const API_BASE_URL = 'http://localhost:5000/api'; // Базовий URL нашого майбутнього API
 
+// Розширена конфігурація для API
 window.apiConfig = {
     baseUrl: API_BASE_URL,
+    
+    // Налаштування запитів
+    requestDefaults: {
+        timeout: 30000, // 30 секунд максимум на запит
+        retryAttempts: 3, // Кількість автоматичних спроб при помилці мережі
+        retryDelay: 1000, // Початкова затримка перед повторною спробою (ms)
+    },
+    
+    // Ендпоінти API
     endpoints: {
         // Автентифікація
         login: '/auth/login',
         register: '/auth/register',
-        logout: '/auth/logout', // Можливо, не знадобиться, якщо вихід через видалення токену
         forgotPassword: '/auth/forgot-password',
         resetPassword: '/auth/reset-password',
-        googleLogin: '/auth/google', // URL для ініціації Google OAuth
-
-        // Користувач
-        currentUser: '/users/me', // Отримати дані поточного користувача
-        updateUser: '/users/me', // Оновити профіль
-        changePassword: '/users/me/password', // Змінити пароль
-        getUserBookmarks: '/users/me/bookmarks', // Отримати закладки
-        toggleBookmark: (storyId) => `/users/me/bookmarks/${storyId}`, // Додати/видалити закладку
-        getUserFollowing: '/users/me/following', // Отримати підписки на авторів
-        toggleFollow: (authorId) => `/users/me/following/${authorId}`, // Підписатись/відписатись
-
+        googleLogin: '/auth/google',
+        
+        // Користувачі
+        currentUser: '/users/me',
+        updateUser: '/users/me',
+        changePassword: '/users/me/password',
+        getUserBookmarks: '/users/me/bookmarks',
+        getUserFollowing: '/users/me/following',
+        toggleBookmark: (storyId) => `/stories/${storyId}/bookmark`,
+        toggleFollow: (authorId) => `/authors/${authorId}/follow`,
+        
         // Історії
-        stories: '/stories', // GET (список), POST (створити)
-        storyById: (storyId) => `/stories/${storyId}`, // GET, PUT, DELETE
-        likeStory: (storyId) => `/stories/${storyId}/like`, // POST (лайк/анлайк)
-        rateStory: (storyId) => `/stories/${storyId}/rate`, // POST (оцінка)
-
+        stories: '/stories',
+        storyById: (id) => `/stories/${id}`,
+        likeStory: (id) => `/stories/${id}/like`,
+        rateStory: (id) => `/stories/${id}/rate`,
+        
         // Автори
         authors: '/authors',
-        authorById: (authorId) => `/authors/${authorId}`,
-        authorStories: (authorId) => `/authors/${authorId}/stories`,
-
+        authorById: (id) => `/authors/${id}`,
+        authorStories: (id) => `/authors/${id}/stories`,
+        
         // Категорії
         categories: '/categories',
         categoryBySlug: (slug) => `/categories/${slug}`,
-        subscribeCategory: (slug) => `/categories/${slug}/subscribe`, // POST (підписка/відписка)
-
+        subscribeCategory: (slug) => `/categories/${slug}/subscribe`,
+        
         // Коментарі
-        commentsByStory: (storyId) => `/stories/${storyId}/comments`, // GET, POST
-        likeComment: (commentId) => `/comments/${commentId}/like`, // POST (лайк/анлайк)
-
+        commentsByStory: (storyId) => `/stories/${storyId}/comments`,
+        likeComment: (id) => `/comments/${id}/like`,
+        
         // Преміум
-        getPlans: '/premium/plans', // GET - Отримати список планів
-        getCurrentSubscription: '/premium/subscription', // GET - Отримати поточну підписку користувача (або через /users/me)
-        validateCoupon: '/premium/coupons/validate', // POST { code: '...', planId: '...' } - Перевірити промокод
-        createSubscription: '/premium/subscribe', // POST (з даними платежу або ID транзакції)
-        cancelSubscription: '/premium/subscription', // DELETE (або /premium/subscribe)
-
-        // Контактна форма
-        contact: '/contact', // POST
-
-        // Переклад
-        translate: '/translate' // POST { text: "...", targetLanguage: "en" }
+        getPlans: '/premium/plans',
+        getCurrentSubscription: '/premium/subscription',
+        validateCoupon: '/premium/validate-coupon',
+        createSubscription: '/premium/subscribe',
+        cancelSubscription: '/premium/subscription',
+        
+        // Контакт
+        contact: '/contact'
     }
 };
+
+// Налаштування для різних середовищ
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('Running in development environment');
+    // Налаштування для локальної розробки
+    window.apiConfig.devMode = true;
+} else if (window.location.hostname.includes('staging')) {
+    // Налаштування для тестового середовища
+    window.apiConfig.baseUrl = 'https://api-staging.taemnysvit.com/api';
+} else if (window.location.hostname.includes('taemnysvit.com')) {
+    // Налаштування для продакшну
+    window.apiConfig.baseUrl = 'https://api.taemnysvit.com/api';
+    window.apiConfig.devMode = false;
+}
 
 console.log('API Config Loaded:', window.apiConfig);

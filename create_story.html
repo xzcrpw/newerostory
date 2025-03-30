@@ -22,7 +22,7 @@
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Select2 Dark Theme (приклад, може потребувати кастомізації) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme/dist/select2-bootstrap4.min.css">
 
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -153,34 +153,62 @@
         if (notificationElement) {
             notificationElement.classList.toggle('success', isSuccess);
             notificationElement.classList.toggle('error', !isSuccess);
+            notificationElement.classList.add('show'); // Додаємо клас для відображення
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
+        this.notificationTimeout = setTimeout(() => { 
+            this.notificationVisible = false; 
+            // Перевіряємо чи елемент все ще існує
+            const notificationEl = document.getElementById('global-notification');
+            if (notificationEl) {
+                notificationEl.classList.remove('show');
+            }
+        }, 4000);
     },
 
     // --- Функція валідації ---
     validateForm() {
         this.errorMessage = null;
+        
+        // Перевірка наявності заголовка
         if (!this.storyTitle.trim()) {
-            this.errorMessage = $store.i18n.t('createStory.errorTitleRequired');
+            this.errorMessage = $store.i18n?.t('createStory.errorTitleRequired') || 'Будь ласка, введіть заголовок історії.';
             return false;
         }
+        
+        // Перевірка наявності категорії
         if (!this.storyCategory) {
-            this.errorMessage = $store.i18n.t('createStory.errorCategoryRequired');
+            this.errorMessage = $store.i18n?.t('createStory.errorCategoryRequired') || 'Будь ласка, виберіть категорію.';
             return false;
         }
-        // Перевірка TinyMCE контенту
-        const content = tinymce.get('storyContentEditor')?.getContent({ format: 'text' }).trim();
+        
+        // Безпечне отримання TinyMCE контенту
+        let content = '';
+        try {
+            const editor = tinymce.get('storyContentEditor');
+            if (editor) {
+                content = editor.getContent({ format: 'text' }).trim();
+            }
+        } catch (error) {
+            console.error('Error getting TinyMCE content:', error);
+            this.errorMessage = $store.i18n?.t('createStory.errorEditor') || 'Помилка редактора. Спробуйте оновити сторінку.';
+            return false;
+        }
+        
+        // Перевірка наявності контенту
         if (!content) {
-            this.errorMessage = $store.i18n.t('createStory.errorContentRequired');
+            this.errorMessage = $store.i18n?.t('createStory.errorContentRequired') || 'Будь ласка, додайте текст вашої історії.';
             return false;
         }
-        // Додаткова перевірка довжини контенту (наприклад, мін 100 символів)
+        
+        // Додаткова перевірка довжини контенту
         if (content.length < 100) {
-            this.errorMessage = $store.i18n.t('createStory.errorContentLength') || 'Текст історії занадто короткий (мін. 100 символів).';
+            this.errorMessage = $store.i18n?.t('createStory.errorContentLength', { min: 100 }) || 
+                               'Текст історії занадто короткий (мін. 100 символів).';
             return false;
         }
+        
         return true;
     },
 
@@ -193,42 +221,68 @@
         this.isEditMode = true;
         this.isLoading = true;
         this.errorMessage = null;
+        
         try {
             console.log(`Simulating API call: getStoryById(${this.storyId})`);
             await new Promise(resolve => setTimeout(resolve, 700));
             // const storyData = await api.stories.getStoryById(this.storyId); // Реальний виклик
-             const storyData = { // Симуляція
-                 _id: this.storyId, title: `Редагована історія ${this.storyId}`, category: 'romance',
-                 tags: ['потяг', 'редагування'], ageRating: '18+', isPremium: false, isAnonymous: false,
-                 imageUrl: `https://source.unsplash.com/random/1200x600/?edit,${this.storyId}`,
-                 content: `<p>Це початковий текст історії ${this.storyId} для редагування.</p>`,
-                 author: { _id: api.utils.getUserId() || 'author123' } // Важливо для перевірки прав
-             };
+            const storyData = { // Симуляція
+                _id: this.storyId, 
+                title: `Редагована історія ${this.storyId}`, 
+                category: 'romance',
+                tags: ['потяг', 'редагування'], 
+                ageRating: '18+', 
+                isPremium: false, 
+                isAnonymous: false,
+                imageUrl: `https://source.unsplash.com/random/1200x600/?edit,${this.storyId}`,
+                content: `<p>Це початковий текст історії ${this.storyId} для редагування.</p>`,
+                author: { _id: api.utils.getUserId() || 'author123' } // Важливо для перевірки прав
+            };
 
-            // Перевірка прав (чи поточний користувач є автором)
-            if (storyData.author._id !== api.utils.getUserId()) {
-                 throw new Error($store.i18n.t('createStory.errorNotAuthor'));
+            // Перевірка наявності даних історії
+            if (!storyData) {
+                throw new Error($store.i18n?.t('createStory.errorStoryNotFound') || 'Історію не знайдено');
             }
 
-            this.storyTitle = storyData.title;
-            // Якщо категорія повертається як об'єкт, беремо її ID/slug
-            this.storyCategory = storyData.category?._id || storyData.category;
-            this.storyTags = storyData.tags || [];
-            this.ageRating = storyData.ageRating || '18+';
-            this.storyImageUrl = storyData.imageUrl; // Зберігаємо URL існуючого зображення
-            this.storyContent = storyData.content || '';
-            this.isPremium = storyData.isPremium || false;
-            this.isAnonymous = storyData.isAnonymous || false;
-            this.authorId = storyData.author._id;
+            // Перевірка прав (чи поточний користувач є автором)
+            if (storyData.author?._id !== api.utils.getUserId()) {
+                throw new Error($store.i18n?.t('createStory.errorNotAuthor') || 'У вас немає прав на редагування цієї історії');
+            }
 
-            // Оновлюємо TinyMCE та Select2 ПІСЛЯ завантаження даних
-            tinymce.get('storyContentEditor')?.setContent(this.storyContent);
-            $(this.$refs.tagsSelect).val(this.storyTags).trigger('change');
+            // Безпечне заповнення полів з перевірками
+            this.storyTitle = storyData.title || '';
+            this.storyCategory = storyData.category?._id || storyData.category || '';
+            this.storyTags = Array.isArray(storyData.tags) ? storyData.tags : [];
+            this.ageRating = storyData.ageRating || '18+';
+            this.storyImageUrl = storyData.imageUrl || null;
+            this.storyContent = storyData.content || '';
+            this.isPremium = Boolean(storyData.isPremium);
+            this.isAnonymous = Boolean(storyData.isAnonymous);
+            this.authorId = storyData.author?._id || null;
+
             // Встановлюємо прев'ю для існуючого зображення
             if(this.storyImageUrl) this.imagePreviewUrl = this.storyImageUrl;
 
+            // Оновлюємо TinyMCE та Select2 ПІСЛЯ завантаження даних
+            this.$nextTick(() => {
+                try {
+                    // Оновлення TinyMCE з перевіркою
+                    const editor = tinymce.get('storyContentEditor');
+                    if (editor) {
+                        editor.setContent(this.storyContent);
+                    }
+                    
+                    // Оновлення Select2 з перевіркою
+                    if (typeof $ === 'function' && this.$refs.tagsSelect) {
+                        $(this.$refs.tagsSelect).val(this.storyTags).trigger('change');
+                    }
+                } catch (error) {
+                    console.error('Error updating editor with story data:', error);
+                }
+            });
+
         } catch (error) {
-            this.errorMessage = error.message || $store.i18n.t('createStory.errorLoadingStory');
+            this.errorMessage = error.message || $store.i18n?.t('createStory.errorLoadingStory') || 'Помилка завантаження історії';
             console.error('Error loading story for edit:', error);
         } finally {
             this.isLoading = false;
@@ -339,18 +393,32 @@
     },
     async publishStory() {
         if (!this.validateForm()) {
-            this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+            this.$nextTick(() => { 
+                const errorElement = document.querySelector('.error-message');
+                if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+                }
+            });
+            return;
+        }
+
+        // Перевірка чи користувач залогінений
+        if (!api.utils.isAuthenticated()) {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
             return;
         }
 
         // Попередження про відсутність зображення
         if (!this.storyImageFile && !this.storyImageUrl) {
-            if (!confirm($store.i18n.t('createStory.confirmPublishNoImage'))) {
+            if (!confirm($store.i18n?.t('createStory.confirmPublishNoImage') || 'Ви впевнені, що хочете опублікувати історію без зображення?')) {
                 return;
             }
         }
 
-        this.isPublishing = true; this.errorMessage = null; this.successMessage = null;
+        this.isPublishing = true; 
+        this.errorMessage = null; 
+        this.successMessage = null;
+        
         try {
             const formData = this.prepareFormData();
             formData.append('status', 'published'); // Встановлюємо статус
@@ -358,6 +426,7 @@
             console.log('Simulating API call: publishStory');
             await new Promise(resolve => setTimeout(resolve, 1200));
             let result;
+            
             if (this.isEditMode) {
                 // result = await api.stories.updateStory(this.storyId, formData);
                 result = { _id: this.storyId }; // Симуляція
@@ -367,36 +436,74 @@
                 result = { _id: 'newStory' + Date.now() }; // Симуляція
                 console.log('Published new story:', result);
             }
+            
             this.hasUnsavedChanges = false; // Скидаємо прапорець
-            this.showNotification($store.i18n.t('createStory.storyPublishedSuccess'), true);
+            this.showNotification(
+                $store.i18n?.t('createStory.storyPublishedSuccess') || 'Історію успішно опубліковано!', 
+                true
+            );
+            
             // Перенаправлення на сторінку історії
-            setTimeout(() => { window.location.href = `story-detailed.html?id=${result._id}`; }, 1500);
+            setTimeout(() => { 
+                if (result && result._id) {
+                    window.location.href = `story-detailed.html?id=${result._id}`; 
+                } else {
+                    // Якщо немає ID, перенаправляємо на профіль користувача
+                    window.location.href = 'profile.html';
+                }
+            }, 1500);
 
         } catch (error) {
-            this.errorMessage = `${$store.i18n.t('createStory.errorPublishing')} ${error.message || $store.i18n.t('general.unknownError')}`;
+            this.errorMessage = `${$store.i18n?.t('createStory.errorPublishing') || 'Помилка публікації історії:'} ${error.message || $store.i18n?.t('general.unknownError') || 'Невідома помилка'}`;
             console.error('Publish story error:', error);
             this.isPublishing = false; // Знімаємо блокування при помилці
         }
-        // Не знімаємо isPublishing при успіху, бо йде редірект
     },
     // Допоміжна функція для підготовки даних форми
     prepareFormData() {
         const formData = new FormData();
-        formData.append('title', this.storyTitle.trim());
-        formData.append('category', this.storyCategory);
-        this.storyTags.forEach(tag => formData.append('tags', tag));
-        formData.append('ageRating', this.ageRating);
-        // Оновлюємо контент з TinyMCE перед відправкою
-        this.storyContent = tinymce.get('storyContentEditor')?.getContent() || '';
-        formData.append('content', this.storyContent);
-        formData.append('isPremium', this.isPremium);
-        formData.append('isAnonymous', this.isAnonymous);
-        if (this.storyImageFile) {
-            formData.append('image', this.storyImageFile);
-        } else if (this.isEditMode && !this.storyImageUrl && !this.imagePreviewUrl) { // Надсилаємо тільки якщо і URL, і превью видалені
-             formData.append('removeImage', 'true');
+        
+        // Безпечне додавання полів з перевіркою
+        const safeAppend = (name, value) => {
+            if (value !== null && value !== undefined) {
+                formData.append(name, value);
+            }
+        };
+        
+        // Додаємо базові поля з валідацією
+        safeAppend('title', this.storyTitle.trim());
+        safeAppend('category', this.storyCategory);
+        
+        // Обробка тегів з перевіркою на масив
+        if (Array.isArray(this.storyTags)) {
+            this.storyTags.forEach(tag => {
+                if (tag) safeAppend('tags', tag);
+            });
         }
-        // Не відправляємо storyImageUrl напряму, бекенд має сам вирішити, чи оновлювати
+        
+        safeAppend('ageRating', this.ageRating);
+        
+        // Безпечне оновлення контенту з TinyMCE
+        try {
+            const editor = tinymce.get('storyContentEditor');
+            if (editor) {
+                this.storyContent = editor.getContent();
+            }
+        } catch (error) {
+            console.error('Error getting content from TinyMCE:', error);
+        }
+        
+        safeAppend('content', this.storyContent);
+        safeAppend('isPremium', this.isPremium);
+        safeAppend('isAnonymous', this.isAnonymous);
+        
+        // Обробка зображення
+        if (this.storyImageFile) {
+            safeAppend('image', this.storyImageFile);
+        } else if (this.isEditMode && !this.storyImageUrl && !this.imagePreviewUrl) {
+            safeAppend('removeImage', 'true');
+        }
+        
         return formData;
     },
 
@@ -404,63 +511,91 @@
     setUnsavedChanges() { this.hasUnsavedChanges = true; },
     handleBeforeUnload(event) {
         if (this.hasUnsavedChanges) {
-            const message = $store.i18n.t('createStory.beforeUnloadWarning');
-            event.preventDefault(); // Standard for most browsers
-            event.returnValue = message; // For older browsers
-            return message;
+            // Зберігаємо поточний контент редактора перед перевіркою
+            try {
+                const editor = tinymce.get('storyContentEditor');
+                if (editor) {
+                    const currentContent = editor.getContent();
+                    // Порівнюємо зі збереженим контентом
+                    if (currentContent !== this.storyContent) {
+                        this.hasUnsavedChanges = true;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error accessing TinyMCE in beforeunload:', e);
+            }
+
+            if (this.hasUnsavedChanges) {
+                const message = $store.i18n?.t('createStory.beforeUnloadWarning') || 'У вас є незбережені зміни. Ви впевнені, що хочете залишити сторінку?';
+                event.preventDefault();
+                event.returnValue = message;
+                return message;
+            }
         }
+        return undefined;
     },
     initEditor() {
-        // Ініціалізація TinyMCE
-        tinymce.init({
-            selector: '#storyContentEditor',
-            plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount help', // Додав help
-            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | help', // Додав help
-            skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
-            content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
-            content_style: 'body { font-family:Montserrat,sans-serif; font-size:16px; color: var(--text-color); background-color: var(--card-color); } p {margin-bottom: 1em;}', // Додав стилі для контенту
-            placeholder: $store.i18n.t('createStory.contentPlaceholder'),
-            height: 500,
-            setup: (editor) => {
-                editor.on('change keyup Undo Redo', () => { // Додав Undo Redo
-                    this.storyContent = editor.getContent();
-                    this.setUnsavedChanges();
-                });
-                // Завантаження контенту, якщо він є (для редагування)
-                editor.on('init', () => {
-                    if (this.isEditMode && this.storyContent) {
-                        editor.setContent(this.storyContent);
-                        // Скидаємо прапорець незбережених змін після початкового завантаження
-                         setTimeout(() => { this.hasUnsavedChanges = false; }, 50);
+        try {
+            // Ініціалізація TinyMCE
+            tinymce.init({
+                selector: '#storyContentEditor',
+                plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount help',
+                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | help',
+                skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
+                content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
+                content_style: 'body { font-family:Montserrat,sans-serif; font-size:16px; color: var(--text-color); background-color: var(--card-color); } p {margin-bottom: 1em;}',
+                placeholder: $store.i18n?.t('createStory.contentPlaceholder') || 'Почніть писати вашу історію тут...',
+                height: 500,
+                setup: (editor) => {
+                    editor.on('change keyup Undo Redo', () => {
+                        this.storyContent = editor.getContent();
+                        this.setUnsavedChanges();
+                    });
+                    editor.on('init', () => {
+                        if (this.isEditMode && this.storyContent) {
+                            editor.setContent(this.storyContent);
+                            setTimeout(() => { this.hasUnsavedChanges = false; }, 50);
+                        }
+                    });
+                },
+                language: $store.i18n?.selectedLang === 'uk' ? 'uk' : ($store.i18n?.selectedLang === 'ru' ? 'ru' : 'en'),
+                language_url: `/tinymce/langs/${$store.i18n?.selectedLang || 'en'}.js`
+            });
+        } catch (error) {
+            console.error('Error initializing TinyMCE:', error);
+            this.errorMessage = $store.i18n?.t('createStory.errorEditorInit') || 'Помилка ініціалізації редактора. Спробуйте оновити сторінку.';
+        }
+
+        // Ініціалізація Select2 з перевіркою наявності jQuery
+        if (typeof $ === 'function') {
+            try {
+                $(this.$refs.tagsSelect).select2({
+                    theme: 'bootstrap4',
+                    tags: true,
+                    tokenSeparators: [',', ' '],
+                    maximumSelectionLength: 5,
+                    placeholder: $store.i18n?.t('createStory.tagsPlaceholder') || 'Додайте теги...',
+                    language: {
+                        noResults: () => $store.i18n?.t('select2.noResults') || 'Нічого не знайдено',
+                        searching: () => $store.i18n?.t('select2.searching') || 'Пошук...',
+                        maximumSelected: (args) => $store.i18n?.t('createStory.tagsMaxSelected', { count: args.maximum }) || 
+                                                  `Ви можете вибрати лише ${args.maximum} тегів`
+                    }
+                }).on('change', (e) => {
+                    const currentVal = JSON.stringify(this.storyTags);
+                    const newVal = JSON.stringify($(e.target).val() || []);
+                    if(currentVal !== newVal) {
+                        this.storyTags = $(e.target).val() || [];
+                        this.setUnsavedChanges();
                     }
                 });
-            },
-            // Додаємо мову інтерфейсу, якщо є відповідний мовний пакет
-            language: $store.i18n.selectedLang === 'uk' ? 'uk' : ($store.i18n.selectedLang === 'ru' ? 'ru' : 'en'), // Приклад
-             language_url: `/tinymce/langs/${$store.i18n.selectedLang}.js` // Шлях до мовних пакетів TinyMCE - ПОТРІБНО ЗАВАНТАЖИТИ ПАКЕТИ
-        });
-
-        // Ініціалізація Select2
-        $(this.$refs.tagsSelect).select2({
-            theme: 'bootstrap4', // Використовуємо темну тему
-            tags: true, // Дозволити створення нових тегів
-            tokenSeparators: [',', ' '], // Роздільники для створення тегів
-            maximumSelectionLength: 5, // Максимум 5 тегів
-            placeholder: $store.i18n.t('createStory.tagsPlaceholder'),
-            language: { // Базова локалізація Select2
-                noResults: () => $store.i18n.t('select2.noResults') || 'Нічого не знайдено',
-                searching: () => $store.i18n.t('select2.searching') || 'Пошук...',
-                maximumSelected: (args) => $store.i18n.t('createStory.tagsMaxSelected', { count: args.maximum }) || `Ви можете вибрати лише ${args.maximum} тегів`
+            } catch (error) {
+                console.error('Error initializing Select2:', error);
             }
-        }).on('change', (e) => {
-            // Перевірка, чи значення дійсно змінилося, щоб уникнути зайвих спрацювань
-             const currentVal = JSON.stringify(this.storyTags);
-             const newVal = JSON.stringify($(e.target).val() || []);
-             if(currentVal !== newVal) {
-                 this.storyTags = $(e.target).val() || [];
-                 this.setUnsavedChanges();
-             }
-        });
+        } else {
+            console.error('jQuery is not available, Select2 cannot be initialized');
+            this.errorMessage = $store.i18n?.t('createStory.errorTagsInit') || 'Помилка ініціалізації тегів. Деякі функції можуть не працювати.';
+        }
 
         // Додаємо слухач для попередження про незбережені зміни
         window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
@@ -476,6 +611,27 @@
     $watch('ageRating', () => setUnsavedChanges());
     $watch('isPremium', () => setUnsavedChanges());
     $watch('isAnonymous', () => setUnsavedChanges());
+    $cleanup = () => {
+        try {
+            // Видалити TinyMCE редактор
+            tinymce.get('storyContentEditor')?.remove();
+            
+            // Видалити слухача beforeunload
+            window.removeEventListener('beforeunload', this.handleBeforeUnload);
+            
+            // Знищити Select2
+            if (typeof $ === 'function') {
+                $(this.$refs.tagsSelect)?.select2('destroy');
+            }
+            
+            // Очистити таймаути
+            if (this.notificationTimeout) {
+                clearTimeout(this.notificationTimeout);
+            }
+        } catch (error) {
+            console.warn('Error during cleanup:', error);
+        }
+    }
 " @beforeunload="handleBeforeUnload($event)">
 
 <!-- Індикатор завантаження -->
@@ -761,6 +917,7 @@
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
+     :class="{ 'show': notificationVisible, 'success': true, 'error': false }"
      style="display: none;"
      id="global-notification">
     <span x-text="notificationMessage"></span>

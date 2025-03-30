@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- Додано x-data та :lang -->
-<html lang="uk" x-data :lang="$store.i18n.selectedLang">
+<html lang="uk" x-data :lang="$store.i18n?.selectedLang || 'uk'">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Title використовує i18n -->
-  <title x-text="`${$store.i18n.t('policyPages.privacyTitle')} — ${$store.i18n.t('general.copyright')}`"></title>
+  <!-- Title використовує безпечну функцію i18n -->
+  <title x-text="`${safeT('policyPages.privacyTitle', 'Політика конфіденційності')} — ${safeT('general.copyright', 'Таємний Світ')}`" data-fallback-title="Політика конфіденційності — Таємний Світ"></title>
 
-  <!-- Мета-теги використовують i18n -->
-  <meta name="description" :content="$store.i18n.t('policyPages.privacyMetaDescription') || 'Політика конфіденційності сайту Таємний Світ. Дізнайтеся, як ми збираємо, використовуємо та захищаємо ваші персональні дані.'">
-  <meta property="og:title" :content="`${$store.i18n.t('policyPages.privacyTitle')} — ${$store.i18n.t('general.copyright')}`">
-  <meta property="og:description" :content="$store.i18n.t('policyPages.privacyMetaDescription') || 'Політика конфіденційності сайту Таємний Світ.'">
+  <!-- Мета-теги використовують безпечну функцію i18n -->
+  <meta name="description" :content="safeT('policyPages.privacyMetaDescription', 'Політика конфіденційності сайту Таємний Світ. Дізнайтеся, як ми збираємо, використовуємо та захищаємо ваші персональні дані.')">
+  <meta property="og:title" :content="`${safeT('policyPages.privacyTitle', 'Політика конфіденційності')} — ${safeT('general.copyright', 'Таємний Світ')}`">
+  <meta property="og:description" :content="safeT('policyPages.privacyMetaDescription', 'Політика конфіденційності сайту Таємний Світ.')">
   <meta property="og:type" content="website">
 
-  <!-- Стилі (використовуємо стилі від terms-page.html) -->
+  <!-- Стилі -->
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/terms-page.css"> <!-- Використовуємо ті ж стилі -->
 
@@ -35,52 +35,221 @@
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+  <style>
+    /* Стиль для кнопки прокрутки нагору */
+    .scroll-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--accent-red); /* Змінено на основний акцент */
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease, background-color 0.3s ease;
+      cursor: pointer;
+      z-index: 1000; /* Вище, ніж сповіщення, якщо вони є */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .scroll-to-top.visible {
+      opacity: 0.8;
+      visibility: visible;
+    }
+
+    .scroll-to-top:hover {
+      opacity: 1;
+      background-color: var(--accent-burgundy); /* Змінено на темніший відтінок */
+    }
+
+    /* Покращення доступності для навігації та посилань */
+    .terms-navigation a:focus,
+    .terms-actions button:focus,
+    .scroll-to-top:focus {
+      outline: 2px solid var(--accent-gold); /* Акцентний колір для фокусу */
+      outline-offset: 3px;
+    }
+
+    /* Покращення стилю посилань в розділах */
+    .section a {
+      color: var(--accent-red); /* Використовуємо основний акцент */
+      text-decoration: none; /* Прибираємо підкреслення за замовчуванням */
+      border-bottom: 1px dotted var(--accent-red); /* Додаємо пунктирне підкреслення */
+      transition: color 0.3s, border-bottom-color 0.3s;
+    }
+
+    .section a:hover {
+      color: var(--accent-gold); /* Змінюємо колір при наведенні */
+      border-bottom-color: var(--accent-gold);
+    }
+
+    /* Стилі для друку (прибираємо зайві елементи) */
+    @media print {
+      header, footer, .breadcrumbs, .terms-actions, .terms-navigation, .scroll-to-top {
+        display: none !important;
+      }
+      body {
+        background: none; /* Прибираємо фон */
+        color: #000; /* Стандартний чорний текст */
+      }
+      .terms-container {
+        box-shadow: none;
+        border: none;
+      }
+      .terms-content {
+        font-size: 11pt; /* Розмір шрифту для друку */
+        line-height: 1.4;
+      }
+      .terms-title { font-size: 16pt; }
+      .section-title { font-size: 13pt; }
+      a { color: #000; text-decoration: none; border-bottom: none; }
+    }
+  </style>
 </head>
-<!-- Простий x-data для хедера -->
-<body x-data="{ isLoggedIn: false }" x-init="isLoggedIn = api.utils.isAuthenticated()">
+<body x-data="{
+  isLoggedIn: false,
+  isPremiumUser: false,
+  activeSection: null, // Для відстеження активної секції
+
+  // Функція для безпечного доступу до i18n ключів
+  safeT(key, fallback = '', params = {}) { // Додав params
+    try {
+      // Перевірка існування $store та $store.i18n
+      if (typeof $store !== 'undefined' && $store.i18n && typeof $store.i18n.t === 'function') {
+        const translation = $store.i18n.t(key, params);
+        // Повертаємо fallback якщо переклад = ключ або порожній рядок
+        return (translation && translation !== key && translation !== '') ? translation : fallback;
+      }
+      return fallback;
+    } catch (e) {
+      console.warn(`Translation key error: ${key}`, e);
+      return fallback;
+    }
+  },
+
+  // Функція для плавного скролу до секцій з покращеннями доступності
+  scrollToSection(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Встановлюємо фокус на заголовок секції для доступності
+      const titleElement = element.querySelector('h2.section-title');
+      if (titleElement) {
+          titleElement.setAttribute('tabindex', '-1'); // Робимо елемент фокусованим тимчасово
+          titleElement.focus({ preventScroll: true }); // Фокусуємо без додаткового скролу
+      }
+    }
+  },
+
+  // Функція для генерації PDF (заглушка з перекладом)
+  generatePDF() {
+    alert(this.safeT('policyPages.downloadPdf', 'Функція завантаження PDF буде доступна незабаром. Наразі ви можете використати функцію друку браузера (Ctrl+P / Cmd+P)') || 'Завантаження PDF скоро буде...');
+  }
+}" x-init="
+  try {
+    isLoggedIn = api.utils.isAuthenticated();
+    isPremiumUser = api.utils.isPremium();
+  } catch (error) {
+    console.error('Auth check error:', error);
+    isLoggedIn = false;
+    isPremiumUser = false;
+  }
+
+  // Відслідковування активної секції при скролі
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) { // Секція вважається активною, якщо видно хоча б 50%
+              activeSection = entry.target.id;
+          }
+      });
+  }, { threshold: 0.5 }); // Порогове значення 0.5
+
+  sections.forEach(section => observer.observe(section));
+">
 
 <!-- Хедер -->
 <header>
   <div class="container">
     <nav class="navbar">
-      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+      <!-- ОНОВЛЕНО: Динамічний логотип -->
+      <a href="index.html" class="logo" aria-label="На головну">
+        <span x-text="safeT('general.siteNamePart1', 'Таємний')"></span><span style="color: var(--accent-red);" x-text="safeT('general.siteNamePart2', 'Світ')"></span>
+      </a>
       <!-- Навігація з i18n -->
       <ul class="nav-links">
-        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        <li><a href="index.html" x-text="safeT('general.home', 'Головна')"></a></li>
+        <li><a href="new-stories.html" x-text="safeT('general.newStories', 'Нові історії')"></a></li>
+        <li><a href="top-stories.html" x-text="safeT('general.topStories', 'Топ рейтинг')"></a></li>
+        <li><a href="categories.html" x-text="safeT('general.categories', 'Категорії')"></a></li>
+        <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li>
       </ul>
       <div class="auth-buttons">
-        <!-- Мовний перемикач -->
+        <!-- ОНОВЛЕНО: Мовний перемикач з правильною логікою -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
-          <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
-            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+            <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
-          <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n.available" :key="lang.code">
-              <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                   @click="$store.i18n.setLanguage(lang.code); open = false;">
-                <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
-              </div>
-            </template>
-          </div>
+          <template x-if="$store?.i18n">
+            <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+              <template x-for="lang in $store.i18n.available" :key="lang.code">
+                <div class="lang-dropdown-item"
+                     :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                     @click="
+                                const newLang = lang.code;
+                                open = false;
+                                try {
+                                    // Викликаємо функцію зміни мови
+                                    await $store.i18n.setLanguage(newLang);
+                                    console.log('Language set to:', newLang);
+                                } catch(e) {
+                                    console.error('Error setting language:', e);
+                                }
+                             "
+                     role="menuitemradio"
+                     :aria-checked="lang.code === $store.i18n.selectedLang"
+                     tabindex="0"
+                     @keydown.enter.space.prevent="
+                                const newLang = lang.code;
+                                open = false;
+                                try { await $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
+                             ">
+                  <span x-text="lang.name"></span>
+                  <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
         <!-- Кнопки авторизації -->
         <template x-if="!isLoggedIn">
           <div>
-            <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span> </a>
-            <a href="register-page.html" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span> </a>
+            <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="safeT('general.login', 'Увійти')"></span> </a>
+            <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="safeT('general.register', 'Реєстрація')"></span> </a>
           </div>
         </template>
         <template x-if="isLoggedIn">
           <div>
-            <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
-            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary"> <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> </a>
+            <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="safeT('general.profile', 'Профіль')"></span> </a>
+            <a href="#" @click.prevent="
+              try {
+                api.auth.logout();
+                isLoggedIn = false;
+                window.location.reload();
+              } catch (e) {
+                console.error('Logout error:', e);
+                alert(safeT('general.logoutError', 'Помилка при виході з системи'));
+              }
+            " class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout', 'Вийти')"></span>
+            </a>
           </div>
         </template>
       </div>
@@ -93,176 +262,265 @@
   <div class="container">
     <!-- Хлібні крихти -->
     <div class="breadcrumbs">
-      <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+      <a href="index.html" x-text="safeT('general.home', 'Головна')"></a>
       <span class="separator">/</span>
-      <span class="current" x-text="$store.i18n.t('policyPages.privacyTitle')"></span>
+      <span class="current" x-text="safeT('policyPages.privacyTitle', 'Політика конфіденційності')"></span>
     </div>
 
-    <div class="terms-container"> <!-- Використовуємо той самий контейнер, що й для terms-page -->
+    <div class="terms-container" role="main">
       <!-- Заголовок -->
       <div class="terms-header">
-        <h1 class="terms-title" x-text="$store.i18n.t('policyPages.privacyTitle')"></h1>
-        <p class="terms-description" x-text="$store.i18n.t('policyPages.privacyDescription')"></p>
-        <!-- Дата оновлення -->
-        <span class="last-updated" x-text="`${$store.i18n.t('policyPages.lastUpdated')}: 12 березня 2025 р.`"></span>
+        <h1 class="terms-title" x-text="safeT('policyPages.privacyTitle', 'Політика конфіденційності')" id="privacy-top"></h1>
+        <p class="terms-description" x-text="safeT('policyPages.privacyDescription', 'Як ми збираємо, використовуємо та захищаємо ваші персональні дані')"></p>
+        <span class="last-updated"
+              x-text="`${safeT('policyPages.lastUpdated', 'Останнє оновлення')}: ${ new Date('2025-03-12').toLocaleDateString($store.i18n?.selectedLang || 'uk-UA', { year: 'numeric', month: 'long', day: 'numeric' }) }`"
+              aria-label="Дата останнього оновлення політики">
+        </span>
       </div>
 
-      <!-- Навігація по розділах (використовуємо ключі i18n) -->
-      <nav class="terms-navigation">
-        <a href="#collection" x-text="$store.i18n.t('policyPages.privacyNavCollection')"></a>
-        <a href="#usage" x-text="$store.i18n.t('policyPages.privacyNavUsage')"></a>
-        <a href="#protection" x-text="$store.i18n.t('policyPages.privacyNavProtection')"></a>
-        <a href="#cookies" x-text="$store.i18n.t('policyPages.privacyNavCookies')"></a>
-        <a href="#rights" x-text="$store.i18n.t('policyPages.privacyNavRights')"></a>
-        <a href="#changes" x-text="$store.i18n.t('policyPages.privacyNavChanges')"></a>
-        <a href="#contact" x-text="$store.i18n.t('policyPages.privacyNavContact')"></a>
+      <!-- Навігація по розділах з атрибутами доступності та відстеженням активного стану -->
+      <nav class="terms-navigation" aria-label="Навігація по розділах політики конфіденційності">
+        <a href="#collection" @click.prevent="scrollToSection('collection')" :class="{'active': activeSection === 'collection'}" x-text="safeT('policyPages.privacyNavCollection', 'Збір даних')"></a>
+        <a href="#usage" @click.prevent="scrollToSection('usage')" :class="{'active': activeSection === 'usage'}" x-text="safeT('policyPages.privacyNavUsage', 'Використання даних')"></a>
+        <a href="#protection" @click.prevent="scrollToSection('protection')" :class="{'active': activeSection === 'protection'}" x-text="safeT('policyPages.privacyNavProtection', 'Захист даних')"></a>
+        <a href="#cookies" @click.prevent="scrollToSection('cookies')" :class="{'active': activeSection === 'cookies'}" x-text="safeT('policyPages.privacyNavCookies', 'Файли cookie')"></a>
+        <a href="#rights" @click.prevent="scrollToSection('rights')" :class="{'active': activeSection === 'rights'}" x-text="safeT('policyPages.privacyNavRights', 'Ваші права')"></a>
+        <a href="#changes" @click.prevent="scrollToSection('changes')" :class="{'active': activeSection === 'changes'}" x-text="safeT('policyPages.privacyNavChanges', 'Зміни політики')"></a>
+        <a href="#contact" @click.prevent="scrollToSection('contact')" :class="{'active': activeSection === 'contact'}" x-text="safeT('policyPages.privacyNavContact', 'Контакти')"></a>
       </nav>
 
-      <!-- Зміст політики (використовуємо ключі i18n) -->
+      <!-- Зміст політики -->
       <div class="terms-content">
-        <section id="collection" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection1Title')"></h2>
+        <section id="collection" class="section" aria-labelledby="collection-heading">
+          <h2 id="collection-heading" class="section-title" x-text="safeT('policyPages.privacySection1Title', '1. Яку інформацію ми збираємо')"></h2>
           <div class="subsection">
-            <h3 class="subsection-title" x-text="$store.i18n.t('policyPages.privacySection1_1Title')"></h3>
-            <p x-text="$store.i18n.t('policyPages.privacySection1_1Intro')"></p>
+            <h3 class="subsection-title" x-text="safeT('policyPages.privacySection1_1Title', '1.1. Інформація, яку надаєте ви')"></h3>
+            <p x-text="safeT('policyPages.privacySection1_1Intro', 'Ми збираємо інформацію, яку ви надаєте безпосередньо під час використання Сайту:')"></p>
             <ul>
-              <li x-text="$store.i18n.t('policyPages.privacyCollectionPoint1')"></li>
-              <li x-text="$store.i18n.t('policyPages.privacyCollectionPoint2')"></li>
-              <li x-text="$store.i18n.t('policyPages.privacyCollectionPoint3')"></li>
-              <li x-text="$store.i18n.t('policyPages.privacyCollectionPoint4')"></li>
-              <li x-text="$store.i18n.t('policyPages.privacyCollectionPoint5')"></li>
+              <li x-text="safeT('policyPages.privacyCollectionPoint1', 'Реєстраційні дані: ім\'я, адреса електронної пошти, пароль.')"></li>
+              <li x-text="safeT('policyPages.privacyCollectionPoint2', 'Дані профілю: біографія, аватар, посилання на соціальні мережі (за бажанням).')"></li>
+              <li x-text="safeT('policyPages.privacyCollectionPoint3', 'Контент: історії, коментарі, які ви публікуєте.')"></li>
+              <li x-text="safeT('policyPages.privacyCollectionPoint4', 'Комунікації: повідомлення, які ви надсилаєте через Сайт або до служби підтримки.')"></li>
+              <li x-text="safeT('policyPages.privacyCollectionPoint5', 'Платіжна інформація: дані картки або іншого платіжного методу при оформленні преміум-підписки (обробляються платіжним шлюзом, ми не зберігаємо повні дані картки).')"></li>
             </ul>
           </div>
           <div class="subsection">
-            <h3 class="subsection-title" x-text="$store.i18n.t('policyPages.privacySection1_2Title')"></h3>
-            <p x-text="$store.i18n.t('policyPages.privacySection1_2Intro')"></p>
+            <h3 class="subsection-title" x-text="safeT('policyPages.privacySection1_2Title', '1.2. Інформація, що збирається автоматично')"></h3>
+            <p x-text="safeT('policyPages.privacySection1_2Intro', 'Ми також можемо збирати певну інформацію автоматично:')"></p>
             <ul>
-              <li x-text="$store.i18n.t('policyPages.privacyAutoCollectionPoint1')"></li>
-              <li x-text="$store.i18n.t('policyPages.privacyAutoCollectionPoint2')"></li>
-              <li x-text="$store.i18n.t('policyPages.privacyAutoCollectionPoint3')"></li>
+              <li x-text="safeT('policyPages.privacyAutoCollectionPoint1', 'Дані про використання: IP-адреса, тип браузера, операційна система, сторінки, які ви відвідуєте, час та дата відвідування.')"></li>
+              <li x-text="safeT('policyPages.privacyAutoCollectionPoint2', 'Cookies та схожі технології: для забезпечення функціональності сайту та аналітики.')"></li>
+              <li x-text="safeT('policyPages.privacyAutoCollectionPoint3', 'Дані про пристрій: тип пристрою, ідентифікатори пристрою.')"></li>
             </ul>
           </div>
         </section>
 
-        <section id="usage" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection2Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection2Intro')"></p>
+        <section id="usage" class="section" aria-labelledby="usage-heading">
+          <h2 id="usage-heading" class="section-title" x-text="safeT('policyPages.privacySection2Title', '2. Як ми використовуємо вашу інформацію')"></h2>
+          <p x-text="safeT('policyPages.privacySection2Intro', 'Ми використовуємо зібрану інформацію для:')"></p>
           <ul>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint1')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint2')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint3')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint4')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint5')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint6')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint7')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyUsagePoint8')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint1', 'Надання та підтримки роботи Сайту.')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint2', 'Персоналізації вашого досвіду.')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint3', 'Обробки реєстрації та керування обліковим записом.')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint4', 'Обробки платежів за преміум-підписку.')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint5', 'Комунікації з вами (відповіді на запити, сповіщення).')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint6', 'Аналізу та покращення роботи Сайту.')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint7', 'Забезпечення безпеки та запобігання шахрайству.')"></li>
+            <li x-text="safeT('policyPages.privacyUsagePoint8', 'Виконання юридичних зобов\'язань.')"></li>
           </ul>
         </section>
 
-        <section id="protection" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection3Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection3Text')"></p>
-          <!-- Можна додати підрозділи, якщо політика детальніша -->
+        <section id="protection" class="section" aria-labelledby="protection-heading">
+          <h2 id="protection-heading" class="section-title" x-text="safeT('policyPages.privacySection3Title', '3. Захист ваших даних')"></h2>
+          <p x-text="safeT('policyPages.privacySection3Text', 'Ми вживаємо відповідних технічних та організаційних заходів для захисту вашої персональної інформації від несанкціонованого доступу, зміни, розкриття або знищення. Однак жоден метод передачі даних через Інтернет не є абсолютно безпечним.')"></p>
         </section>
 
-        <section id="cookies" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection4Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection4Text1')"></p>
-          <p x-text="$store.i18n.t('policyPages.privacySection4Text2')"></p>
+        <section id="cookies" class="section" aria-labelledby="cookies-heading">
+          <h2 id="cookies-heading" class="section-title" x-text="safeT('policyPages.privacySection4Title', '4. Файли Cookie')"></h2>
+          <p x-text="safeT('policyPages.privacySection4Text1', 'Ми використовуємо файли cookie та подібні технології для збору інформації про те, як ви взаємодієте з нашим Сайтом, для запам\'ятовування ваших налаштувань та забезпечення роботи деяких функцій.')"></p>
+          <p x-text="safeT('policyPages.privacySection4Text2', 'Типи файлів cookie, які ми можемо використовувати:')"></p>
           <ul>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType1')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType2')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType3')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyCookieType4')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType1', 'Необхідні: для базової роботи сайту (напр., сесія користувача).')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType2', 'Функціональні: для запам\'ятовування налаштувань (напр., мова).')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType3', 'Аналітичні: для збору анонімної статистики використання сайту.')"></li>
+            <li x-text="safeT('policyPages.privacyCookieType4', 'Рекламні: для показу релевантної реклами (якщо використовується).')"></li>
           </ul>
-          <p x-text="$store.i18n.t('policyPages.privacyCookieManage')"></p>
+          <p x-text="safeT('policyPages.privacyCookieManage', 'Ви можете керувати файлами cookie через налаштування вашого браузера.')"></p>
         </section>
 
-        <section id="rights" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection5Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection5Intro')"></p>
+        <section id="rights" class="section" aria-labelledby="rights-heading">
+          <h2 id="rights-heading" class="section-title" x-text="safeT('policyPages.privacySection5Title', '5. Ваші права')"></h2>
+          <p x-text="safeT('policyPages.privacySection5Intro', 'Ви маєте право:')"></p>
           <ul>
-            <li x-text="$store.i18n.t('policyPages.privacyRightAccess')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyRightCorrection')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyRightDeletion')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyRightRestriction')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyRightObjection')"></li>
-            <li x-text="$store.i18n.t('policyPages.privacyRightPortability')"></li>
+            <li x-text="safeT('policyPages.privacyRightAccess', 'Отримувати доступ до вашої персональної інформації.')"></li>
+            <li x-text="safeT('policyPages.privacyRightCorrection', 'Виправляти неточну інформацію.')"></li>
+            <li x-text="safeT('policyPages.privacyRightDeletion', 'Вимагати видалення ваших даних (з певними обмеженнями).')"></li>
+            <li x-text="safeT('policyPages.privacyRightRestriction', 'Обмежувати обробку ваших даних.')"></li>
+            <li x-text="safeT('policyPages.privacyRightObjection', 'Заперечувати проти обробки.')"></li>
+            <li x-text="safeT('policyPages.privacyRightPortability', 'Отримувати ваші дані у портативному форматі.')"></li>
           </ul>
-          <p x-text="$store.i18n.t('policyPages.privacyRightsContact')"></p>
+          <p x-text="safeT('policyPages.privacyRightsContact', 'Для реалізації цих прав зв\'яжіться з нами.')"></p>
         </section>
 
-        <section id="changes" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection6Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection6Text')"></p>
+        <section id="changes" class="section" aria-labelledby="changes-heading">
+          <h2 id="changes-heading" class="section-title" x-text="safeT('policyPages.privacySection6Title', '6. Зміни до Політики конфіденційності')"></h2>
+          <p x-text="safeT('policyPages.privacySection6Text', 'Ми можемо періодично оновлювати цю Політику. Ми повідомимо вас про суттєві зміни шляхом публікації нової версії на Сайті або іншим способом. Рекомендуємо регулярно переглядати цю сторінку.')"></p>
         </section>
 
-        <section id="contact" class="section">
-          <h2 class="section-title" x-text="$store.i18n.t('policyPages.privacySection7Title')"></h2>
-          <p x-text="$store.i18n.t('policyPages.privacySection7Intro')"></p>
-          <p><span x-text="$store.i18n.t('contact.formEmailLabel')"></span> <a href="mailto:admin@e.world">admin@e.world</a></p>
-          <p><span x-text="$store.i18n.t('contact.formTitle')"></span>: <a href="contact.html" x-text="$store.i18n.t('faq.contactUsButton')"></a></p>
+        <section id="contact" class="section" aria-labelledby="contact-heading">
+          <h2 id="contact-heading" class="section-title" x-text="safeT('policyPages.privacySection7Title', '7. Контактна інформація')"></h2>
+          <p x-text="safeT('policyPages.privacySection7Intro', 'Якщо у вас є запитання щодо цієї Політики конфіденційності, будь ласка, зв\'яжіться з нами:')"></p>
+          <p><span x-text="safeT('contact.formEmailLabel', 'Електронна пошта:')"></span> <a href="mailto:admin@erostory.world">admin@erostory.world</a></p>
+          <p x-html="safeT('policyPages.contactUsText', 'Або через {link}.', { link: `<a href='contact.html'>${safeT('faq.contactUsButton', 'контактну форму')}</a>` }) || `Або через <a href='contact.html'>контактну форму</a>.`"></p>
         </section>
+      </div>
+
+      <!-- Кнопки дій -->
+      <div class="terms-actions">
+        <button @click="generatePDF()" class="btn btn-outline" :title="safeT('policyPages.downloadPdf', 'Завантажити PDF')">
+          <i class="fas fa-file-pdf"></i> <span x-text="safeT('policyPages.downloadPdf', 'Завантажити PDF')"></span>
+        </button>
+        <button @click="window.print()" class="btn btn-outline" :title="safeT('policyPages.printPage', 'Надрукувати')">
+          <i class="fas fa-print"></i> <span x-text="safeT('policyPages.printPage', 'Надрукувати')"></span>
+        </button>
       </div>
 
       <!-- Футер сторінки -->
       <div class="terms-footer">
-        <p x-text="$store.i18n.t('policyPages.footerText')"></p>
-        <a href="index.html" class="btn btn-outline" x-text="$store.i18n.t('policyPages.backToHomeButton')"></a>
+        <p x-text="safeT('policyPages.footerText', 'Дякуємо за використання Таємного Світу!')"></p>
+        <a href="index.html" class="btn btn-outline" x-text="safeT('policyPages.backToHomeButton', 'Повернутися на головну')"></a>
       </div>
     </div>
   </div>
 </main>
 
+<!-- Кнопка нагору -->
+<button class="scroll-to-top"
+        @click="window.scrollTo({top: 0, behavior: 'smooth'})"
+        x-data="{ isVisible: false }"
+        x-init="window.addEventListener('scroll', () => { isVisible = window.scrollY > 500 })"
+        x-show="isVisible"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-y-2"
+        x-transition:enter-end="opacity-80 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-80 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform translate-y-2"
+        aria-label="Прокрутити нагору"
+        title="Нагору">
+  <i class="fas fa-arrow-up"></i>
+</button>
+
 <!-- Footer -->
 <footer>
   <div class="container">
-    <!-- Код футера з i18n, як в index.html -->
+    <!-- Код футера з i18n -->
     <div class="footer-content">
       <div class="footer-section footer-about">
-        <h4 x-text="$store.i18n.t('general.about')"></h4>
-        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <h4 x-text="safeT('general.about', 'Про нас')"></h4>
+        <p x-text="safeT('general.aboutText', 'Платформа еротичних історій.')"></p>
         <div class="social-links">
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" :title="safeT('general.shareFacebook', 'Facebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="safeT('general.shareTelegram', 'Telegram')"><i class="fab fa-telegram-plane"></i></a>
           <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
         </div>
       </div>
       <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <h4 x-text="safeT('general.navigation', 'Навігація')"></h4>
         <ul>
-          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+          <li><a href="index.html" x-text="safeT('general.home', 'Головна')"></a></li>
+          <li><a href="categories.html" x-text="safeT('general.categories', 'Категорії')"></a></li>
+          <li><a href="new-stories.html" x-text="safeT('general.newStories', 'Нові історії')"></a></li>
+          <li><a href="top-stories.html" x-text="safeT('general.topStories', 'Топ рейтинг')"></a></li>
+          <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li>
         </ul>
       </div>
       <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <h4 x-text="safeT('general.support', 'Підтримка')"></h4>
         <ul>
-          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+          <li><a href="faq.html" x-text="safeT('faq.title', 'FAQ')"></a></li>
+          <li><a href="contact.html" x-text="safeT('contact.title', 'Контакти')"></a></li>
+          <li><a href="terms-page.html" x-text="safeT('general.terms', 'Умови')"></a></li>
+          <li><a href="privacy-policy.html" x-text="safeT('general.privacy', 'Конфіденційність')"></a></li>
         </ul>
       </div>
       <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <h4 x-text="safeT('general.join', 'Приєднуйтесь')"></h4>
         <ul>
-          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+          <li><a href="login.html" x-text="safeT('general.login', 'Увійти')"></a></li>
+          <li><a href="login.html?tab=register" x-text="safeT('general.register', 'Реєстрація')"></a></li>
+          <li><a href="premium.html" x-text="safeT('general.premium', 'Преміум')"></a></li>
+          <li><a href="create_story.html" x-text="safeT('createStory.title', 'Створити історію')"></a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+      © <span x-text="new Date().getFullYear() || '2025'"></span>
+      <span x-text="safeT('general.copyright', 'Таємний Світ')"></span>.
+      <span x-text="safeT('general.allRightsReserved', 'Всі права захищені')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="safeT('general.terms', 'Умови використання')"></a> |
+      <a href="privacy-policy.html" x-text="safeT('general.privacy', 'Політика конфіденційності')"></a>
     </div>
   </div>
 </footer>
+
+<!-- Скрипт підсвічування навігації (якщо потрібен) -->
+<script>
+  // Скрипт для підсвічування активної секції навігації
+  document.addEventListener('DOMContentLoaded', () => {
+    const sections = document.querySelectorAll('.section');
+    const navLinks = document.querySelectorAll('.terms-navigation a');
+
+    const observerOptions = {
+      root: null, // Відносно viewport
+      rootMargin: '0px',
+      threshold: 0.4 // Секція активна, коли видно 40%
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${entry.target.id}`) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(section => observer.observe(section));
+
+    // Додавання стилів для активного стану, якщо їх немає в CSS
+    if (!document.querySelector('style#active-nav-style')) {
+      const style = document.createElement('style');
+      style.id = 'active-nav-style';
+      style.textContent = `
+          .terms-navigation a.active {
+              color: var(--accent-red);
+              font-weight: 600;
+              position: relative;
+          }
+          .terms-navigation a.active::after {
+              content: '';
+              position: absolute;
+              bottom: -3px;
+              left: 0;
+              width: 100%;
+              height: 2px;
+              background-color: var(--accent-red);
+              animation: slideIn 0.3s ease-out;
+          }
+          @keyframes slideIn {
+              from { width: 0; }
+              to { width: 100%; }
+          }
+      `;
+      document.head.appendChild(style);
+    }
+  });
+</script>
 
 </body>
 </html>

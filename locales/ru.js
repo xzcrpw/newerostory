@@ -1,5 +1,7 @@
 export default {
     general: {
+        siteNamePart1: "Тайный", // Або відповідний переклад/транслітерація
+        siteNamePart2: "Мир",    // Або відповідний переклад/транслітерація
         welcome: "Добро пожаловать", // PHT: Welcome
         login: "Войти", // PHT: Login
         register: "Регистрация", // PHT: Register
@@ -54,7 +56,7 @@ export default {
         aboutText: "Платформа для чтения и публикации эксклюзивных эротических историй. Погрузитесь в мир фантазий и страсти.", // PHT: A platform for reading and publishing exclusive erotic stories. Immerse yourself in a world of fantasy and passion.
         terms: "Условия использования", // PHT: Terms of Use
         privacy: "Политика конфиденциальности", // PHT: Privacy Policy
-        copyright: "Тайный Мир (e.world)", // PHT: Secret World (e.world)
+        copyright: "Тайный Мир (erostory.world)", // PHT: Secret World (e.world)
         language: "Язык", // PHT: Language
         shareFacebook: "Поделиться в Facebook", // PHT: Share on Facebook
         shareTwitter: "Поделиться в Twitter", // PHT: Share on Twitter
@@ -711,7 +713,7 @@ export default {
         formTitle: "Отправить сообщение", // PHT: Send a Message
         formNameLabel: "Ваше имя *", // PHT: Your Name *
         formNamePlaceholder: "Введите ваше имя", // PHT: Enter your name
-        formEmailLabel: "Ваша электронная почта *", // PHT: Your Email *
+        formEmailLabel: "E-mail ", // PHT: Your Email *
         formEmailPlaceholder: "Введите вашу почту", // PHT: Enter your email
         formSubjectLabel: "Тема сообщения *", // PHT: Subject *
         formSubjectPlaceholder: "Укажите тему", // PHT: Specify the subject
@@ -734,7 +736,9 @@ export default {
         privacyTitle: "Политика конфиденциальности", // PHT: Privacy Policy
         privacyDescription: "Ваша конфиденциальность важна для нас. Эта политика объясняет, как мы собираем, используем и защищаем вашу информацию.", // PHT: Your privacy is important to us. This policy explains how we collect, use, disclose, and protect your information.
         privacyMetaDescription: "Политика конфиденциальности сайта Тайный Мир. Узнайте, как мы собираем, используем и защищаем ваши персональные данные.", // PHT: Secret World website privacy policy. Learn how we collect, use, and protect your personal data.
-        lastUpdated: "Последнее обновление:", // PHT: Last updated:
+        lastUpdated: "Последнее обновление:",
+        downloadPdf: "Скачать PDF",    // Перекласти для кожної мови
+        printPage: "Распечатать",        // Перекласти для кожної мови// PHT: Last updated:
         backToHomeButton: "Вернуться на главную", // PHT: Back to Homepage
         footerText: "Спасибо за использование Тайного Мира!", // PHT: Thank you for using Secret World!
         contactUsText: "Если у вас есть вопросы, {link}.", // PHT: If you have questions, {link}.

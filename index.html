@@ -36,10 +36,26 @@
 
     verifyAge() {
         this.showAgeVerification = false;
-        localStorage.setItem('ageVerified', 'true');
-        // Встановлюємо кукі на 30 днів
-        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
-        document.cookie = `ageVerified=true; path=/; expires=${expires}; SameSite=Lax`;
+        
+        try {
+            // Зберігаємо у localStorage
+            localStorage.setItem('ageVerified', 'true');
+            
+            // Встановлюємо кукі на 30 днів з захищеними параметрами
+            const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+            document.cookie = `ageVerified=true; path=/; expires=${expires}; SameSite=Lax`;
+            
+            // Запускаємо завантаження контенту, якщо до цього було заблоковано
+            if (this.isLoadingCategories === false && this.categories.length === 0) {
+                this.loadCategories();
+            }
+            if (this.isLoadingStories === false && this.popularStories.length === 0) {
+                this.loadPopularStories();
+            }
+        } catch (error) {
+            console.error('Error saving age verification:', error);
+            // Все одно приховуємо перевірку віку, навіть якщо сталася помилка збереження
+        }
     },
 
     submitSearch() {
@@ -48,64 +64,188 @@
         window.location.href = `categories.html?search=${encodeURIComponent(this.searchQuery)}`;
     },
 
+    // --- Перевірка статусу логіну з обробкою помилки ---
     checkLoginStatus() {
-        this.isLoggedIn = api.utils.isAuthenticated(); // Використовуємо функцію з api-utils
+        try {
+            this.isLoggedIn = api.utils.isAuthenticated();
+        } catch (error) {
+            console.error('Error checking login status:', error);
+            this.isLoggedIn = false;
+        }
     },
 
     async loadCategories() {
         this.isLoadingCategories = true;
         try {
+            // Перевіряємо, чи була підтверджена вікова перевірка
+            if (!(localStorage.getItem('ageVerified') === 'true' || this.getCookie('ageVerified') === 'true')) {
+                console.log('Age not verified, skipping category load');
+                this.isLoadingCategories = false;
+                return;
+            }
+
             // Симуляція API
             await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Створюємо масив для категорій з обробкою невизначених ключів i18n
+            const safeTKeys = (key, fallback) => {
+                try {
+                    const translation = $store.i18n?.t(key);
+                    return (translation && translation !== key) ? translation : fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            };
+            
             this.categories = [
-                { name: $store.i18n.t('createStory.categoryRomance') || 'Романтика', slug: 'romance', count: 125 },
-                { name: $store.i18n.t('createStory.categoryFantasy') || 'Фантазії', slug: 'fantasy', count: 98 },
-                { name: $store.i18n.t('createStory.categoryBDSM') || 'БДСМ', slug: 'bdsm', count: 76 },
-                { name: $store.i18n.t('createStory.categoryFirstTime') || 'Перший досвід', slug: 'first-time', count: 84 },
-                { name: $store.i18n.t('createStory.categoryVacation') || 'Курортний роман', slug: 'vacation', count: 42 },
-                { name: $store.i18n.t('createStory.categoryChanceEncounters') || 'Випадкові зустрічі', slug: 'chance-encounters', count: 63 }
+                { name: safeTKeys('createStory.categoryRomance', 'Романтика'), slug: 'romance', count: 125 },
+                { name: safeTKeys('createStory.categoryFantasy', 'Фантазії'), slug: 'fantasy', count: 98 },
+                { name: safeTKeys('createStory.categoryBDSM', 'БДСМ'), slug: 'bdsm', count: 76 },
+                { name: safeTKeys('createStory.categoryFirstTime', 'Перший досвід'), slug: 'first-time', count: 84 },
+                { name: safeTKeys('createStory.categoryVacation', 'Курортний роман'), slug: 'vacation', count: 42 },
+                { name: safeTKeys('createStory.categoryChanceEncounters', 'Випадкові зустрічі'), slug: 'chance-encounters', count: 63 }
             ];
             // TODO: Замінити на реальний API-запит:
             // this.categories = await api.categories.getCategories({ limit: 6 }); // Обмежуємо кількість на головній
         } catch (e) {
-             console.error('Failed to load categories', e);
-             // Можна показати повідомлення про помилку
+            console.error('Failed to load categories', e);
+            // Встановлюємо порожній масив щоб уникнути помилок у шаблоні
+            this.categories = [];
         } finally {
-             this.isLoadingCategories = false;
+            this.isLoadingCategories = false;
         }
     },
 
+    // --- Покращена функція завантаження популярних історій ---
     async loadPopularStories() {
-         this.isLoadingStories = true;
+        this.isLoadingStories = true;
         try {
+            // Перевіряємо, чи була підтверджена вікова перевірка
+            if (!(localStorage.getItem('ageVerified') === 'true' || this.getCookie('ageVerified') === 'true')) {
+                console.log('Age not verified, skipping stories load');
+                this.isLoadingStories = false;
+                return;
+            }
+
             // Симуляція API
-             await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            // Безпечна функція для отримання перекладів
+            const safeTKeys = (key, fallback) => {
+                try {
+                    const translation = $store.i18n?.t(key);
+                    return (translation && translation !== key) ? translation : fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            };
+            
             this.popularStories = [
-                { _id: '1', title: $store.i18n.t('home.simStory1Title') || 'Випадкова зустріч', excerpt: $store.i18n.t('home.simStory1Excerpt') || 'Це мала бути звичайна ділова поїздка, але один погляд змінив усе', readingTime: '6', views: 2456, averageRating: 4.8, category: { name: $store.i18n.t('createStory.categoryRomance') || 'Романтика', slug: 'romance' } },
-                { _id: '2', title: $store.i18n.t('home.simStory2Title') || 'Спогади минулого літа', excerpt: $store.i18n.t('home.simStory2Excerpt') || 'Вона з\'явилася в його житті на один сезон, але залишила слід назавжди', readingTime: '8', views: 1892, averageRating: 4.6, category: { name: $store.i18n.t('createStory.categoryVacation') || 'Курортний роман', slug: 'vacation' } },
-                { _id: '3', title: $store.i18n.t('home.simStory3Title') || 'Таємниця готельного номера', excerpt: $store.i18n.t('home.simStory3Excerpt') || 'Коли двері зачинилися, реальність перестала існувати', readingTime: '5', views: 3150, averageRating: 4.9, category: { name: $store.i18n.t('createStory.categoryChanceEncounters') || 'Випадкові зустрічі', slug: 'chance-encounters' }, isPremium: true } // Додав преміум для прикладу
+                { 
+                    _id: '1', 
+                    title: safeTKeys('home.simStory1Title', 'Випадкова зустріч'), 
+                    excerpt: safeTKeys('home.simStory1Excerpt', 'Це мала бути звичайна ділова поїздка, але один погляд змінив усе'),
+                    readingTime: '6', 
+                    views: 2456, 
+                    averageRating: 4.8, 
+                    category: { 
+                        name: safeTKeys('createStory.categoryRomance', 'Романтика'), 
+                        slug: 'romance' 
+                    }
+                },
+                { 
+                    _id: '2', 
+                    title: safeTKeys('home.simStory2Title', 'Спогади минулого літа'), 
+                    excerpt: safeTKeys('home.simStory2Excerpt', 'Вона з\'явилася в його житті на один сезон, але залишила слід назавжди'),
+                    readingTime: '8', 
+                    views: 1892, 
+                    averageRating: 4.6, 
+                    category: { 
+                        name: safeTKeys('createStory.categoryVacation', 'Курортний роман'), 
+                        slug: 'vacation' 
+                    } 
+                },
+                { 
+                    _id: '3', 
+                    title: safeTKeys('home.simStory3Title', 'Таємниця готельного номера'), 
+                    excerpt: safeTKeys('home.simStory3Excerpt', 'Коли двері зачинилися, реальність перестала існувати'),
+                    readingTime: '5', 
+                    views: 3150, 
+                    averageRating: 4.9, 
+                    category: { 
+                        name: safeTKeys('createStory.categoryChanceEncounters', 'Випадкові зустрічі'), 
+                        slug: 'chance-encounters' 
+                    }, 
+                    isPremium: true // Додав преміум для прикладу
+                }
             ];
             // TODO: Замінити на реальний API-запит:
             // const response = await api.stories.getStories({ sort: '-views', limit: 3, populate: 'category' }); // Запитуємо категорію
             // this.popularStories = response.data || [];
         } catch (e) {
-             console.error('Failed to load popular stories', e);
-             // Можна показати повідомлення про помилку
+            console.error('Failed to load popular stories', e);
+            // Встановлюємо порожній масив щоб уникнути помилок у шаблоні
+            this.popularStories = [];
         } finally {
-             this.isLoadingStories = false;
+            this.isLoadingStories = false;
         }
     },
-    getCookie(name) { // Допоміжна функція для кукі
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    }
+    getCookie(name) {
+        try {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) {
+                return parts.pop().split(';').shift();
+            }
+            return null;
+        } catch (error) {
+            console.warn('Error reading cookie:', error);
+            return null;
+        }
+    },
+    // --- Додана функція для відображення зірок ---
+    formatStars(rating) {
+        if (!rating || isNaN(rating)) return '';
+        
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating - fullStars >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        
+        let stars = '';
+        
+        // Додаємо заповнені зірки
+        for (let i = 0; i < fullStars; i++) {
+            stars += '<i class=\'fas fa-star\'></i>';
+        }
+        
+        // Додаємо напівзірку, якщо потрібно
+        if (hasHalfStar) {
+            stars += '<i class=\'fas fa-star-half-alt\'></i>';
+        }
+        
+        // Додаємо порожні зірки
+        for (let i = 0; i < emptyStars; i++) {
+            stars += '<i class=\'far fa-star\'></i>';
+        }
+        
+        return stars;
+    },
 }" x-init="
-    showAgeVerification = !(localStorage.getItem('ageVerified') === 'true' || getCookie('ageVerified') === 'true');
-    checkLoginStatus();
-    loadCategories();
-    loadPopularStories();
+    try {
+        showAgeVerification = !(localStorage.getItem('ageVerified') === 'true' || getCookie('ageVerified') === 'true');
+        checkLoginStatus();
+        
+        // Завантажуємо дані лише якщо вік підтверджено
+        if (!showAgeVerification) {
+            loadCategories();
+            loadPopularStories();
+        }
+    } catch (error) {
+        console.error('Error during initialization:', error);
+        // Встановлюємо базові значення для продовження роботи сторінки
+        showAgeVerification = true;
+        isLoggedIn = false;
+    }
 ">
 
 <!-- Віковий контроль -->
@@ -136,19 +276,19 @@
         <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
       </ul>
       <div class="auth-buttons">
-        <!-- Мовний перемикач -->
+        <!-- Мовний перемикач з обробкою помилок -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
+            <span x-text="$store.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
           </div>
           <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n.available" :key="lang.code">
+            <template x-for="lang in $store.i18n?.available || []" :key="lang.code">
               <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                   @click="$store.i18n.setLanguage(lang.code); open = false;">
+                   :class="{ 'active': lang.code === $store.i18n?.selectedLang }"
+                   @click="try { $store.i18n.setLanguage(lang.code); open = false; setTimeout(() => { loadCategories(); loadPopularStories(); }, 100); } catch(e) { console.error('Error switching language:', e); open = false; }">
                 <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+                <i x-show="lang.code === $store.i18n?.selectedLang" class="fas fa-check"></i>
               </div>
             </template>
           </div>
@@ -169,7 +309,18 @@
             <a href="profile.html" class="btn btn-outline">
               <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
             </a>
-            <a href="#" @click.prevent="api.auth.logout(); isLoggedIn = false; window.location.reload();" class="btn btn-primary">
+            <!-- Кнопка виходу з покращеною обробкою -->
+            <a href="#" @click.prevent="
+              try { 
+                api.auth.logout(); 
+                isLoggedIn = false; 
+                // Оновлюємо сторінку лише після завершення logout 
+                setTimeout(() => window.location.href = 'index.html', 100); 
+              } catch (e) { 
+                console.error('Logout failed:', e); 
+                window.location.reload();
+              }
+            " class="btn btn-primary">
               <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
             </a>
           </div>
@@ -269,9 +420,11 @@
               </div>
             </a>
             <div class="story-card-content">
-              <!-- Теги/категорія з API -->
+              <!-- Безпечна перевірка властивостей категорії -->
               <div class="story-tags">
-                <a :href="`category-page.html?slug=${story.category?.slug || story.category}`" class="story-tag" x-text="story.category?.name || story.category || $store.i18n.t('general.defaultCategory')"></a>
+                <a :href="`category-page.html?slug=${story.category?.slug || (typeof story.category === 'string' ? story.category : '')}`" 
+                   class="story-tag" 
+                   x-text="story.category?.name || (typeof story.category === 'string' ? story.category : $store.i18n.t('general.defaultCategory') || 'Без категорії')"></a>
               </div>
               <h3 class="story-title">
                 <a :href="`story-detailed.html?id=${story._id}`" x-text="story.title"></a>
@@ -280,7 +433,11 @@
               <div class="story-meta">
                 <div class="story-meta-item"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="$store.i18n.t('general.readingTimeSuffix')"></span></div>
                 <div class="story-meta-item"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
-                <div class="story-meta-item rating"><i class="fas fa-star"></i> <span x-text="(story.averageRating || 0).toFixed(1)"></span></div>
+                <div class="story-meta-item rating">
+                  <!-- Використовуємо нову функцію для зіркового рейтингу -->
+                  <span x-html="formatStars(story.averageRating)"></span>
+                  <span class="rating-text" x-text="(story.averageRating || 0).toFixed(1)"></span>
+                </div>
               </div>
             </div>
           </div>

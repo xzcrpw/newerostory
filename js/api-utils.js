@@ -98,132 +98,177 @@
      * @throws {Error} - Викидає помилку у разі невдалого запиту (статус не 2xx) або мережевої помилки.
      */
     async function request(endpoint, options = {}, needsAuth = false) {
-        const url = `${baseUrl}${endpoint}`; // Формуємо повний URL
-
-        // Створюємо копію заголовків, щоб не модифікувати оригінальний об'єкт options
+        const url = `${baseUrl}${endpoint}`;
         const headers = { ...options.headers };
-        let body = options.body; // Зберігаємо тіло запиту для обробки
-
-        // --- Обробка автентифікації ---
+        let body = options.body;
+        
+        // Додаємо таймаут для fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+        }, window.apiConfig.requestDefaults?.timeout || 30000);
+        
+        // Додаємо обробку автентифікації з перевіркою JWT дати закінчення
         const token = getToken();
         if (needsAuth) {
             if (!token) {
                 console.error(`Authentication token is missing for protected request: ${options.method || 'GET'} ${url}`);
-                // Перенаправляємо на логін з параметром для повернення
-                const redirectParam = '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                window.location.href = 'login.html' + redirectParam;
-                // Кидаємо помилку, щоб зупинити виконання подальшого коду
-                throw new Error('Необхідна автентифікація');
+                clearTimeout(timeoutId);
+                
+                // Перевіряємо, чи це AJAX запит або завантаження сторінки
+                if (isAjaxRequest()) {
+                    throw new Error('Необхідна автентифікація');
+                } else {
+                    const redirectParam = '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = 'login.html' + redirectParam;
+                    return new Promise(() => {}); // Запобігаємо продовженню виконання
+                }
             }
-            // Додаємо токен до заголовків
+            
+            // Перевірка JWT на дату закінчення
+            try {
+                if (isTokenExpired(token)) {
+                    console.warn('Token expired. Redirecting to login.');
+                    clearTimeout(timeoutId);
+                    removeToken();
+                    
+                    if (isAjaxRequest()) {
+                        throw new Error('Термін дії токена закінчився');
+                    } else {
+                        const redirectParam = '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                        window.location.href = 'login.html' + redirectParam;
+                        return new Promise(() => {});
+                    }
+                }
+            } catch (e) {
+                console.error('Error checking token expiration:', e);
+            }
+            
             headers['Authorization'] = `Bearer ${token}`;
         }
-
-        // --- Налаштування конфігурації Fetch ---
+        
+        // Налаштування конфігурації Fetch
         const config = {
-            method: options.method || 'GET', // Метод GET за замовчуванням
-            headers, // Встановлюємо підготовлені заголовки
-            // Додаткові опції Fetch (credentials, mode, cache тощо можна додати сюди)
-            // cache: 'no-cache', // Приклад: заборонити кешування
+            method: options.method || 'GET',
+            headers,
+            signal: controller.signal,
         };
-
-        // --- Обробка тіла запиту (Body) ---
+        
+        // Обробка тіла запиту
         if (body) {
             if (body instanceof FormData) {
-                // Якщо тіло - це FormData, не встановлюємо 'Content-Type'.
-                // Браузер автоматично встановить 'multipart/form-data' з правильним boundary.
                 config.body = body;
             } else if (typeof body === 'object') {
-                // Якщо тіло - об'єкт (не FormData), перетворюємо його на JSON рядок.
                 try {
                     config.body = JSON.stringify(body);
-                    // Встановлюємо 'Content-Type' для JSON, якщо він ще не встановлений.
                     if (!headers['Content-Type']) {
                         headers['Content-Type'] = 'application/json';
-                        config.headers = headers; // Оновлюємо заголовки в конфігу
+                        config.headers = headers;
                     }
                 } catch (jsonError) {
                     console.error('Error stringifying request body:', jsonError);
                     throw new Error('Не вдалося перетворити тіло запиту в JSON.');
                 }
             } else {
-                // Якщо тіло - рядок або інший примітивний тип (рідко використовується з API).
                 config.body = body;
-                // Встановлюємо 'Content-Type', якщо він не вказаний і тіло - рядок
                 if (typeof body === 'string' && !headers['Content-Type']) {
-                    headers['Content-Type'] = 'text/plain'; // Або інший відповідний тип
+                    headers['Content-Type'] = 'text/plain';
                     config.headers = headers;
                 }
             }
         }
-
-        // --- Виконання запиту та обробка відповіді ---
-        try {
-            const requestInfo = `${config.method} ${url}`;
-            const logBody = config.body instanceof FormData ? 'with FormData' : (config.body ? `with body: ${config.body.substring(0, 100)}...` : ''); // Обрізаємо довгі JSON
-            console.log(`API Request: ${requestInfo}`, logBody);
-
-            const response = await fetch(url, config);
-
-            // --- Обробка статусів відповіді ---
-
-            // Успіх без контенту (наприклад, DELETE або деякі PUT/POST)
-            if (response.status === 204) {
-                console.log(`API Response: ${response.status} No Content`);
-                return { success: true }; // Повертаємо ознаку успіху
-            }
-
-            // Спроба розпарсити JSON відповідь
-            let responseData;
+        
+        // Функція для виконання запиту з повторними спробами
+        const executeRequestWithRetry = async (retriesLeft = window.apiConfig.requestDefaults?.retryAttempts || 3) => {
             try {
-                responseData = await response.json();
-                console.log(`API Response: ${response.status}`, responseData);
-            } catch (parseError) {
-                // Якщо відповідь не JSON, але статус ОК (наприклад, 200, 201)
-                if (response.ok) {
-                    console.warn(`API Response ${response.status} was not JSON, but status is OK.`);
-                    // Можна спробувати отримати текст відповіді
-                    // const textResponse = await response.text();
-                    // console.log('API Text Response:', textResponse);
-                    return { success: true, message: 'Відповідь не містить JSON, але статус ОК.' }; // Повертаємо успіх
-                } else {
-                    // Якщо статус не ОК і відповідь не JSON, кидаємо помилку парсингу
-                    console.error('Error parsing JSON response:', parseError);
-                    throw new Error(`Помилка сервера (статус ${response.status}, відповідь не JSON)`);
+                const requestInfo = `${config.method} ${url}`;
+                console.log(`API Request (${retriesLeft} retries left): ${requestInfo}`);
+                
+                const response = await fetch(url, config);
+                clearTimeout(timeoutId);
+                
+                // Успіх без контенту (наприклад, DELETE або деякі PUT/POST)
+                if (response.status === 204) {
+                    console.log(`API Response: ${response.status} No Content`);
+                    return { success: true };
                 }
-            }
-
-
-            // Перевірка статусу відповіді (після парсингу JSON)
-            if (!response.ok) {
-                // Витягуємо повідомлення про помилку з тіла відповіді або використовуємо статус
-                const errorMessage = responseData?.message || responseData?.error || `Помилка HTTP: ${response.status}`;
-                console.error('API Error:', errorMessage, responseData);
-
-                // Спеціальна обробка для помилок автентифікації/авторизації
-                if (response.status === 401 || response.status === 403) {
-                    console.log('Authentication/Authorization error detected. Removing token.');
-                    removeToken(); // Видаляємо недійсний токен
+                
+                let responseData;
+                try {
+                    responseData = await response.json();
+                    console.log(`API Response: ${response.status}`, responseData);
+                } catch (parseError) {
+                    if (response.ok) {
+                        console.warn(`API Response ${response.status} was not JSON, but status is OK.`);
+                        return { success: true, message: 'Відповідь не містить JSON, але статус ОК.' };
+                    } else {
+                        console.error('Error parsing JSON response:', parseError);
+                        throw new Error(`Помилка сервера (статус ${response.status}, відповідь не JSON)`);
+                    }
                 }
-                // Кидаємо помилку з повідомленням від API
-                throw new Error(errorMessage);
+                
+                if (!response.ok) {
+                    const errorMessage = responseData?.message || responseData?.error || `Помилка HTTP: ${response.status}`;
+                    console.error('API Error:', errorMessage, responseData);
+                    
+                    if (response.status === 401 || response.status === 403) {
+                        console.log('Authentication/Authorization error detected. Removing token.');
+                        removeToken();
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                return responseData;
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                if (error.name === 'AbortError') {
+                    console.error('Request timed out after', window.apiConfig.requestDefaults?.timeout || 30000, 'ms');
+                    throw new Error('Запит перевищив час очікування. Спробуйте пізніше.');
+                }
+                
+                if ((error instanceof TypeError && error.message === 'Failed to fetch' || 
+                    error.message.includes('NetworkError')) && retriesLeft > 0) {
+                    
+                    console.warn(`Network error. Retrying... (${retriesLeft} left)`);
+                    const delay = window.apiConfig.requestDefaults?.retryDelay || 1000;
+                    
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return executeRequestWithRetry(retriesLeft - 1);
+                }
+                
+                throw error;
             }
+        };
+        
+        return executeRequestWithRetry();
+    }
 
-            // Повертаємо успішну відповідь (розпарсені дані)
-            return responseData;
-
-        } catch (error) {
-            // Обробка мережевих помилок або помилок, кинутих вище
-            console.error('Fetch API Exception:', error);
-            // Перекидаємо помилку далі, щоб її можна було обробити в компоненті Alpine.js
-            // Додаємо трохи більше контексту до помилки, якщо це мережева помилка
-            if (error instanceof TypeError && error.message === 'Failed to fetch') {
-                throw new Error('Помилка мережі. Перевірте з\'єднання або URL API.');
-            }
-            throw error; // Перекидаємо оригінальну помилку
+    // Функція для перевірки, чи запит є AJAX (не завантажує нову сторінку)
+    function isAjaxRequest() {
+        try {
+            const stack = new Error().stack || '';
+            return stack.includes('fetch') || stack.includes('xhr') || 
+                   stack.includes('api.') || stack.includes('async');
+        } catch (e) {
+            return false;
         }
     }
 
+    // Функція для перевірки закінчення терміну дії JWT
+    function isTokenExpired(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(window.atob(base64));
+            
+            return payload.exp * 1000 < Date.now() + 10000;
+        } catch (e) {
+            console.error('Error parsing JWT:', e);
+            return false;
+        }
+    }
 
     // --- Об'єкт API з методами для взаємодії з бекендом ---
     window.api = {

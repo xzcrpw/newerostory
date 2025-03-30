@@ -106,17 +106,25 @@
         commented: '-commentsCount'
     },
 
-    // --- Функція сповіщень ---
-     showNotification(message, isSuccess = true) {
+    // --- Виправлена функція сповіщень ---
+    showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
         const notificationElement = document.getElementById('global-notification');
         if (notificationElement) {
             notificationElement.classList.toggle('success', isSuccess);
             notificationElement.classList.toggle('error', !isSuccess);
+            notificationElement.classList.add('show'); // Додаємо клас show для анімації
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
+        this.notificationTimeout = setTimeout(() => { 
+            this.notificationVisible = false; 
+            // Перевіряємо чи елемент досі існує
+            const notificationEl = document.getElementById('global-notification');
+            if (notificationEl) {
+                notificationEl.classList.remove('show');
+            }
+        }, 4000);
     },
 
     // --- Завантаження історій ---
@@ -173,31 +181,90 @@
     toggleSortMenu() { this.showSortMenu = !this.showSortMenu; },
     closeSortMenu() { this.showSortMenu = false; },
 
-    // --- Пагінація ---
-    nextPage() { if (this.isLoading || this.currentPage >= this.totalPages) return; this.currentPage++; this.fetchStories(); this.$nextTick(() => { document.querySelector('.stories-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
-    prevPage() { if (this.isLoading || this.currentPage <= 1) return; this.currentPage--; this.fetchStories(); this.$nextTick(() => { document.querySelector('.stories-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
+    // --- Покращена пагінація ---
+    async nextPage() { 
+        if (this.isLoading || this.currentPage >= this.totalPages) return;
+        
+        this.currentPage++; 
+        await this.fetchStories(); 
+        
+        // Скролимо до верху грід-списку, перевіряючи наявність елемента
+        this.$nextTick(() => { 
+            const gridElement = document.querySelector('.stories-grid');
+            if (gridElement) {
+                gridElement.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+            }
+        }); 
+    },
 
-    // --- Підписка (з categories.html) ---
-     async subscribeNewsletter() {
-         this.newsletterError = ''; this.newsletterSubmitted = false;
-         if (!this.newsletterEmail) { this.newsletterError = $store.i18n.t('newsletter.errorEmailRequired'); return; }
-         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-         if (!emailRegex.test(this.newsletterEmail)) { this.newsletterError = $store.i18n.t('newsletter.errorEmailInvalid'); return; }
-         this.newsletterSubmitting = true;
-         try {
-              console.log('API call: subscribeNewsletter', this.newsletterEmail);
-              await new Promise(resolve => setTimeout(resolve, 1000));
-             // await api.newsletter.subscribe(this.newsletterEmail); // Реальний виклик
-             this.newsletterSubmitted = true; this.newsletterEmail = '';
-             setTimeout(() => { this.newsletterSubmitted = false; }, 5000);
-         } catch (error) {
-              this.newsletterError = error.message || $store.i18n.t('newsletter.errorGeneral');
-              console.error('Newsletter subscribe error:', error);
-         } finally { this.newsletterSubmitting = false; }
-     },
+    async prevPage() { 
+        if (this.isLoading || this.currentPage <= 1) return; 
+        
+        this.currentPage--; 
+        await this.fetchStories(); 
+        
+        // Скролимо до верху грід-списку, перевіряючи наявність елемента
+        this.$nextTick(() => { 
+            const gridElement = document.querySelector('.stories-grid');
+            if (gridElement) {
+                gridElement.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+            }
+        });
+    },
 
-     // --- Анімація карток ---
+    // --- Покращена підписка на розсилку ---
+    async subscribeNewsletter() {
+        this.newsletterError = '';
+        this.newsletterSubmitted = false;
+        
+        // Валідація з перевірками
+        if (!this.newsletterEmail) {
+            this.newsletterError = $store.i18n?.t('newsletter.errorEmailRequired') || 'Будь ласка, введіть ваш email.';
+            return;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(this.newsletterEmail)) {
+            this.newsletterError = $store.i18n?.t('newsletter.errorEmailInvalid') || 'Будь ласка, введіть коректний email.';
+            return;
+        }
+        
+        this.newsletterSubmitting = true;
+        try {
+            console.log('API call: subscribeNewsletter', this.newsletterEmail);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // await api.newsletter.subscribe(this.newsletterEmail); // Реальний виклик
+            
+            this.newsletterSubmitted = true;
+            this.newsletterEmail = '';
+            
+            // Безпечний таймаут, що перевіряє чи компонент все ще у DOM
+            setTimeout(() => { 
+                // Перевіряємо, чи компонент досі в DOM
+                if (this.$el && this.$el.isConnected) {
+                    this.newsletterSubmitted = false; 
+                }
+            }, 5000);
+        } catch (error) {
+            this.newsletterError = error.message || $store.i18n?.t('newsletter.errorGeneral') || 'Помилка при підписці на розсилку.';
+            console.error('Newsletter subscribe error:', error);
+        } finally {
+            this.newsletterSubmitting = false;
+        }
+    },
+
+     // --- Покращена анімація карток ---
      initCardAnimation() {
+         // Перевірка підтримки IntersectionObserver
+         if (!('IntersectionObserver' in window)) {
+             // Якщо браузер не підтримує IntersectionObserver, 
+             // просто показуємо всі картки одразу
+             this.$el.querySelectorAll('.story-card').forEach(card => {
+                 card.classList.add('visible');
+             });
+             return;
+         }
+
          const observer = new IntersectionObserver(
              (entries) => {
                  entries.forEach(entry => {
@@ -209,13 +276,51 @@
              },
              { threshold: 0.1 }
          );
-         this.$el.querySelectorAll('.story-card:not(.visible)').forEach(card => {
-             observer.observe(card);
-         });
-      }
+         
+         // Шукаємо картки в межах поточного Alpine.js компонента
+         if (this.$el && typeof this.$el.querySelectorAll === 'function') {
+             this.$el.querySelectorAll('.story-card:not(.visible)').forEach(card => {
+                 observer.observe(card);
+             });
+         }
+     },
+
+    // --- Додана функція для відображення зірок ---
+    formatStars(rating) {
+        if (!rating || isNaN(rating)) return '';
+        
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating - fullStars >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        
+        let stars = '';
+        
+        // Додаємо заповнені зірки
+        for (let i = 0; i < fullStars; i++) {
+            stars += '<i class="fas fa-star"></i>';
+        }
+        
+        // Додаємо напівзірку, якщо потрібно
+        if (hasHalfStar) {
+            stars += '<i class="fas fa-star-half-alt"></i>';
+        }
+        
+        // Додаємо порожні зірки
+        for (let i = 0; i < emptyStars; i++) {
+            stars += '<i class="far fa-star"></i>';
+        }
+        
+        return stars;
+    },
 
 }" x-init="
-    isLoggedIn = api.utils.isAuthenticated();
+    try {
+        isLoggedIn = api.utils.isAuthenticated();
+    } catch (error) {
+        console.error('Error checking authentication status:', error);
+        isLoggedIn = false;
+    }
+    
     currentSort = 'newest'; // Переконуємось, що сортування правильне для нових історій
     fetchStories();
 ">
@@ -267,7 +372,17 @@
                         <a href="profile.html" class="btn btn-outline">
                             <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
                         </a>
-                        <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary">
+                        <!-- Безпечний логаут з обробкою помилок -->
+                        <a href="#" @click.prevent="
+                            try { 
+                                api.auth.logout(); 
+                                window.location.reload(); 
+                            } catch (error) { 
+                                console.error('Logout error:', error);
+                                // Показуємо користувачу повідомлення про помилку
+                                showNotification($store.i18n.t('auth.logoutError') || 'Помилка при виході з системи', false);
+                            }
+                        " class="btn btn-primary">
                             <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
                         </a>
                     </div>
@@ -301,27 +416,27 @@
             <!-- <div class="filter-option" :class="{ 'active': currentFilter === 'following' }" @click="setFilter('following')" x-text="$store.i18n.t('storyLists.followingFilter')"></div> --> <!-- Фільтр підписок, якщо потрібно -->
         </div>
 
+        <!-- Покращене меню сортування з атрибутами доступності -->
         <div class="sort-dropdown">
-            <div class="sort-button" @click="toggleSortMenu()">
-                  <span>
-                      <!-- Динамічно показуємо назву поточного сортування -->
-                      <span x-text="$store.i18n.t('storyLists.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1))"></span>
-                  </span>
-                <i class="fas fa-chevron-down" :class="{ 'open': showSortMenu }"></i> <!-- Додано клас 'open' -->
+            <div class="sort-button" @click="toggleSortMenu()" role="button" tabindex="0" @keydown.enter="toggleSortMenu()" aria-haspopup="true" :aria-expanded="showSortMenu">
+                <span>
+                    <span x-text="$store.i18n.t('storyLists.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1))"></span>
+                </span>
+                <i class="fas fa-chevron-down" :class="{ 'open': showSortMenu }" aria-hidden="true"></i>
             </div>
 
-            <div class="sort-menu" x-show="showSortMenu" x-transition>
-                <div class="sort-option" :class="{ 'active': currentSort === 'newest' }" @click="setSort('newest')">
-                    <i class="fas fa-clock"></i> <span x-text="$store.i18n.t('storyLists.sortByNewest')"></span>
+            <div class="sort-menu" x-show="showSortMenu" x-transition role="menu">
+                <div class="sort-option" :class="{ 'active': currentSort === 'newest' }" @click="setSort('newest')" role="menuitem" tabindex="0" @keydown.enter="setSort('newest')">
+                    <i class="fas fa-clock" aria-hidden="true"></i> <span x-text="$store.i18n.t('storyLists.sortByNewest')"></span>
                 </div>
-                <div class="sort-option" :class="{ 'active': currentSort === 'popular' }" @click="setSort('popular')">
-                    <i class="fas fa-fire"></i> <span x-text="$store.i18n.t('storyLists.sortByPopular')"></span>
+                <div class="sort-option" :class="{ 'active': currentSort === 'popular' }" @click="setSort('popular')" role="menuitem" tabindex="0" @keydown.enter="setSort('popular')">
+                    <i class="fas fa-fire" aria-hidden="true"></i> <span x-text="$store.i18n.t('storyLists.sortByPopular')"></span>
                 </div>
-                <div class="sort-option" :class="{ 'active': currentSort === 'rated' }" @click="setSort('rated')">
-                    <i class="fas fa-star"></i> <span x-text="$store.i18n.t('storyLists.sortByRated')"></span>
+                <div class="sort-option" :class="{ 'active': currentSort === 'rated' }" @click="setSort('rated')" role="menuitem" tabindex="0" @keydown.enter="setSort('rated')">
+                    <i class="fas fa-star" aria-hidden="true"></i> <span x-text="$store.i18n.t('storyLists.sortByRated')"></span>
                 </div>
-                <div class="sort-option" :class="{ 'active': currentSort === 'commented' }" @click="setSort('commented')">
-                    <i class="fas fa-comments"></i> <span x-text="$store.i18n.t('storyLists.sortByCommented')"></span>
+                <div class="sort-option" :class="{ 'active': currentSort === 'commented' }" @click="setSort('commented')" role="menuitem" tabindex="0" @keydown.enter="setSort('commented')">
+                    <i class="fas fa-comments" aria-hidden="true"></i> <span x-text="$store.i18n.t('storyLists.sortByCommented')"></span>
                 </div>
             </div>
         </div>
@@ -351,11 +466,16 @@
                         </template>
                     </div>
                     <h3 class="story-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
-                    <p class="story-excerpt" x-text="(story.content?.replace(/<[^>]*>?/gm, '').substring(0, 150) || $store.i18n.t('general.descriptionMissing')) + '...'"></p>
+                    <!-- Безпечне відображення витягу з історії -->
+                    <p class="story-excerpt" x-text="(story.content && typeof story.content === 'string' ? story.content.replace(/<[^>]*>?/gm, '').substring(0, 150) : ($store.i18n.t('general.descriptionMissing') || 'Опис відсутній')) + '...'"></p>
                     <div class="story-meta">
                         <div class="story-meta-item"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="$store.i18n.t('general.readingTimeSuffix')"></span></div>
                         <div class="story-meta-item"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
-                        <div class="story-meta-item rating"><i class="fas fa-star"></i> <span x-text="(story.averageRating || 0).toFixed(1)"></span></div>
+                        <!-- Оновлений блок рейтингу з використанням функції formatStars -->
+                        <div class="story-meta-item rating">
+                            <span x-html="formatStars(story.averageRating)"></span>
+                            <span class="rating-text" x-text="(story.averageRating || 0).toFixed(1)"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -383,18 +503,19 @@
         <h3 class="newsletter-title" x-text="$store.i18n.t('newsletter.title')"></h3>
         <p class="newsletter-description" x-text="$store.i18n.t('newsletter.description')"></p>
         <!-- Повідомлення про помилку/успіх -->
-        <div x-show="newsletterError" x-transition class="form-notification error">
-            <i class="fas fa-exclamation-circle"></i> <span x-text="newsletterError"></span>
+        <div x-show="newsletterError" x-transition class="form-notification error" role="alert" aria-live="assertive">
+            <i class="fas fa-exclamation-circle" aria-hidden="true"></i> <span x-text="newsletterError"></span>
         </div>
-        <div x-show="newsletterSubmitted" x-transition class="form-notification success">
-            <i class="fas fa-check-circle"></i> <span x-text="$store.i18n.t('newsletter.successMessage')"></span>
+        <div x-show="newsletterSubmitted" x-transition class="form-notification success" role="status" aria-live="polite">
+            <i class="fas fa-check-circle" aria-hidden="true"></i> <span x-text="$store.i18n.t('newsletter.successMessage') || 'Дякуємо за підписку!'"></span>
         </div>
 
         <form class="newsletter-form" @submit.prevent="subscribeNewsletter()">
             <input type="email" class="newsletter-input" :placeholder="$store.i18n.t('newsletter.emailPlaceholder')" x-model="newsletterEmail" required :aria-label="$store.i18n.t('newsletter.emailPlaceholder')" :disabled="newsletterSubmitting">
-            <button type="submit" class="btn btn-primary processing" :disabled="newsletterSubmitting || newsletterSubmitted">
+            <!-- Виправлена кнопка підписки з правильними класами -->
+            <button type="submit" class="btn btn-primary" :class="{ 'processing': newsletterSubmitting }" :disabled="newsletterSubmitting || newsletterSubmitted">
                 <span x-show="!newsletterSubmitting && !newsletterSubmitted" x-text="$store.i18n.t('newsletter.subscribeButton')"></span>
-                <span x-show="newsletterSubmitting"><span x-text="$store.i18n.t('general.subscribing')"></span></span> <!-- Спінер додається CSS -->
+                <span x-show="newsletterSubmitting"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('general.subscribing')"></span></span>
                 <span x-show="newsletterSubmitted"><i class="fas fa-check"></i> <span x-text="$store.i18n.t('newsletter.subscribed')"></span></span>
             </button>
         </form>

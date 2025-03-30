@@ -1,6 +1,8 @@
 // locales/en.js
 export default {
     general: {
+        siteNamePart1: "Secret",
+        siteNamePart2: "World",
         welcome: "Welcome",
         login: "Login",
         register: "Register",
@@ -55,7 +57,7 @@ export default {
         aboutText: "A platform for reading and publishing exclusive erotic stories. Immerse yourself in a world of fantasy and passion.",
         terms: "Terms of Use",
         privacy: "Privacy Policy",
-        copyright: "Secret World (e.world)",
+        copyright: "Secret World (erostory.world)",
         language: "Language",
         shareFacebook: "Share on Facebook",
         shareTwitter: "Share on Twitter",
@@ -715,7 +717,7 @@ export default {
         formTitle: "Send a Message",
         formNameLabel: "Your Name *",
         formNamePlaceholder: "Enter your name",
-        formEmailLabel: "Your Email *",
+        formEmailLabel: "E-Mail *",
         formEmailPlaceholder: "Enter your email",
         formSubjectLabel: "Subject *",
         formSubjectPlaceholder: "Specify the subject",
@@ -739,6 +741,8 @@ export default {
         privacyDescription: "Your privacy is important to us. This policy explains how we collect, use, disclose, and protect your information.",
         privacyMetaDescription: "Secret World website privacy policy. Learn how we collect, use, and protect your personal data.",
         lastUpdated: "Last updated:",
+        downloadPdf: "Download PDF", // Translate for each language
+        printPage: "Print", // Translate for each language
         backToHomeButton: "Back to Homepage",
         footerText: "Thank you for using Secret World!",
         contactUsText: "If you have questions, {link}.",

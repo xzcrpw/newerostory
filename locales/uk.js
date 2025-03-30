@@ -1,6 +1,8 @@
 // locales/uk.js
 export default {
     general: {
+        siteNamePart1: "Таємний", // Або відповідний переклад/транслітерація
+        siteNamePart2: "Світ",    // Або відповідний переклад/транслітерація
         welcome: "Ласкаво просимо",
         login: "Увійти",
         register: "Реєстрація",
@@ -55,7 +57,7 @@ export default {
         aboutText: "Платформа для читання та публікації ексклюзивних еротичних історій. Зануртеся у світ фантазій та пристрасті.",
         terms: "Умови використання",
         privacy: "Політика конфіденційності",
-        copyright: "Таємний Світ (e.world)",
+        copyright: "Таємний Світ (erostory.world)",
         language: "Мова",
         shareFacebook: "Поділитися у Facebook",
         shareTwitter: "Поділитися у Twitter",
@@ -705,7 +707,7 @@ export default {
         formTitle: "Надіслати повідомлення",
         formNameLabel: "Ваше ім'я *",
         formNamePlaceholder: "Введіть ваше ім'я",
-        formEmailLabel: "Ваша електронна пошта *",
+        formEmailLabel: "E-Mail *",
         formEmailPlaceholder: "Введіть вашу пошту",
         formSubjectLabel: "Тема повідомлення *",
         formSubjectPlaceholder: "Вкажіть тему",
@@ -729,6 +731,8 @@ export default {
         privacyDescription: "Ваша конфіденційності важлива для нас. Ця політика пояснює, як ми збираємо, використовуємо та захищаємо вашу інформацію.",
         privacyMetaDescription: "Політика конфіденційності сайту Таємний Світ. Дізнайтеся, як ми збираємо, використовуємо та захищаємо ваші персональні дані.",
         lastUpdated: "Останнє оновлення",
+        downloadPdf: "Завантажити PDF",    // Перекласти для кожної мови
+        printPage: "Надрукувати",        // Перекласти для кожної мови
         backToHomeButton: "Повернутися на головну",
         footerText: "Дякуємо за використання Таємного Світу!",
         contactUsText: "Якщо у вас є питання, {link}.", // Додано {link}

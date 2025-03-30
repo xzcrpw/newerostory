@@ -84,6 +84,20 @@
         .profile-form-container[x-transition\:enter-start] { max-height: 0; opacity: 0; }
         .profile-form-container[x-transition\:enter-end] { max-height: 1000px; opacity: 1; }
 
+        /* Додавання підтримки prefers-reduced-motion для доступності */
+        @media (prefers-reduced-motion: reduce) {
+            .loading-spinner-small {
+                animation: none;
+            }
+            .loading-spinner-small::after {
+                content: "...";
+            }
+            @keyframes spin { to { transform: none; } }
+            
+            /* Зменшуємо всі анімації */
+            .profile-form-container { transition-duration: 0.1s; }
+            .notification { transition-duration: 0.1s; }
+        }
 
         /* Стилі для кнопки видалення/відписки */
         .action-btn.removing, button.removing {
@@ -147,6 +161,17 @@
         }
         .avatar-remove-button:hover { text-decoration: underline; }
 
+        /* Стиль для помилкового поля та повідомлення */
+        .form-input.has-error {
+            border-color: #ff6b6b;
+        }
+        
+        .input-error {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
     </style>
 </head>
 <body x-data="{
@@ -183,52 +208,150 @@
     currentPassword: '', newPassword: '', confirmPassword: '',
 
     // --- Допоміжні функції ---
-    validatePasswordStrength(password) { return password && password.length >= 8; },
+    validatePasswordStrength(password) {
+        if (!password) return false;
+        
+        // Розширені вимоги: 8+ символів, хоча б 1 цифра, 1 літера верхнього і нижнього регістру
+        const hasMinLength = password.length >= 8;
+        const hasDigit = /\d/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasUpperCase = /[A-Z]/.test(password);
+        
+        // Базова перевірка: мінімальна довжина + хоча б одна цифра і одна буква
+        const basicRequirements = hasMinLength && hasDigit && (hasLowerCase || hasUpperCase);
+        
+        // Визначення сили пароля (для майбутнього використання)
+        let strength = 0;
+        if (hasMinLength) strength++;
+        if (hasDigit) strength++;
+        if (hasLowerCase) strength++;
+        if (hasUpperCase) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++; // Спеціальні символи
+        
+        // Зберігаємо силу пароля для використання
+        this.passwordStrength = strength;
+        
+        return basicRequirements;
+    },
     clearMessages() { this.editFormError = null; this.passwordFormError = null; this.subscriptionError = null; this.activityError = null; },
     showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
+        
         const el = document.getElementById('global-notification');
-        if(el) { el.classList.toggle('success', isSuccess); el.classList.toggle('error', !isSuccess); }
+        if(el) { 
+            el.classList.toggle('success', isSuccess); 
+            el.classList.toggle('error', !isSuccess);
+            el.classList.add('show'); // Додавання класу show для анімації
+        }
+        
         this.notificationVisible = true;
+        
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000);
+        
+        this.notificationTimeout = setTimeout(() => { 
+            this.notificationVisible = false; 
+            // Перевіряємо елемент перед видаленням класу
+            const notification = document.getElementById('global-notification');
+            if(notification) {
+                notification.classList.remove('show');
+            }
+        }, 4000);
+    },
+    // Функція для безпечного отримання перекладу
+    safeT(key, fallback) {
+        try {
+            const translation = $store.i18n?.t(key);
+            return (translation && translation !== key) ? translation : fallback;
+        } catch (e) {
+            console.warn(`Translation key error: ${key}`, e);
+            return fallback;
+        }
     },
 
     // --- Завантаження даних профілю (з i18n) ---
     async fetchProfileData() {
-        this.isLoadingProfile = true; this.profileError = null;
+        this.isLoadingProfile = true; 
+        this.profileError = null;
+        
         try {
             console.log('Simulating API call: getCurrentUser');
             await new Promise(resolve => setTimeout(resolve, 500));
-            // const userData = await api.users.getCurrentUser(); // Реальний виклик
-             const userData = { // Симуляція
-                 _id: 'user123abc', name: 'Тестовий Користувач', email: 'test@e.world',
-                 bio: 'Люблю читати та писати захопливі історії. Приєднуйтесь до мого світу фантазій!',
-                 avatarUrl: 'https://source.unsplash.com/random/200x200/?profile,user',
-                 isPremium: Math.random() < 0.3, // 30% шанс бути преміум
-                 subscriptionEndDate: Math.random() < 0.3 ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() : null, // Якщо преміум, то дата закінчення
-                 paymentMethodLast4: Math.random() < 0.3 ? '4242' : null,
-                 stats: { savedCount: 15, readCount: 48, commentsCount: 7, followingCount: 3 }
-             };
-
-            this.userId = userData._id; this.userName = userData.name; this.userEmail = userData.email;
-            this.userBio = userData.bio || ''; this.userAvatar = userData.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
-            this.isPremiumUser = userData.isPremium || false;
-            this.subscriptionEndDate = userData.subscriptionEndDate ? new Date(userData.subscriptionEndDate).toLocaleDateString($store.i18n.selectedLang || 'uk-UA') : null;
-            this.paymentMethodInfo = userData.paymentMethodLast4 ? `**** ${userData.paymentMethodLast4}` : $store.i18n.t('profile.paymentMethodNotSet'); // i18n
-            this.savedStoriesCount = userData.stats?.savedCount || 0; this.readStoriesCount = userData.stats?.readCount || 0;
-            this.commentsCount = userData.stats?.commentsCount || 0; this.followingCount = userData.stats?.followingCount || 0;
-            // Ініціалізуємо дані форм
-            this.editUserName = this.userName; this.editUserBio = this.userBio; this.avatarPreviewUrl = this.userAvatar;
-        } catch (error) {
-            this.profileError = error.message || $store.i18n.t('profile.errorLoadingProfile'); // i18n
-            console.error('Profile fetch error:', error);
-            // Якщо помилка авторизації, перенаправляємо на логін
-            if (error.message.includes('автентифікація') || error.message.toLowerCase().includes('unauthorized') || error.message.includes('401')) {
-                 this.showNotification($store.i18n.t('auth.sessionExpired') || 'Сесія застаріла. Будь ласка, увійдіть знову.', false);
-                 setTimeout(() => window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname), 1500);
+            
+            // Перевірка автентифікації перед запитом
+            if (!api.utils.isAuthenticated()) {
+                throw new Error(this.safeT('auth.notLoggedIn', 'Будь ласка, увійдіть до системи'));
             }
-        } finally { this.isLoadingProfile = false; }
+            
+            // Симуляція відповіді
+            const userData = { 
+                _id: 'user123abc', 
+                name: 'Тестовий Користувач', 
+                email: 'test@e.world',
+                bio: 'Люблю читати та писати захопливі історії. Приєднуйтесь до мого світу фантазій!',
+                avatarUrl: 'https://source.unsplash.com/random/200x200/?profile,user',
+                isPremium: Math.random() < 0.3, 
+                subscriptionEndDate: Math.random() < 0.3 ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() : null,
+                paymentMethodLast4: Math.random() < 0.3 ? '4242' : null,
+                stats: { savedCount: 15, readCount: 48, commentsCount: 7, followingCount: 3 }
+            };
+
+            this.userId = userData._id; 
+            this.userName = userData.name; 
+            this.userEmail = userData.email;
+            this.userBio = userData.bio || ''; 
+            this.userAvatar = userData.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.isPremiumUser = userData.isPremium || false;
+            
+            // Форматування дати згідно з локаллю
+            this.subscriptionEndDate = userData.subscriptionEndDate ? 
+                new Date(userData.subscriptionEndDate).toLocaleDateString(
+                    $store.i18n?.selectedLang || 'uk-UA',
+                    { year: 'numeric', month: 'long', day: 'numeric' }
+                ) : null;
+                
+            this.paymentMethodInfo = userData.paymentMethodLast4 ? 
+                `**** ${userData.paymentMethodLast4}` : 
+                this.safeT('profile.paymentMethodNotSet', 'Не вказано');
+                
+            this.savedStoriesCount = userData.stats?.savedCount || 0; 
+            this.readStoriesCount = userData.stats?.readCount || 0;
+            this.commentsCount = userData.stats?.commentsCount || 0; 
+            this.followingCount = userData.stats?.followingCount || 0;
+            
+            // Ініціалізуємо дані форм
+            this.editUserName = this.userName; 
+            this.editUserBio = this.userBio; 
+            this.avatarPreviewUrl = this.userAvatar;
+            
+            // Оновлення statuses в api.utils при необхідності
+            if (api.utils.isPremium() !== userData.isPremium) {
+                api.utils.setPremiumStatus(userData.isPremium);
+            }
+            
+        } catch (error) {
+            this.profileError = error.message || this.safeT('profile.errorLoadingProfile', 'Помилка завантаження профілю');
+            console.error('Profile fetch error:', error);
+            
+            // Якщо помилка авторизації, перенаправляємо на логін
+            if (error.message.includes('автентифікація') || 
+                error.message.toLowerCase().includes('unauthorized') || 
+                error.message.includes('401') ||
+                error.message.includes('login') ||
+                !api.utils.isAuthenticated()) {
+                
+                this.showNotification(
+                    this.safeT('auth.sessionExpired', 'Сесія застаріла. Будь ласка, увійдіть знову.'),
+                    false
+                );
+                
+                setTimeout(() => {
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                }, 1500);
+            }
+        } finally { 
+            this.isLoadingProfile = false; 
+        }
     },
 
     // --- Завантаження даних активності (з i18n) ---
@@ -317,6 +440,7 @@
              this.editUserAvatarFile = null;
              if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
              this.hasUnsavedChanges = false; // Скидаємо прапорець при закритті
+             this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
          }
     },
     toggleChangePassword() {
@@ -330,6 +454,7 @@
              this.newPassword = '';
              this.confirmPassword = '';
              this.hasUnsavedChanges = false; // Скидаємо прапорець при закритті
+             this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
          }
     },
     toggleSubscriptionSettings() {
@@ -366,18 +491,50 @@
         reader.readAsDataURL(file);
         this.setUnsavedChanges(); // Позначаємо зміни
     },
+    // Виправлена функція видалення аватару
     removeAvatarPreview() {
-        this.avatarPreviewUrl = this.userAvatar; // Повертаємо старий аватар для превью
-        this.editUserAvatarFile = null;
-        if (this.$refs.avatarUploadInput) { this.$refs.avatarUploadInput.value = null; }
-        this.setUnsavedChanges(); // Позначаємо зміни (або можна вважати поверненням до початкового стану)
+        try {
+            // Встановлюємо базовий аватар для превью
+            this.avatarPreviewUrl = 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.editUserAvatarFile = null;
+            
+            // Очищаємо input file
+            if (this.$refs.avatarUploadInput) {
+                this.$refs.avatarUploadInput.value = '';
+            }
+            
+            // Позначаємо, що аватар був видалений
+            this.avatarRemoved = true;
+            this.setUnsavedChanges();
+        } catch (error) {
+            console.error('Error removing avatar:', error);
+            this.editFormError = this.safeT('profile.errorRemovingAvatar', 'Помилка при видаленні зображення');
+        }
     },
-    setUnsavedChanges() { if (this.showEditProfile || this.showChangePassword) this.hasUnsavedChanges = true; }, // Тільки для відкритих форм
+    // Покращений метод контролю змін
+    setUnsavedChanges() { 
+        if (this.showEditProfile || this.showChangePassword) {
+            this.hasUnsavedChanges = true;
+            
+            // Встановлюємо повідомлення для beforeunload при зміні даних
+            window.onbeforeunload = (event) => {
+                const message = this.safeT('profile.unsavedChanges', 'У вас є незбережені зміни. Ви впевнені, що хочете залишити сторінку?');
+                event.returnValue = message;
+                return message;
+            };
+        }
+    },
+
+    // Додаємо функцію скидання стану незбережених змін
+    resetUnsavedChanges() {
+        this.hasUnsavedChanges = false;
+        window.onbeforeunload = null;
+    },
 
     // --- Збереження профілю (з i18n) ---
     async saveProfile() {
         this.editFormError = null;
-        if (!this.editUserName.trim()) { this.editFormError = $store.i18n.t('profile.errorNameRequired'); return; } // i18n
+        if (!this.editUserName.trim()) { this.editFormError = $store.i18n.t('profile.errorNameRequired'); return; }
         this.isSavingProfile = true;
         try {
             let profileData; const useFormData = !!this.editUserAvatarFile;
@@ -385,34 +542,45 @@
                 profileData = new FormData();
                 profileData.append('name', this.editUserName.trim());
                 profileData.append('bio', this.editUserBio);
-                profileData.append('avatar', this.editUserAvatarFile); // 'avatar' - ключ для файлу
+                profileData.append('avatar', this.editUserAvatarFile);
             } else {
                 profileData = { name: this.editUserName.trim(), bio: this.editUserBio };
                 // Перевіряємо, чи користувач видалив існуючий аватар
-                if (!this.avatarPreviewUrl || this.avatarPreviewUrl === 'https://source.unsplash.com/random/200x200/?profile-placeholder') {
-                    profileData.removeAvatar = true; // Прапорець для бекенда
+                // Виправлення: перевіряємо зміну URL для визначення видалення аватару
+                if (this.avatarPreviewUrl !== this.userAvatar && 
+                    this.avatarPreviewUrl === 'https://source.unsplash.com/random/200x200/?profile-placeholder') {
+                    profileData.removeAvatar = true;
                 }
             }
             console.log('Simulating API call: updateUser', useFormData ? 'with FormData' : profileData);
             await new Promise(resolve => setTimeout(resolve, 1100));
-            // const updatedUser = await api.users.updateUser(profileData); // Реальний виклик
-            const updatedUser = { // Симуляція
-                 ...userData, // Копіюємо старі дані
-                 name: this.editUserName.trim(),
-                 bio: this.editUserBio,
-                 // Симулюємо URL нового аватара (в реальності прийде з бекенда)
-                 avatarUrl: this.editUserAvatarFile ? URL.createObjectURL(this.editUserAvatarFile) : (profileData.removeAvatar ? 'https://source.unsplash.com/random/200x200/?profile-placeholder' : this.userAvatar)
+            
+            // Симуляція відповіді API з коректною обробкою аватара
+            const updatedUser = {
+                name: this.editUserName.trim(),
+                bio: this.editUserBio,
+                avatarUrl: this.editUserAvatarFile ? 
+                    URL.createObjectURL(this.editUserAvatarFile) : 
+                    (profileData.removeAvatar ? 'https://source.unsplash.com/random/200x200/?profile-placeholder' : this.userAvatar)
             };
+            
             // Оновлюємо дані на сторінці
-            this.userName = updatedUser.name; this.userBio = updatedUser.bio || ''; this.userAvatar = updatedUser.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
-            this.editUserAvatarFile = null; if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
-            this.showNotification($store.i18n.t('notifications.profileUpdated'), true); // i18n
+            this.userName = updatedUser.name;
+            this.userBio = updatedUser.bio || '';
+            this.userAvatar = updatedUser.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.editUserAvatarFile = null;
+            if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
+            
+            this.showNotification($store.i18n.t('notifications.profileUpdated'), true);
             this.showEditProfile = false;
-            this.hasUnsavedChanges = false; // Скидаємо прапорець
+            this.hasUnsavedChanges = false;
+            this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
         } catch (error) {
-            this.editFormError = error.message || $store.i18n.t('profile.errorSavingProfile'); // i18n
+            this.editFormError = error.message || $store.i18n.t('profile.errorSavingProfile');
             console.error('Save profile error:', error);
-        } finally { this.isSavingProfile = false; }
+        } finally {
+            this.isSavingProfile = false;
+        }
     },
 
     // --- Зміна пароля (з i18n) ---
@@ -438,6 +606,7 @@
             this.showNotification($store.i18n.t('notifications.passwordChanged'), true); // i18n
             this.showChangePassword = false; this.currentPassword = ''; this.newPassword = ''; this.confirmPassword = '';
             this.hasUnsavedChanges = false; // Скидаємо прапорець
+            this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
         } catch (error) {
             this.passwordFormError = error.message || $store.i18n.t('profile.errorChangingPassword'); // i18n
             console.error('Change password error:', error);
@@ -447,20 +616,37 @@
     // --- Керування підпискою (з i18n) ---
     upgradeAccount() { window.location.href = 'premium.html'; },
     async cancelSubscription() {
-        if (confirm($store.i18n.t('profile.confirmCancelSubscription'))) { // i18n
-            this.isCancellingSubscription = true; this.subscriptionError = null;
+        try {
+            const confirmMessage = this.safeT('profile.confirmCancelSubscription', 'Ви впевнені, що хочете скасувати преміум-підписку?');
+            if (!confirm(confirmMessage)) return;
+            
+            this.isCancellingSubscription = true;
+            this.subscriptionError = null;
+            
+            console.log('Simulating API call: cancelSubscription');
+            await new Promise(resolve => setTimeout(resolve, 700));
+            
+            // Оновлюємо статус преміум після скасування
+            this.isPremiumUser = false;
+            
+            // Безпечне оновлення статусу через API
             try {
-                console.log('Simulating API call: cancelSubscription');
-                await new Promise(resolve => setTimeout(resolve, 700));
-                // await api.premium.cancel(); // Реальний виклик
-                this.isPremiumUser = false; api.utils.setPremiumStatus(false);
-                this.subscriptionEndDate = null; this.paymentMethodInfo = $store.i18n.t('profile.paymentMethodNotSet');
-                this.showNotification($store.i18n.t('notifications.subscriptionCancelled'), true); // i18n
-                this.showSubscriptionSettings = false; // Закриваємо вікно після успішного скасування
-            } catch (error) {
-                this.subscriptionError = error.message || $store.i18n.t('notifications.errorCancelSubscription'); // i18n
-                console.error('Cancel subscription error:', error);
-            } finally { this.isCancellingSubscription = false; }
+                api.utils.setPremiumStatus(false);
+            } catch (storageError) {
+                console.warn('Error updating premium status in storage:', storageError);
+                // Продовжуємо виконання, навіть якщо сталася помилка
+            }
+            
+            this.subscriptionEndDate = null;
+            this.paymentMethodInfo = this.safeT('profile.paymentMethodNotSet', 'Не вказано');
+            
+            this.showNotification(this.safeT('notifications.subscriptionCancelled', 'Підписку успішно скасовано'), true);
+            this.showSubscriptionSettings = false;
+        } catch (error) {
+            this.subscriptionError = error.message || this.safeT('notifications.errorCancelSubscription', 'Помилка при скасуванні підписки');
+            console.error('Cancel subscription error:', error);
+        } finally {
+            this.isCancellingSubscription = false;
         }
     },
 
@@ -504,29 +690,52 @@
     }
 
 }" x-init="
-    isLoggedIn = api.utils.isAuthenticated();
-    if (!isLoggedIn) {
+    try {
+        // Спроба відновити останню активну вкладку
+        const savedTab = localStorage.getItem('profileActiveTab');
+        if (savedTab && ['saved', 'history', 'likes', 'comments', 'following'].includes(savedTab)) {
+            activeTab = savedTab;
+        }
+        
+        isLoggedIn = api.utils.isAuthenticated();
+        if (!isLoggedIn) {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+        } else {
+            fetchProfileData().then(() => {
+                if (!profileError) { fetchActivityData(activeTab); }
+            });
+        }
+    } catch (error) {
+        console.error('Authentication check error:', error);
+        // При помилці перевірки перенаправляємо на логін
         window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
-    } else {
-        fetchProfileData().then(() => {
-            if (!profileError) { fetchActivityData(activeTab); }
-        });
     }
-     // Додаємо слухач для попередження про незбережені зміни
-     window.addEventListener('beforeunload', (event) => {
-         if (hasUnsavedChanges) {
-             const message = $store.i18n.t('createStory.beforeUnloadWarning'); // Використаємо ключ з createStory
-             event.preventDefault();
-             event.returnValue = message;
-             return message;
-         }
-     });
-     // Відслідковування змін у формах
-     $watch('editUserName', () => { if(showEditProfile) setUnsavedChanges() });
-     $watch('editUserBio', () => { if(showEditProfile) setUnsavedChanges() });
-     $watch('currentPassword', () => { if(showChangePassword) setUnsavedChanges() });
-     $watch('newPassword', () => { if(showChangePassword) setUnsavedChanges() });
-     $watch('confirmPassword', () => { if(showChangePassword) setUnsavedChanges() });
+    
+    // Додаємо слухач для попередження про незбережені зміни
+    window.addEventListener('beforeunload', (event) => {
+        if (hasUnsavedChanges) {
+            const message = $store.i18n?.t('createStory.beforeUnloadWarning') || 'У вас є незбережені зміни. Ви впевнені, що хочете залишити сторінку?';
+            event.preventDefault();
+            event.returnValue = message;
+            return message;
+        }
+    });
+    
+    // Відслідковування змін у формах
+    $watch('editUserName', () => { if(showEditProfile) setUnsavedChanges() });
+    $watch('editUserBio', () => { if(showEditProfile) setUnsavedChanges() });
+    $watch('currentPassword', () => { if(showChangePassword) setUnsavedChanges() });
+    $watch('newPassword', () => { if(showChangePassword) setUnsavedChanges() });
+    $watch('confirmPassword', () => { if(showChangePassword) setUnsavedChanges() });
+    
+    // Зберігаємо активну вкладку при зміні
+    $watch('activeTab', (value) => {
+        try {
+            localStorage.setItem('profileActiveTab', value);
+        } catch (error) {
+            console.warn('Error saving active tab to localStorage:', error);
+        }
+    });
 ">
 
 <!-- Хедер -->
@@ -570,7 +779,19 @@
                 <template x-if="isLoggedIn">
                     <div>
                         <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
-                        <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary"> <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> </a>
+                        <!-- Виправлений обробник виходу з обробкою помилок -->
+                        <a href="#" @click.prevent="
+                            try {
+                                api.auth.logout();
+                                window.location.href = 'index.html';
+                            } catch (error) {
+                                console.error('Logout error:', error);
+                                showNotification($store.i18n?.t('auth.logoutError') || 'Помилка при виході з системи', false);
+                                setTimeout(() => window.location.reload(), 1500);
+                            }
+                        " class="btn btn-primary"> 
+                            <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span> 
+                        </a>
                     </div>
                 </template>
             </div>
@@ -645,12 +866,23 @@
                 </div>
             </div>
 
-            <div class="profile-menu">
-                <button @click="setTab('saved')" :class="{ 'active': activeTab === 'saved' }" class="menu-item"> <i class="fas fa-bookmark"></i> <span x-text="$store.i18n.t('profile.savedStories')"></span> </button>
-                <button @click="setTab('history')" :class="{ 'active': activeTab === 'history' }" class="menu-item"> <i class="fas fa-history"></i> <span x-text="$store.i18n.t('profile.readingHistory')"></span> </button>
-                <button @click="setTab('likes')" :class="{ 'active': activeTab === 'likes' }" class="menu-item"> <i class="fas fa-heart"></i> <span x-text="$store.i18n.t('profile.likedStories')"></span> </button>
-                <button @click="setTab('comments')" :class="{ 'active': activeTab === 'comments' }" class="menu-item"> <i class="fas fa-comments"></i> <span x-text="$store.i18n.t('profile.myComments')"></span> </button>
-                <button @click="setTab('following')" :class="{ 'active': activeTab === 'following' }" class="menu-item"> <i class="fas fa-users"></i> <span x-text="$store.i18n.t('profile.myFollowing')"></span> </button>
+            <!-- Виправлення атрибутів доступності для кнопок навігації -->
+            <div class="profile-menu" role="tablist" aria-label="Вкладки профілю">
+                <button @click="setTab('saved')" :class="{ 'active': activeTab === 'saved' }" class="menu-item" role="tab" :aria-selected="activeTab === 'saved'" id="tab-saved" aria-controls="panel-saved"> 
+                    <i class="fas fa-bookmark" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.savedStories')"></span> 
+                </button>
+                <button @click="setTab('history')" :class="{ 'active': activeTab === 'history' }" class="menu-item" role="tab" :aria-selected="activeTab === 'history'" id="tab-history" aria-controls="panel-history"> 
+                    <i class="fas fa-history" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.readingHistory')"></span> 
+                </button>
+                <button @click="setTab('likes')" :class="{ 'active': activeTab === 'likes' }" class="menu-item" role="tab" :aria-selected="activeTab === 'likes'" id="tab-likes" aria-controls="panel-likes"> 
+                    <i class="fas fa-heart" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.likedStories')"></span> 
+                </button>
+                <button @click="setTab('comments')" :class="{ 'active': activeTab === 'comments' }" class="menu-item" role="tab" :aria-selected="activeTab === 'comments'" id="tab-comments" aria-controls="panel-comments"> 
+                    <i class="fas fa-comments" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.myComments')"></span> 
+                </button>
+                <button @click="setTab('following')" :class="{ 'active': activeTab === 'following' }" class="menu-item" role="tab" :aria-selected="activeTab === 'following'" id="tab-following" aria-controls="panel-following"> 
+                    <i class="fas fa-users" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.myFollowing')"></span> 
+                </button>
             </div>
         </aside>
 
@@ -666,7 +898,8 @@
                     <form @submit.prevent="saveProfile()" class="profile-form">
                         <div class="form-group">
                             <label class="form-label" x-text="$store.i18n.t('profile.editAvatarLabel')"></label>
-                            <div class="avatar-upload-preview" :style="{ backgroundImage: `url(${avatarPreviewUrl})` }">
+                            <div class="avatar-upload-preview" 
+                                 :style="{ backgroundImage: avatarPreviewUrl ? `url(${avatarPreviewUrl})` : `url(${userAvatar || 'https://source.unsplash.com/random/200x200/?profile-placeholder'})` }">
                                 <label for="avatar-upload-input" class="avatar-upload-overlay">
                                     <i class="fas fa-camera"></i>
                                 </label>
@@ -679,9 +912,19 @@
                             </div>
                             <div class="form-help" x-text="$store.i18n.t('profile.editAvatarHelp')"></div>
                         </div>
+                        <!-- Виправлене повідомлення про помилку для імені користувача -->
                         <div class="form-group">
                             <label for="editUserName" class="form-label" x-text="$store.i18n.t('profile.editNameLabel')"></label>
-                            <input type="text" id="editUserName" class="form-input" x-model="editUserName" required>
+                            <input 
+                                type="text" 
+                                id="editUserName" 
+                                class="form-input" 
+                                x-model="editUserName" 
+                                required
+                                :class="{'has-error': nameError}"
+                                @input="nameError = ''"
+                            >
+                            <div x-show="nameError" class="input-error" x-text="nameError" role="alert"></div>
                         </div>
                         <div class="form-group">
                             <label for="editUserEmail" class="form-label" x-text="$store.i18n.t('profile.editEmailLabel')"></label>
@@ -693,9 +936,10 @@
                         </div>
                         <div class="form-actions">
                             <button type="button" @click="toggleEditProfile()" class="btn btn-outline" x-text="$store.i18n.t('general.cancel')"></button>
-                            <button type="submit" class="btn btn-primary processing" :disabled="isSavingProfile">
+                            <!-- Виправлений клас для анімації обробки зі збереженням стану -->
+                            <button type="submit" class="btn btn-primary" :class="{ 'processing': isSavingProfile }" :disabled="isSavingProfile">
                                 <span x-show="!isSavingProfile" x-text="$store.i18n.t('profile.saveChangesButton')"></span>
-                                <span x-show="isSavingProfile"><span x-text="$store.i18n.t('profile.saving')"></span></span>
+                                <span x-show="isSavingProfile"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('profile.saving')"></span></span>
                             </button>
                         </div>
                     </form>
@@ -706,7 +950,7 @@
             <div x-show="showChangePassword" class="profile-form-container" x-collapse>
                 <div class="form-card">
                     <h2 class="form-title" x-text="$store.i18n.t('profile.changePasswordFormTitle')"></h2>
-                    <div x-show="passwordFormError" class="error-message-small" style="margin-bottom: 1rem;">
+                    <div x-show="passwordFormError" class="error-message-small" style="margin-bottom: 1рем;">
                         <i class="fas fa-exclamation-circle"></i> <span x-text="passwordFormError"></span>
                     </div>
                     <form @submit.prevent="changePassword()" class="profile-form">
@@ -725,9 +969,10 @@
                         </div>
                         <div class="form-actions">
                             <button type="button" @click="toggleChangePassword()" class="btn btn-outline" x-text="$store.i18n.t('general.cancel')"></button>
-                            <button type="submit" class="btn btn-primary processing" :disabled="isChangingPassword">
+                            <!-- Виправлений клас для анімації обробки зміни пароля -->
+                            <button type="submit" class="btn btn-primary" :class="{ 'processing': isChangingPassword }" :disabled="isChangingPassword">
                                 <span x-show="!isChangingPassword" x-text="$store.i18n.t('profile.changePasswordButton')"></span>
-                                <span x-show="isChangingPassword"><span x-text="$store.i18n.t('profile.changingPassword')"></span></span>
+                                <span x-show="isChangingPassword"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('profile.changingPassword')"></span></span>
                             </button>
                         </div>
                     </form>
@@ -756,9 +1001,16 @@
                         <div class="subscription-actions">
                             <button type="button" class="btn btn-outline" @click="toggleSubscriptionSettings()" x-text="$store.i18n.t('profile.closeButton')"></button>
                             <button type="button" class="btn btn-primary" @click="upgradeAccount()" x-text="$store.i18n.t('profile.changePlanButton')"></button>
-                            <button type="button" class="btn btn-danger processing" @click="cancelSubscription()" :disabled="isCancellingSubscription">
+                            <!-- Виправлена кнопка скасування підписки без постійного класу processing -->
+                            <button type="button" class="btn btn-danger" 
+                                    :class="{ 'processing': isCancellingSubscription }" 
+                                    @click="cancelSubscription()" 
+                                    :disabled="isCancellingSubscription">
                                 <span x-show="!isCancellingSubscription" x-text="$store.i18n.t('profile.cancelSubscriptionButton')"></span>
-                                <span x-show="isCancellingSubscription"><span x-text="$store.i18n.t('profile.cancelling')"></span></span>
+                                <span x-show="isCancellingSubscription">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span x-text="$store.i18n.t('profile.cancelling')"></span>
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -786,7 +1038,7 @@
             <div x-show="!isLoadingActivity && !activityError && !showEditProfile && !showChangePassword && !showSubscriptionSettings">
 
                 <!-- Збережені історії -->
-                <div x-show="activeTab === 'saved'" class="content-container">
+                <div x-show="activeTab === 'saved'" class="content-container" role="tabpanel" id="panel-saved" aria-labelledby="tab-saved">
                     <h2 class="content-title" x-text="$store.i18n.t('profile.savedStories')"></h2>
                     <div x-show="savedStories.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noSavedStories')"></div>
                     <template x-for="story in savedStories" :key="story._id || story.id">
@@ -899,7 +1151,7 @@
                                         <div class="following-stat"><span x-text="(author.stats?.averageRating || 0).toFixed(1)"></span> <i class="fas fa-star"></i></div>
                                         <div class="following-stat" x-show="author.stats?.followersCount"><span x-text="author.stats.followersCount"></span> <span x-text="$store.i18n.t('profile.followersShort') || 'підп.'"></span></div>
                                     </div>
-                                    <div class="following-bio" x-text="author.bio || $store.i18n.t('authorsPage.bioMissing')"></div>
+                                    <div class="following-біо" x-text="author.bio || $store.i18n.t('authorsPage.bioMissing')"></div>
                                 </div>
                                 <div class="following-actions">
                                     <button type="button" class="btn btn-outline" @click="unfollowAuthor(author._id, $event)" x-text="$store.i18n.t('profile.unfollowAction')"></button>
@@ -914,8 +1166,8 @@
     </div> <!-- Кінець profile-section -->
 </main>
 
-<!-- Підказка для преміум-акаунту -->
-<template x-if="!isPremiumUser && !isLoadingProfile">
+<!-- Виправлена перевірка умов відображення преміум-сповіщення -->
+<template x-if="!isPremiumUser && !isLoadingProfile && activeTab !== 'following'">
     <div class="premium-notification" x-show="!showEditProfile && !showChangePassword && !showSubscriptionSettings" x-transition>
         <div class="premium-notification-content">
             <div class="premium-icon"><i class="fas fa-crown"></i></div>
@@ -924,8 +1176,6 @@
                 <p x-text="$store.i18n.t('profile.premiumBannerText')"></p>
             </div>
             <a href="premium.html" class="btn-premium" x-text="$store.i18n.t('profile.premiumBannerButton')"></a>
-            <!-- Кнопка закриття (опціонально) -->
-            <!-- <button @click="localStorage.setItem('hidePremiumBanner', 'true')" class="close-notification" title="Закрити">×</button> -->
         </div>
     </div>
 </template>
@@ -980,7 +1230,7 @@
     </div>
 </footer>
 
-<!-- Елемент сповіщення -->
+<!-- Виправлений елемент сповіщення з класами, що контролюють стан -->
 <div x-show="notificationVisible"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 translate-y-2"
@@ -989,6 +1239,7 @@
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
      style="display: none;"
      id="global-notification">
     <span x-text="notificationMessage"></span>

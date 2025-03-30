@@ -1,5 +1,7 @@
 export default {
     general: {
+        siteNamePart1: "Geheime",
+        siteNamePart2: "Welt",
         welcome: "Willkommen", // PHT: Welcome
         login: "Anmelden", // PHT: Login
         register: "Registrieren", // PHT: Register
@@ -711,7 +713,7 @@ export default {
         formTitle: "Nachricht senden", // PHT: Send a Message
         formNameLabel: "Ihr Name *", // PHT: Your Name *
         formNamePlaceholder: "Geben Sie Ihren Namen ein", // PHT: Enter your name
-        formEmailLabel: "Ihre E-Mail *", // PHT: Your Email *
+        formEmailLabel: "E-Mail *", // PHT: Your Email *
         formEmailPlaceholder: "Geben Sie Ihre E-Mail ein", // PHT: Enter your email
         formSubjectLabel: "Betreff *", // PHT: Subject *
         formSubjectPlaceholder: "Geben Sie den Betreff an", // PHT: Specify the subject
@@ -735,6 +737,8 @@ export default {
         privacyDescription: "Ihre Privatsphäre ist uns wichtig. Diese Richtlinie erklärt, wie wir Ihre Informationen sammeln, verwenden, offenlegen und schützen.", // PHT: Your privacy is important to us. This policy explains how we collect, use, disclose, and protect your information.
         privacyMetaDescription: "Datenschutzrichtlinie der Secret World Website. Erfahren Sie, wie wir Ihre personenbezogenen Daten sammeln, verwenden und schützen.", // PHT: Secret World website privacy policy. Learn how we collect, use, and protect your personal data.
         lastUpdated: "Zuletzt aktualisiert:", // PHT: Last updated:
+        downloadPdf: "PDF herunterladen", // Übersetzen für jede Sprache
+        printPage: "Seite drucken", // Übersetzen für jede Sprache
         backToHomeButton: "Zurück zur Startseite", // PHT: Back to Homepage
         footerText: "Danke, dass Sie Secret World nutzen!", // PHT: Thank you for using Secret World!
         contactUsText: "Wenn Sie Fragen haben, {link}.", // PHT: If you have questions, {link}.
