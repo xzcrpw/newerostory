@@ -387,21 +387,32 @@ header:after {
 }
 
 .google-btn {
+    background-color: rgb(120, 5, 5);
     color: #ffffff;
     border-color: #4285F4;
 }
 
 .google-btn i {
-    color: #4285F4;
+    background: linear-gradient(
+            to right,
+            #DB4437, /* Червоний */
+            #F4B400, /* Жовтий */
+            #0F9D58, /* Зелений */
+            #4285F4  /* Синій */
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
+
 .facebook-btn {
+    background-color: rgb(120, 5, 5);
     color: #ffffff;
     border-color: #3b5998;
 }
 
 .facebook-btn i {
-    color: #3b5998;
+    color: rgba(109, 145, 255, 0.96);
 }
 
 .auth-footer {

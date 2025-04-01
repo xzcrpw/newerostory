@@ -526,7 +526,7 @@ export default {
         recommendedBadge: "Рекомендовано",
         perMonth: "/місяць",
         perYear: "/рік",
-        monthlyEquivalent: "≈ {price} ₴/місяць",
+        monthlyEquivalent: "≈ ${price}/місяць",
         // Переваги для карток планів
         benefitFreeStories: "Обмежені історії",
         benefitLimitedBookmarks: "Обмежені закладки",
@@ -563,7 +563,7 @@ export default {
         agreeTerms: "Я погоджуюсь з {termsLink} та {privacyLink}",
         termsLink: "умовами використання",
         privacyLink: "політикою конфіденційності",
-        payButton: "Оплатити {amount} ₴",
+        payButton: "Оплатити ${amount}",
         processingPayment: "Обробка...",
         securePayment: "Захищена оплата",
         cryptoOptionBTC: "Bitcoin",
@@ -581,11 +581,11 @@ export default {
         paymentErrorCardFields: "Будь ласка, виправте помилки у формі картки.",
         paymentErrorCryptoTerms: "Будь ласка, погодьтеся з умовами.",
         errorTermsRequired: "Будь ласка, погодьтеся з умовами.",
-        errorCardNumber: "Некоректний номер картки",
-        errorCardName: "Введіть ім'я власника",
-        errorCardExpiry: "Некоректний термін (MM/YY)",
+        errorCardNumber: "Введіть коректний номер картки",
+        errorCardName: "Введіть ім'я власника картки",
+        errorCardExpiry: "Введіть дату у форматі MM/YY",
         errorCardExpiryPast: "Термін дії картки минув",
-        errorCardCVC: "Некоректний CVC",
+        errorCardCVC: "Введіть коректний CVC код",
         confirmationTitle: "Дякуємо за вашу підписку!",
         confirmationMessage: "Ваша {billingCycle} підписка на план \"{planName}\" успішно активована. Насолоджуйтесь преміум-контентом!",
         confirmationPlanLabel: "План:",
@@ -616,7 +616,7 @@ export default {
         qrCodeTitle: "QR-код для оплати", // Додав
         sidebarTitle: "Преміум доступ", // Для віджета історії
         sidebarDescription: "Відкрийте найгарячіші моменти історії та ексклюзивний контент",
-        sidebarPrice: "199 ₴",
+        sidebarPrice: "$5.99",
         sidebarButton: "Спробувати преміум",
         testimonialsTitle: "Що кажуть наші читачі", // Додав
         testimonial1Text: "Нарешті знайшла платформу з якісними історіями та зручним інтерфейсом. Преміум вартий кожної гривні!", // Додав
@@ -644,6 +644,10 @@ export default {
         step3Title: "Підтвердження", // Додав
         step3Desc: "Ваша підписка активована", // Додав
         processingInfo: "Обробка інформації про підписку...", // Додав
+        benefitExclusive: "Ексклюзивний контент",
+        benefitNoAds: "Без реклами",
+        benefitOffline: "Офлайн-читання",
+        benefitTranslation: "Переклад історій"
     },
     faq: {
         title: "Часті запитання",

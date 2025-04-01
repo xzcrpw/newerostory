@@ -22,6 +22,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
 
+    <!-- Internationalization -->
+    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -29,12 +32,13 @@
     <script src="js/api-config.js" defer></script>
     <script src="js/api-utils.js" defer></script>
 
-    <!-- Internationalization -->
-    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/new-stories.css"> <!-- Використовуємо цей CSS -->
+    <link rel="stylesheet" href="css/categories.css"> <!-- Використовуємо цей CSS -->
+
 
     <style>
         /* Додаткові стилі для завантаження/помилок */
@@ -297,17 +301,17 @@
         
         // Додаємо заповнені зірки
         for (let i = 0; i < fullStars; i++) {
-            stars += '<i class="fas fa-star"></i>';
+            stars += '<i class=\'fas fa-star\'></i>';
         }
         
         // Додаємо напівзірку, якщо потрібно
         if (hasHalfStar) {
-            stars += '<i class="fas fa-star-half-alt"></i>';
+            stars += '<i class=\'fas fa-star-half-alt\'></i>';
         }
         
         // Додаємо порожні зірки
         for (let i = 0; i < emptyStars; i++) {
-            stars += '<i class="far fa-star"></i>';
+            stars += '<i class=\'far fa-star\'></i>';
         }
         
         return stars;
@@ -341,20 +345,44 @@
             <div class="auth-buttons">
                 <!-- Мовний перемикач -->
                 <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
-                    <div class="lang-dropdown-button" @click="open = !open">
-                        <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
-                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+                    <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+                        <!-- Безпечний доступ до selectedLang -->
+                        <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
                     </div>
-                    <div class="lang-dropdown-menu" x-show="open" x-transition>
-                        <template x-for="lang in $store.i18n.available" :key="lang.code">
-                            <div class="lang-dropdown-item"
-                                 :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                                 @click="$store.i18n.setLanguage(lang.code); open = false;">
-                                <span x-text="lang.name"></span>
-                                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
-                            </div>
-                        </template>
-                    </div>
+                    <!-- Перевіряємо наявність $store.i18n -->
+                    <template x-if="$store?.i18n">
+                        <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+                            <!-- Безпечний доступ до available та ітерація -->
+                            <template x-for="lang in $store.i18n.available || []" :key="lang.code">
+                                <div class="lang-dropdown-item"
+                                     :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                                     @click="
+                 const newLang = lang.code;
+                 open = false;
+                 try {
+                     // Виклик setLanguage всередині try...catch
+                     $store.i18n.setLanguage(newLang);
+                     console.log('Language set to:', newLang);
+                 } catch(e) {
+                     console.error('Error setting language:', e);
+                     // Можна додати сповіщення для користувача тут
+                 }
+              "
+                                     role="menuitemradio"
+                                     :aria-checked="lang.code === $store.i18n.selectedLang"
+                                     tabindex="0"
+                                     @keydown.enter.space.prevent="
+                 const newLang = lang.code;
+                 open = false;
+                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
+              ">
+                                    <span x-text="lang.name"></span>
+                                    <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
                 <!-- Кнопки авторизації -->
                 <template x-if="!isLoggedIn">
@@ -498,22 +526,31 @@
         </button>
     </div>
 
-    <!-- Підписка на нові історії -->
-    <div class="newsletter-banner">
-        <h3 class="newsletter-title" x-text="$store.i18n.t('newsletter.title')"></h3>
+    <!-- Підписка на розсилку -->
+    <div class="newsletter-section">
+        <h2 class="newsletter-title" x-text="$store.i18n.t('newsletter.title')"></h2>
         <p class="newsletter-description" x-text="$store.i18n.t('newsletter.description')"></p>
+
         <!-- Повідомлення про помилку/успіх -->
-        <div x-show="newsletterError" x-transition class="form-notification error" role="alert" aria-live="assertive">
-            <i class="fas fa-exclamation-circle" aria-hidden="true"></i> <span x-text="newsletterError"></span>
+        <div x-show="newsletterError" x-transition class="form-notification error">
+            <i class="fas fa-exclamation-circle"></i> <span x-text="newsletterError"></span>
         </div>
-        <div x-show="newsletterSubmitted" x-transition class="form-notification success" role="status" aria-live="polite">
-            <i class="fas fa-check-circle" aria-hidden="true"></i> <span x-text="$store.i18n.t('newsletter.successMessage') || 'Дякуємо за підписку!'"></span>
+        <div x-show="newsletterSubmitted" x-transition class="form-notification success">
+            <i class="fas fa-check-circle"></i> <span x-text="$store.i18n.t('newsletter.successMessage')"></span>
         </div>
 
         <form class="newsletter-form" @submit.prevent="subscribeNewsletter()">
-            <input type="email" class="newsletter-input" :placeholder="$store.i18n.t('newsletter.emailPlaceholder')" x-model="newsletterEmail" required :aria-label="$store.i18n.t('newsletter.emailPlaceholder')" :disabled="newsletterSubmitting">
-            <!-- Виправлена кнопка підписки з правильними класами -->
-            <button type="submit" class="btn btn-primary" :class="{ 'processing': newsletterSubmitting }" :disabled="newsletterSubmitting || newsletterSubmitted">
+            <input
+                    type="email"
+                    id="newsletterEmail"
+                    class="newsletter-input"
+                    :placeholder="$store.i18n.t('newsletter.emailPlaceholder')"
+                    x-model="newsletterEmail"
+                    required
+                    :aria-label="$store.i18n.t('newsletter.emailPlaceholder')"
+                    :disabled="newsletterSubmitting"
+            >
+            <button type="submit" class="btn btn-primary" :disabled="newsletterSubmitting || newsletterSubmitted">
                 <span x-show="!newsletterSubmitting && !newsletterSubmitted" x-text="$store.i18n.t('newsletter.subscribeButton')"></span>
                 <span x-show="newsletterSubmitting"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('general.subscribing')"></span></span>
                 <span x-show="newsletterSubmitted"><i class="fas fa-check"></i> <span x-text="$store.i18n.t('newsletter.subscribed')"></span></span>

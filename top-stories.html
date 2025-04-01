@@ -396,7 +396,7 @@
                         }, index * 50); // 50мс затримка між картками для каскадного ефекту
                         
                         // Додаємо доступність з клавіатури
-                        const cardLink = card.querySelector('a[href^="story-detailed.html"]');
+                        const cardLink = card.querySelector('a[href^=\'story-detailed.html\']');
                         if (cardLink) {
                             card.setAttribute('tabindex', '0');
                             card.addEventListener('keydown', (e) => {

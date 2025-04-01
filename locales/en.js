@@ -654,7 +654,11 @@ export default {
         step2Desc: "Enter payment details",
         step3Title: "Confirmation",
         step3Desc: "Your subscription is active",
-        processingInfo: "Processing subscription information..."
+        processingInfo: "Processing subscription information...",
+        benefitExclusive: "Exclusive Content", // PHT: Exclusive Content
+        benefitNoAds: "Without Ads", // PHT: Without Ads
+        benefitOffline: "Offline Reading", // PHT: Offline Reading
+        benefitTranslation: "Story translation", // PHT: Story Translation
     },
     faq: {
         title: "Frequently Asked Questions",

@@ -56,7 +56,7 @@ export default {
         aboutText: "Eine Plattform zum Lesen und Veröffentlichen exklusiver erotischer Geschichten. Tauche ein in eine Welt der Fantasie und Leidenschaft.", // PHT: A platform for reading and publishing exclusive erotic stories. Immerse yourself in a world of fantasy and passion.
         terms: "Nutzungsbedingungen", // PHT: Terms of Use
         privacy: "Datenschutzrichtlinie", // PHT: Privacy Policy
-        copyright: "Secret World (e.world)", // PHT: Secret World (e.world)
+        copyright: "Secret World (erostory  .world)", // PHT: Secret World (e.world)
         language: "Sprache", // PHT: Language
         shareFacebook: "Auf Facebook teilen", // PHT: Share on Facebook
         shareTwitter: "Auf Twitter teilen", // PHT: Share on Twitter
@@ -650,7 +650,11 @@ export default {
         step2Desc: "Zahlungsdetails eingeben", // PHT: Enter payment details
         step3Title: "Bestätigung", // PHT: Confirmation
         step3Desc: "Ihr Abonnement ist aktiv", // PHT: Your subscription is active
-        processingInfo: "Abonnementinformationen werden verarbeitet..." // PHT: Processing subscription information...
+        processingInfo: "Abonnementinformationen werden verarbeitet...", // PHT: Processing subscription information...
+        benefitExclusive: "Exklusive Inhalte", // PHT: Exklusive Inhalte
+        benefitNoAds: "Ohne Werbung", // PHT: Ohne Werbung
+        benefitOffline: "Offline lesen", // PHT: Offline lesen
+        benefitTranslation: "Übersetzung der Geschichte", // PHT: Übersetzung der Geschichte
     },
     faq: {
         title: "Häufig gestellte Fragen", // PHT: Frequently Asked Questions

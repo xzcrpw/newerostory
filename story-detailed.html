@@ -21,15 +21,46 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
 
-  <!-- Alpine.js -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
+
 
   <!-- API Config & Utils -->
   <script src="js/api-config.js" defer></script>
   <script src="js/api-utils.js" defer></script>
 
-  <!-- Internationalization -->
-  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof api === 'undefined') {
+        console.error('API is not defined after loading scripts! Creating a mock API.');
+        window.api = {
+          utils: {
+            getUserId: () => null,
+            isAuthenticated: () => false,
+            isPremium: () => false
+          },
+          // Додайте інші методи, які використовуються
+          stories: {
+            likeStory: async () => Promise.resolve({}),
+            rateStory: async () => Promise.resolve({ averageRating: 0, totalRatings: 0 })
+          },
+          users: {
+            toggleBookmark: async () => Promise.resolve({}),
+            checkIfFollowing: async () => Promise.resolve(false)
+          },
+          comments: {
+            createComment: async () => Promise.resolve({}),
+            likeComment: async () => Promise.resolve({})
+          }
+        };
+      }
+    });
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <!-- CSS -->
   <link rel="stylesheet" href="css/main.css">
@@ -108,6 +139,7 @@
     commentError: null,
     notificationVisible: false,
     notificationMessage: '',
+    notificationType: 'success', // Додано цю змінну
     notificationTimeout: null,
     userId: null, // ID поточного користувача
 
@@ -134,28 +166,19 @@
 
     // --- Функція для показу сповіщень ---
     showNotification(message, isSuccess = true) {
-        this.notificationMessage = message;
-        this.notificationType = isSuccess ? 'success' : 'error';
-        
-        const el = document.getElementById('global-notification');
-        if(el) { 
-            el.classList.toggle('success', isSuccess); 
-            el.classList.toggle('error', !isSuccess);
-            el.classList.add('show'); // Додавання класу show для анімації 
-        }
-        
-        this.notificationVisible = true;
-        
-        if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        
-        this.notificationTimeout = setTimeout(() => { 
-            this.notificationVisible = false; 
-            // Перевіряємо наявність елемента перед модифікацією
-            const notification = document.getElementById('global-notification');
-            if(notification) {
-                notification.classList.remove('show');
-            }
-        }, 4000);
+      this.notificationMessage = message;
+      this.notificationType = isSuccess ? 'success' : 'error';
+
+      // Просто встановлюємо прапорець, Alpine.js зробить решту
+      this.notificationVisible = true;
+
+      // Очищаємо попередній таймер, якщо він є
+      if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+
+      // Встановлюємо новий таймер
+      this.notificationTimeout = setTimeout(() => {
+          this.notificationVisible = false;
+      }, 4000);
     },
 
     // --- Завантаження даних з покращеною обробкою помилок ---
@@ -290,6 +313,20 @@
             // Оновлюємо мета-теги
             this.updateMetaTags();
 
+            // ДОДАЙТЕ ТУТ - оновлення заголовка сторінки
+            document.title = this.story ? `${this.story.title} — ${this.safeT('general.copyright', {}, 'Таємний Світ')}` :
+                             this.error ? `${this.safeT('general.error', {}, 'Помилка')} — ${this.safeT('general.copyright', {}, 'Таємний Світ')}` :
+                             `${this.safeT('general.loading', {}, 'Завантаження')}... — ${this.safeT('general.copyright', {}, 'Таємний Світ')}`;
+
+
+            // Також оновлюємо метатеги
+            const descMeta = document.querySelector('meta[name=\'description\']');
+            if (descMeta) {
+                const desc = this.story ? this.story.content.replace(/<[^>]*>?/gm, '').substring(0, 160) + '...' :
+                             this.safeT('story.metaDescriptionPlaceholder', {}, '') || 'Еротичні історії на сайті Таємний Світ.';
+                descMeta.setAttribute('content', desc);
+            }
+
             // Завантажуємо статус взаємодії користувача, обробляємо помилку окремо
             if (this.isLoggedIn) {
                 try {
@@ -300,13 +337,17 @@
                 }
             }
 
-        } catch (err) {
-            this.error = err.message || this.safeT('story.errorLoadingStory', {}, 'Помилка завантаження історії');
-            console.error('Fetch Story Error:', err);
-        } finally {
-            this.isLoading = false;
-        }
-    },
+         } catch (err) {
+        this.error = err.message || this.safeT('story.errorLoadingStory', {}, 'Помилка завантаження історії');
+        console.error('Fetch Story Error:', err);
+
+        // Також додайте тут оновлення заголовка для сторінки з помилкою
+        document.title = `${this.safeT('general.error', {}, 'Помилка')} — ${this.safeT('general.copyright', {}, 'Таємний Світ')}`;
+
+    } finally {
+        this.isLoading = false;
+    }
+},
     // Завантаження статусів взаємодії користувача
     async fetchUserInteractionStatus() {
          try {
@@ -606,14 +647,14 @@
     },
     async likeComment(commentId, event) {
         if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
-        const commentIndex = this.comments.findIndex(c => (c._id або c.id) === commentId);
+        const commentIndex = this.comments.findIndex(c => (c._id || c.id) === commentId);
         if (commentIndex === -1) return;
 
         const button = event?.currentTarget; if (button) button.classList.add('removing'); // Показуємо спінер
 
         const comment = this.comments[commentIndex];
         const originalLiked = comment.liked;
-        const originalLikes = comment.likes або 0;
+        const originalLikes = comment.likes || 0;
         // Оптимістичне оновлення
         this.comments[commentIndex].liked = !originalLiked;
         this.comments[commentIndex].likes = Math.max(0, originalLikes + (this.comments[commentIndex].liked ? 1 : -1));
@@ -623,14 +664,14 @@
         } catch (err) {
             this.comments[commentIndex].liked = originalLiked; // Відкат
             this.comments[commentIndex].likes = originalLikes;
-            this.showNotification(safeT('story.errorLikingComment') + ': ' + (err.message або safeT('general.unknownError')), false);
+            this.showNotification(safeT('story.errorLikingComment') + ': ' + (err.message || safeT('general.unknownError')), false);
             console.error('Comment Like Error:', err);
         } finally { if (button) button.classList.remove('removing'); }
     },
     // Безпечніше копіювання URL до буфера обміну
     async copyLink() {
         try {
-            if (navigator.clipboard і typeof navigator.clipboard.writeText === 'function') {
+            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
                 await navigator.clipboard.writeText(window.location.href);
                 this.showNotification(this.safeT('general.copiedLink', {}, 'Посилання скопійовано!'), true);
             } else {
@@ -662,11 +703,11 @@
          this.isTranslating = true; this.translationError = null; this.translatedContent = null;
          try {
              const originalContent = this.story?.content;
-             if (!originalContent) throw new Error(safeT('story.errorNoContentForTranslation') або 'Немає контенту для перекладу.');
+             if (!originalContent) throw new Error(safeT('story.errorNoContentForTranslation') || 'Немає контенту для перекладу.');
 
              console.log(`Translating story ${this.storyId} to ${this.selectedLang} (client-side translation disabled)`);
              // Кидаємо помилку, бо переклад має бути на бекенді
-             throw new Error(safeT('story.errorTranslationClientSide') або 'Функція перекладу контенту виконується на сервері.');
+             throw new Error(safeT('story.errorTranslationClientSide') || 'Функція перекладу контенту виконується на сервері.');
 
              // --- Закоментований код для симуляції/майбутнього API ---
              // console.log(`API call: translateText to ${this.selectedLang}`);
@@ -676,7 +717,7 @@
              // --- Кінець ---
 
          } catch (error) {
-             this.translationError = error.message або safeT('story.translationError');
+             this.translationError = error.message || safeT('story.translationError');
              console.error('Translation error:', error);
              this.translatedContent = `<p style='color: #ff6b6b;'>${this.translationError}</p>`;
          } finally { this.isTranslating = false; }
@@ -684,11 +725,11 @@
      // Безпечнiша функція для доступу до i18n перекладів
      safeT(key, params = {}, fallback = '') {
          try {
-             if (!$store або !$store.i18n або typeof $store.i18n.t !== 'function') {
+             if (!$store || !$store.i18n || typeof $store.i18n.t !== 'function') {
                  return fallback;
              }
              const translation = $store.i18n.t(key, params);
-             return (translation і translation !== key) ? translation : fallback;
+             return (translation && translation !== key) ? translation : fallback;
          } catch (error) {
              console.warn(`Translation error for key: ${key}`, error);
              return fallback;
@@ -696,7 +737,7 @@
      },
      // Функція для форматування HTML зірок на основі числового рейтингу
      formatStars(rating) {
-         if (!rating або isNaN(rating)) return '';
+         if (!rating || isNaN(rating)) return '';
          
          const fullStars = Math.floor(rating);
          const hasHalfStar = rating - fullStars >= 0.5;
@@ -706,17 +747,17 @@
          
          // Додаємо заповнені зірки
          for (let i = 0; i < fullStars; i++) {
-             stars += '<i class="fas fa-star"></i>';
+             stars += '<i class=\'fas fa-star\'></i>';
          }
          
          // Додаємо напівзірку, якщо потрібно
          if (hasHalfStar) {
-             stars += '<i class="fas fa-star-half-alt"></i>';
+             stars += '<i class=\'fas fa-star-half-alt\'></i>';
          }
          
          // Додаємо порожні зірки
          for (let i = 0; i < emptyStars; i++) {
-             stars += '<i class="far fa-star"></i>';
+             stars += '<i class=\'far fa-star\'></i>';
          }
          
          return stars;
@@ -725,29 +766,44 @@
      isProcessingFollow: false
 
 }" x-init="
-    userId = api.utils.getUserId(); // Зберігаємо ID поточного користувача
-    isLoggedIn = api.utils.isAuthenticated();
-    isPremiumUser = api.utils.isPremium();
-    // Синхронізуємо selectedLang з i18n store
-    if (typeof $store !== 'undefined' і $store.i18n) {
-        selectedLang = $store.i18n.selectedLang;
-        availableLanguages = $store.i18n.available.map(lang => ({
-            code: lang.code,
-            name: lang.code === 'uk' ? `${safeT('story.translationOriginalUk') або 'Українська'} (Оригінал)` : lang.name
-        }));
-        // Спостерігаємо за зміною мови в store
-        $watch('$store.i18n.selectedLang', (newLang) => {
-            if (selectedLang !== newLang) {
-                selectedLang = newLang;
-                // Оновлюємо дати коментарів
-                comments.forEach(c => c.date = new Date(c.createdAt).toLocaleString(selectedLang або 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' }));
-                // Можливо, скинути переклад при зміні мови сайту
-                // if (selectedLang !== 'uk') translateStory(); else translatedContent = null;
-            }
-        });
-    } else { console.warn('i18n store not available on init'); }
-    // Запускаємо завантаження даних історії
-    fetchStoryData();
+    try {
+
+        if (typeof api !== 'undefined') {
+            userId = api.utils.getUserId();
+            isLoggedIn = api.utils.isAuthenticated();
+            isPremiumUser = api.utils.isPremium();
+        } else {
+            console.warn('API not defined, using default values');
+            userId = null;
+            isLoggedIn = false;
+            isPremiumUser = false;
+        }
+
+        // Синхронізуємо selectedLang з i18n store
+        if (typeof $store !== 'undefined' && $store.i18n) {
+            selectedLang = $store.i18n.selectedLang;
+            availableLanguages = $store.i18n.available.map(lang => ({
+                code: lang.code,
+                name: lang.code === 'uk' ? `${safeT('story.translationOriginalUk') || 'Українська'} (Оригінал)` : lang.name
+            }));
+
+            // Спостерігаємо за зміною мови в store
+            $watch('$store.i18n.selectedLang', (newLang) => {
+                if (selectedLang !== newLang) {
+                    selectedLang = newLang;
+                    // Оновлюємо дати коментарів
+                    comments.forEach(c => c.date = new Date(c.createdAt).toLocaleString(selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' }));
+                }
+            });
+        } else {
+            console.warn('i18n store not available on init');
+        }
+
+        // Запускаємо завантаження даних історії
+        fetchStoryData();
+    } catch(e) {
+        console.error('Error in x-init:', e);
+    }
 ">
 
 <!-- Індикатор завантаження -->
@@ -768,37 +824,46 @@
         <li><a href="authors.html" x-text="safeT('general.authors')"></a></li>
       </ul>
       <div class="auth-buttons">
-        <!-- Мовний перемикач з покращеною обробкою помилок -->
+        <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
-          <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n?.selectedLang?.toUpperCase() або 'UK'"></span>
-            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+            <!-- Безпечний доступ до selectedLang -->
+            <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
-          <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n?.available або []" :key="lang.code">
-              <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n?.selectedLang }"
-                   @click="try { 
-                       $store.i18n.setLanguage(lang.code); 
-                       open = false; 
-                       // Оновлюємо дати коментарів
-                       comments.forEach(c => {
-                           try {
-                               c.date = new Date(c.createdAt).toLocaleString(lang.code або 'uk-UA', 
-                               { dateStyle: 'medium', timeStyle: 'short' });
-                           } catch (error) {
-                               console.warn('Date formatting error:', error);
-                           }
-                       });
-                   } catch(e) { 
-                       console.error('Error switching language:', e); 
-                       open = false; 
-                   }">
-                <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n?.selectedLang" class="fas fa-check"></i>
-              </div>
-            </template>
-          </div>
+          <!-- Перевіряємо наявність $store.i18n -->
+          <template x-if="$store?.i18n">
+            <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+              <!-- Безпечний доступ до available та ітерація -->
+              <template x-for="lang in $store.i18n.available || []" :key="lang.code">
+                <div class="lang-dropdown-item"
+                     :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                     @click="
+                 const newLang = lang.code;
+                 open = false;
+                 try {
+                     // Виклик setLanguage всередині try...catch
+                     $store.i18n.setLanguage(newLang);
+                     console.log('Language set to:', newLang);
+                 } catch(e) {
+                     console.error('Error setting language:', e);
+                     // Можна додати сповіщення для користувача тут
+                 }
+              "
+                     role="menuitemradio"
+                     :aria-checked="lang.code === $store.i18n.selectedLang"
+                     tabindex="0"
+                     @keydown.enter.space.prevent="
+                 const newLang = lang.code;
+                 open = false;
+                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
+              ">
+                  <span x-text="lang.name"></span>
+                  <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
         <!-- Кнопки входу/профілю -->
         <template x-if="!isLoggedIn">
@@ -840,13 +905,13 @@
 <!-- Основний контент -->
 <main class="container">
   <!-- Повідомлення про помилку завантаження -->
-  <div x-show="error і !isLoading" class="error-message" style="margin: 2rem 0;">
+  <div x-show="error && !isLoading" class="error-message" style="margin: 2rem 0;">
     <i class="fas fa-exclamation-circle"></i> <span x-text="error"></span>
     <button @click="fetchStoryData()" class="btn btn-outline" x-text="safeT('general.retryButton')"></button>
   </div>
 
   <!-- Контент сторінки історії -->
-  <template x-if="story і !isLoading і !error">
+  <template x-if="story && !isLoading && !error">
     <div>
       <!-- Хлібні крихти -->
       <div class="breadcrumbs">
@@ -854,7 +919,7 @@
         <span class="separator">/</span>
         <a href="categories.html" x-text="safeT('general.categories')"></a>
         <span class="separator">/</span>
-        <a :href="`category-page.html?slug=${story.category?.slug або 'other'}`" x-text="story.category?.name або safeT('general.defaultCategory')"></a>
+        <a :href="`category-page.html?slug=${story.category?.slug || 'other'}`" x-text="story.category?.name || safeT('general.defaultCategory')"></a>
         <span class="separator">/</span>
         <span class="current" x-text="story.title"></span>
       </div>
@@ -865,10 +930,10 @@
         <div class="story-main">
           <!-- Заголовок історії -->
           <div class="story-header">
-            <div class="story-category" x-text="story.category?.name або safeT('general.defaultCategory')"></div>
+            <div class="story-category" x-text="story.category?.name || safeT('general.defaultCategory')"></div>
             <h1 class="story-title-main" x-text="story.title"></h1>
             <div class="story-meta-info">
-              <div><i class="far fa-calendar-alt"></i> <span x-text="new Date(story.createdAt).toLocaleDateString($store.i18n.selectedLang або 'uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })"></span></div>
+              <div><i class="far fa-calendar-alt"></i> <span x-text="new Date(story.createdAt).toLocaleDateString($store.i18n.selectedLang || 'uk-UA', { day: 'numeric', month: 'long', year: 'numeric' })"></span></div>
               <div><i class="far fa-eye"></i> <span x-text="story.views"></span> <span x-text="safeT('general.views')"></span></div>
               <div><i class="far fa-clock"></i> <span x-text="story.readingTime"></span> <span x-text="safeT('general.readingTimeSuffix')"></span></div>
               <div><i class="far fa-comments"></i> <span x-text="comments.length"></span> <span x-text="safeT('general.comments')"></span></div>
@@ -879,20 +944,20 @@
               <div class="story-author">
                 <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="display: contents;">
                   <div class="author-avatar" 
-                       :style="`background-image: url('${author.avatarUrl або 'https://source.unsplash.com/random/100x100/?profile'}')`" 
+                       :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile'}')`"
                        role="img" 
-                       :aria-label="`${safeT('story.avatarOf', {}, 'Аватар')} ${author.name або safeT('general.anonymous', {}, 'Анонімний автор')}`">
+                       :aria-label="`${safeT('story.avatarOf', {}, 'Аватар')} ${author.name || safeT('general.anonymous', {}, 'Анонімний автор')}`">
                   </div>
                 </a>
                 <div class="author-info">
                   <div class="author-name">
                     <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="color: inherit; text-decoration: none;" 
-                       x-text="author.name або safeT('general.anonymous', {}, 'Анонімний автор')"></a>
+                       x-text="author.name || safeT('general.anonymous', {}, 'Анонімний автор')"></a>
                   </div>
-                  <div class="author-bio" x-text="author.bio або safeT('authorsPage.bioMissing', {}, 'Інформація про автора відсутня')"></div>
+                  <div class="author-bio" x-text="author.bio || safeT('authorsPage.bioMissing', {}, 'Інформація про автора відсутня')"></div>
                 </div>
                 <!-- Кнопка стеження -->
-                <template x-if="author._id і isLoggedIn і userId !== author._id">
+                <template x-if="author._id && isLoggedIn && userId !== author._id">
                   <button type="button" 
                           @click="toggleFollow($event)" 
                           class="btn btn-outline follow-btn" 
@@ -904,7 +969,7 @@
                     </span>
                   </button>
                 </template>
-                <template x-if="author._id і !isLoggedIn">
+                <template x-if="author._id && !isLoggedIn">
                   <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" 
                      class="btn btn-outline follow-btn" 
                      x-text="safeT('story.followAuthor', {}, 'Стежити')">
@@ -924,31 +989,31 @@
           </div>
 
           <!-- Головне зображення -->
-          <div class="story-featured-image" :style="`background-image: url('${story.imageUrl або 'https://source.unsplash.com/random/1200x600/?abstract'}')`">
+          <div class="story-featured-image" :style="`background-image: url('${story.imageUrl || 'https://source.unsplash.com/random/1200x600/?abstract'}')`">
             <div class="story-badge-large" x-text="story.ageRestriction"></div>
           </div>
 
           <!-- Оцінка і дії -->
           <div class="story-actions">
             <div class="story-rating">
-              <div class="rating-score" x-text="(story.averageRating або 0).toFixed(1)"></div>
+              <div class="rating-score" x-text="(story.averageRating || 0).toFixed(1)"></div>
               <div class="rating-stars" x-ref="ratingStarsContainer"> <!-- Додав x-ref -->
                 <template x-for="i in 5">
                   <i class="rating-star"
                      :class="i <= userRating ? 'fas fa-star' : 'far fa-star'"
                      @click="setRating(i)"
                      style="cursor: pointer;"
-                     :aria-label="safeT('story.rateAriaLabel', { stars: i }) або `Оцінити на ${i} з 5`"></i>
+                     :aria-label="safeT('story.rateAriaLabel', { stars: i }) || `Оцінити на ${i} з 5`"></i>
                 </template>
               </div>
               <div class="rating-count">
-                (<span x-text="story.totalRatings або 0"></span> <span x-text="safeT('story.ratingCountSuffix')"></span>)
+                (<span x-text="story.totalRatings || 0"></span> <span x-text="safeT('story.ratingCountSuffix')"></span>)
               </div>
             </div>
             <div class="story-buttons">
               <button type="button" class="action-btn" @click="toggleLike($event)" :title="liked ? safeT('story.likedStory') : safeT('story.likeStory')" :style="{ 'background-color': liked ? 'rgba(204, 0, 51, 0.2)' : '' }">
                 <i :class="liked ? 'fas fa-heart' : 'far fa-heart'" style="color: var(--accent-red);"></i>
-                <span x-text="story.likes або 0" style="margin-left: 5px; font-size: 0.9em;"></span>
+                <span x-text="story.likes || 0" style="margin-left: 5px; font-size: 0.9em;"></span>
               </button>
               <button type="button" class="action-btn" @click="toggleBookmark($event)" :title="bookmarked ? safeT('story.savedBookmark') : safeT('story.saveBookmark')" :style="{ 'background-color': bookmarked ? 'rgba(255, 255, 255, 0.1)' : '' }">
                 <i :class="bookmarked ? 'fas fa-bookmark' : 'far fa-bookmark'"></i>
@@ -974,8 +1039,8 @@
               <div class="translation-status">
                 <span x-show="isTranslating"><i class="fas fa-spinner fa-spin"></i> <span x-text="safeT('story.translationLoading')"></span></span>
                 <span x-show="translationError" class="translation-error-inline"><i class="fas fa-exclamation-triangle"></i> <span x-text="translationError"></span></span>
-                <span x-show="!isTranslating і !translationError і selectedLang !== 'uk'" x-text="safeT('story.translationShowing')"></span>
-                <span x-show="!isTranslating і !translationError і selectedLang === 'uk'" x-text="safeT('story.translationOriginalShowing')"></span>
+                <span x-show="!isTranslating && !translationError && selectedLang !== 'uk'" x-text="safeT('story.translationShowing')"></span>
+                <span x-show="!isTranslating && !translationError && selectedLang === 'uk'" x-text="safeT('story.translationOriginalShowing')"></span>
               </div>
             </div>
           </template>
@@ -983,7 +1048,7 @@
           <!-- Контент історії -->
           <div class="story-content">
             <!-- Урізаний контент для не-преміум -->
-            <template x-if="story.isPremium і !isPremiumUser">
+            <template x-if="story.isPremium && !isPremiumUser">
               <div x-html="story.content.substring(0, Math.min(500, Math.floor(story.content.length * 0.3))) + '...'"></div>
               <div class="story-premium-notice">
                 <h3 x-text="safeT('story.premiumContentBlocked')"></h3>
@@ -992,17 +1057,17 @@
               </div>
             </template>
             <!-- Повний контент для преміум або не-преміум історій -->
-            <template x-if="!story.isPremium або isPremiumUser">
+            <template x-if="!story.isPremium || isPremiumUser">
               <!-- Перекладений контент -->
-              <div x-show="selectedLang !== 'uk' і translatedContent" x-html="translatedContent"></div>
+              <div x-show="selectedLang !== 'uk' && translatedContent" x-html="translatedContent"></div>
               <!-- Оригінальний контент -->
-              <div x-show="selectedLang === 'uk' або !translatedContent" x-html="story.content"></div>
+              <div x-show="selectedLang === 'uk' || !translatedContent" x-html="story.content"></div>
             </template>
           </div>
 
 
           <!-- Теги історії -->
-          <div class="story-tags-section" x-show="story.tags і story.tags.length > 0">
+          <div class="story-tags-section" x-show="story.tags && story.tags.length > 0">
             <h3 class="story-tags-title" x-text="safeT('story.tagsLabel')"></h3>
             <div class="story-tags-list">
               <template x-for="tag in story.tags" :key="tag">
@@ -1036,7 +1101,7 @@
               <textarea x-model="commentText" class="comment-input" :placeholder="safeT('story.leaveCommentPlaceholder')" :disabled="isSubmittingComment" aria-label="Текст коментаря" x-ref="commentInputRef"></textarea>
               <div x-show="commentError" class="error-message-inline" x-text="commentError"></div>
               <div class="comment-submit">
-                <button type="button" @click="submitComment()" class="btn btn-primary" :class="{ 'processing': isSubmittingComment }" :disabled="isSubmittingComment або !commentText.trim()">
+                <button type="button" @click="submitComment()" class="btn btn-primary" :class="{ 'processing': isSubmittingComment }" :disabled="isSubmittingComment || !commentText.trim()">
                   <span x-show="!isSubmittingComment" x-text="safeT('story.addCommentButton')"></span>
                   <span x-show="isSubmittingComment"><i class="fas fa-spinner fa-spin"></i> <span x-text="safeT('general.adding')"></span></span>
                 </button>
@@ -1052,24 +1117,24 @@
             </div>
 
             <div class="comments-list">
-              <template x-for="comment in comments" :key="comment.id або comment._id">
+              <template x-for="comment in comments" :key="comment.id || comment._id">
                 <div class="comment">
-                  <div class="comment-avatar" :style="`background-image: url('${comment.author?.avatarUrl або 'https://source.unsplash.com/random/100x100/?face'}')`" role="img" :aria-label="`${safeT('story.avatarOf') або 'Аватар'} ${comment.author?.name}`"></div>
+                  <div class="comment-avatar" :style="`background-image: url('${comment.author?.avatarUrl || 'https://source.unsplash.com/random/100x100/?face'}')`" role="img" :aria-label="`${safeT('story.avatarOf') || 'Аватар'} ${comment.author?.name}`"></div>
                   <div class="comment-body">
-                    <div class="comment-author" x-text="comment.author?.name або safeT('general.anonymous')"></div>
-                    <div class="comment-date" x-text="comment.date або new Date(comment.createdAt).toLocaleString($store.i18n.selectedLang або 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' })"></div>
+                    <div class="comment-author" x-text="comment.author?.name || safeT('general.anonymous')"></div>
+                    <div class="comment-date" x-text="comment.date || new Date(comment.createdAt).toLocaleString($store.i18n.selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' })"></div>
                     <div class="comment-text" x-text="comment.text"></div>
                     <div class="comment-actions">
-                      <a href="#" @click.prevent="likeComment(comment.id або comment._id, $event)" :aria-label="comment.liked ? safeT('story.unlikeCommentAriaLabel') : safeT('story.likeCommentAriaLabel')">
+                      <a href="#" @click.prevent="likeComment(comment.id || comment._id, $event)" :aria-label="comment.liked ? safeT('story.unlikeCommentAriaLabel') : safeT('story.likeCommentAriaLabel')">
                         <i :class="comment.liked ? 'fas fa-thumbs-up' : 'far fa-thumbs-up'"></i>
-                        <span x-text="safeT('story.likeCommentAction')"></span> (<span x-text="comment.likes або 0"></span>)
+                        <span x-text="safeT('story.likeCommentAction')"></span> (<span x-text="comment.likes || 0"></span>)
                       </a>
-                      <a href="#" @click.prevent="alert(safeT('story.replyWIP') або 'Функція відповіді в розробці')"><i class="far fa-comment"></i> <span x-text="safeT('story.replyButton')"></span></a>
+                      <a href="#" @click.prevent="alert(safeT('story.replyWIP') || 'Функція відповіді в розробці')"><i class="far fa-comment"></i> <span x-text="safeT('story.replyButton')"></span></a>
                     </div>
                   </div>
                 </div>
               </template>
-              <div x-show="comments.length === 0 і !isLoading" style="text-align: center; color: var(--secondary-text); padding: 1rem;" x-text="safeT('story.noCommentsYet')">
+              <div x-show="comments.length === 0 && !isLoading" style="text-align: center; color: var(--secondary-text); padding: 1rem;" x-text="safeT('story.noCommentsYet')">
               </div>
             </div>
           </div>
@@ -1081,32 +1146,32 @@
           <template x-if="author">
             <div class="sidebar-widget author-widget">
               <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="display: contents;">
-                <div class="author-avatar-large" :style="`background-image: url('${author.avatarUrl або 'https://source.unsplash.com/random/200x200/?profile'}')`" role="img" :aria-label="`${safeT('story.avatarOf') або 'Аватар'} ${author.name}`"></div>
+                <div class="author-avatar-large" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile'}')`" role="img" :aria-label="`${safeT('story.avatarOf') || 'Аватар'} ${author.name}`"></div>
               </a>
               <h3 class="author-name-large">
-                <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="color: inherit; text-decoration: none;" x-text="author.name або safeT('general.anonymous')"></a>
+                <a :href="author._id ? `author-profile.html?id=${author._id}` : '#'" style="color: inherit; text-decoration: none;" x-text="author.name || safeT('general.anonymous')"></a>
               </h3>
               <div class="author-stats">
                 <div class="author-stat">
-                  <div class="stat-value" x-text="author.storyCount або 0"></div>
+                  <div class="stat-value" x-text="author.storyCount || 0"></div>
                   <div class="stat-label" x-text="safeT('profile.storiesWritten')"></div>
                 </div>
                 <div class="author-stat">
-                  <div class="stat-value" x-text="(author.averageRating або 0).toFixed(1)"></div>
+                  <div class="stat-value" x-text="(author.averageRating || 0).toFixed(1)"></div>
                   <div class="stat-label" x-text="safeT('general.ratingLabel')"></div>
                 </div>
                 <div class="author-stat">
-                  <div class="stat-value" x-text="author.followersCount або 0"></div>
+                  <div class="stat-value" x-text="author.followersCount || 0"></div>
                   <div class="stat-label" x-text="safeT('profile.followers')"></div>
                 </div>
               </div>
-              <template x-if="author._id і isLoggedIn і userId !== author._id">
+              <template x-if="author._id && isLoggedIn && userId !== author._id">
                 <button type="button" @click="toggleFollow($event)" class="btn btn-primary follow-btn" :class="{ 'following': followed }" style="width: 100%;" :disabled="!author">
                   <span x-show="!isProcessingFollow" x-text="followed ? safeT('story.unfollowAuthor') : safeT('story.followAuthor')"></span>
                   <span x-show="isProcessingFollow"><i class="fas fa-spinner fa-spin"></i> <span x-text="safeT('general.processing')"></span></span>
                 </button>
               </template>
-              <template x-if="author._id і !isLoggedIn">
+              <template x-if="author._id && !isLoggedIn">
                 <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-primary" style="width: 100%;" x-text="safeT('story.followAuthor')"></a>
               </template>
             </div>
@@ -1116,9 +1181,9 @@
           <template x-if="!isPremiumUser">
             <div class="sidebar-widget premium-widget">
               <div class="premium-icon"><i class="fas fa-crown"></i></div>
-              <h3 class="premium-title" x-text="safeT('premium.sidebarTitle') або 'Преміум доступ'"></h3>
-              <p class="premium-description" x-text="safeT('premium.sidebarDescription') або 'Відкрийте найгарячіші моменти історії та ексклюзивний контент'"></p>
-              <div class="premium-price" x-text="safeT('premium.sidebarPrice') або '199 ₴'"></div>
+              <h3 class="premium-title" x-text="safeT('premium.sidebarTitle') || 'Преміум доступ'"></h3>
+              <p class="premium-description" x-text="safeT('premium.sidebarDescription') || 'Відкрийте найгарячіші моменти історії та ексклюзивний контент'"></p>
+              <div class="premium-price" x-text="safeT('premium.sidebarPrice') || '199 ₴'"></div>
               <span class="price-period" x-text="safeT('premium.perMonth')"></span>
               <div class="premium-features">
                 <div class="premium-feature"><i class="fas fa-check"></i><div x-text="safeT('premium.benefitAccess')"></div></div>
@@ -1126,7 +1191,7 @@
                 <div class="premium-feature"><i class="fas fa-check"></i><div x-text="safeT('premium.benefitNoAds')"></div></div>
                 <div class="premium-feature"><i class="fas fa-check"></i><div x-text="safeT('premium.benefitTranslation')"></div></div>
               </div>
-              <a href="premium.html" class="btn btn-primary" style="width: 100%;" x-text="safeT('premium.sidebarButton') або 'Спробувати преміум'"></a>
+              <a href="premium.html" class="btn btn-primary" style="width: 100%;" x-text="safeT('premium.sidebarButton') || 'Спробувати преміум'"></a>
             </div>
           </template>
 
@@ -1141,7 +1206,7 @@
                     <h4 class="related-story-title" x-text="related.title"></h4>
                     <div class="related-story-meta">
                       <div class="related-story-views"><i class="far fa-eye"></i> <span x-text="related.views"></span></div>
-                      <div class="related-story-rating"><i class="fas fa-star"></i> <span x-text="(related.rating або 0).toFixed(1)"></span></div>
+                      <div class="related-story-rating"><i class="fas fa-star"></i> <span x-text="(related.rating || 0).toFixed(1)"></span></div>
                     </div>
                   </div>
                 </a>
@@ -1224,13 +1289,21 @@
      x-transition:enter-end="opacity-100 transform translate-y-0"
      x-transition:leave="transition ease-in duration-300"
      x-transition:leave-start="opacity-100 transform translate-y-0"
-     x-transition:leave-end="opacity-0 -translate-y-full"
+     x-transition:leave-end="opacity-0 transform translate-y-2"
      class="notification"
-     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
+     :class="{ 'success': notificationType === 'success', 'error': notificationType === 'error' }"
      style="display: none;"
      id="global-notification">
   <span x-text="notificationMessage"></span>
 </div>
+
+<script>
+  // Додати після завантаження всіх скриптів
+  document.addEventListener('DOMContentLoaded', function() {
+    // Встановлюємо початковий заголовок
+    document.title = "Завантаження... — Таємний Світ";
+  });
+</script>
 
 </body>
 </html>

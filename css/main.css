@@ -7,7 +7,7 @@
     --secondary-text: rgba(255, 255, 255, 0.7);
 
     /* Градієнти */
-    --primary-gradient: linear-gradient(135deg, #800020 0%, #cc0033 100%);
+    --primary-gradient: linear-gradient(135deg, #7c0020 0%, #cc0033 100%);
     --button-gradient: linear-gradient(135deg, #990000 0%, #cc0033 70%, #e30043 100%);
     --card-gradient: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(25, 17, 20, 0.2) 100%);
 
@@ -16,9 +16,10 @@
     --accent-burgundy: #800020;
     --accent-gold: #d9a45b;
     --accent-gold-rgb: 217, 164, 91; /* Додано RGB версію для використання в rgba() */
+    --accent-dark: #1f1417; /* Додано темний відтінок для градієнтів */
 
-    /* Преміум-кольори (з premium_page.css, можуть бути корисними глобально) */
-    --premium-gold: #d9a45b; /* Повторює --accent-gold */
+    /* Преміум-кольори */
+    --premium-gold: #d9a45b; /* Видалено дублікат, залишено тут */
     --premium-gold-dark: #b78a4d;
     --premium-gold-light: #e3bb7d;
     --premium-gradient: linear-gradient(135deg, var(--premium-gold) 0%, var(--premium-gold-dark) 100%);
@@ -29,6 +30,19 @@
     --button-radius: 30px;
 }
 
+/* Глобальні стилі */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%; /* Prevent font scaling in landscape */
+    scroll-behavior: smooth; /* Плавна прокрутка */
+}
+
+
 body {
     font-family: 'Montserrat', sans-serif;
     background-color: var(--bg-color);
@@ -38,14 +52,56 @@ body {
     background-image: radial-gradient(circle at 10% 20%, rgba(153, 0, 0, 0.1) 0%, transparent 20%),
     radial-gradient(circle at 90% 80%, rgba(153, 0, 0, 0.08) 0%, transparent 20%);
     background-attachment: fixed;
+    margin: 0; /* Скидаємо відступи */
+    display: flex; /* Для притискання футера */
+    flex-direction: column; /* Для притискання футера */
+}
+main {
+    flex-grow: 1; /* Дозволяє main зайняти весь доступний простір */
 }
 
-h1, h2, h3, h4, h5 {
+img {
+    max-width: 100%; /* Запобігаємо виходу зображень за межі контейнера */
+    height: auto; /* Зберігаємо пропорції */
+    display: block; /* Забираємо зайвий відступ під зображеннями */
+}
+
+h1, h2, h3, h4, h5, h6 { /* Додано h6 */
     font-family: 'Cormorant Garamond', serif;
     font-weight: 700;
+    margin-top: 0; /* Скидаємо верхній відступ */
     margin-bottom: 1rem;
     letter-spacing: 0.3px;
 }
+
+p {
+    margin-top: 0; /* Скидаємо верхній відступ */
+    margin-bottom: 1rem; /* Стандартний нижній відступ */
+}
+ul, ol {
+    list-style: none; /* Прибираємо маркери за замовчуванням */
+    padding: 0;
+    margin: 0;
+}
+
+a {
+    color: var(--accent-red); /* Базовий колір посилань */
+    text-decoration: none;
+    transition: color 0.3s;
+}
+a:hover {
+    color: var(--accent-gold);
+    text-decoration: underline; /* Підкреслення при ховері */
+}
+button {
+    font-family: inherit; /* Успадкування шрифту */
+    cursor: pointer;
+    border: none; /* Скидаємо рамку за замовчуванням */
+    background: none; /* Скидаємо фон за замовчуванням */
+    padding: 0; /* Скидаємо падінг за замовчуванням */
+    color: inherit; /* Успадковуємо колір */
+}
+
 
 .container {
     width: 100%;
@@ -68,13 +124,14 @@ header:after {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, transparent, var(--accent-red), transparent);
+    background: linear-gradient(to right, transparent, rgba(153, 0, 0, 0.3), transparent); /* Зробимо менш яскравим */
 }
 
 .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem; /* Додамо проміжок між елементами */
 }
 
 .logo {
@@ -85,7 +142,12 @@ header:after {
     text-decoration: none;
     position: relative;
     display: inline-block;
+    white-space: nowrap; /* Не переносити назву */
 }
+.logo:hover {
+    text-decoration: none; /* Прибираємо підкреслення для лого */
+}
+
 
 .logo span {
     color: var(--accent-red);
@@ -106,11 +168,16 @@ header:after {
 
 .nav-links {
     display: flex;
-    list-style: none;
+    /* list-style: none; */ /* Вже скинуто глобально */
+    margin: 0; /* Скидаємо */
+    padding: 0; /* Скидаємо */
+    gap: 2.5rem; /* Використовуємо gap */
+    flex-wrap: wrap; /* Дозволяємо перенос */
+    justify-content: center; /* Центруємо, якщо переносяться */
 }
 
 .nav-links li {
-    margin-right: 2.5rem;
+    /* margin-right: 2.5rem; */ /* Замінено на gap */
     position: relative;
 }
 
@@ -121,10 +188,12 @@ header:after {
     font-weight: 500;
     transition: all 0.3s;
     padding: 8px 0;
+    display: block; /* Для правильної роботи :after */
 }
 
 .nav-links a:hover {
     color: var(--accent-red);
+    text-decoration: none; /* Прибираємо підкреслення для посилань навігації */
 }
 
 .nav-links a:after {
@@ -149,8 +218,11 @@ header:after {
     flex-shrink: 0; /* Запобігти стисканню контейнера, якщо він у flex-боксі */
 }
 
-.lang-dropdown {
-    margin-right: 1rem;
+.lang-dropdown-container {
+    position: relative;
+    margin-right: 0.5rem; /* Зменшив відступ */
+}
+.lang-dropdown-button {
     color: var(--secondary-text);
     font-size: 0.9rem;
     display: flex;
@@ -160,12 +232,74 @@ header:after {
     border-radius: var(--border-radius);
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background-color 0.3s;
 }
-
-.lang-dropdown i {
+.lang-dropdown-button:hover, .lang-dropdown-button:focus-visible {
+    background-color: rgba(255, 255, 255, 0.1);
+    outline: none; /* Прибираємо стандартний outline */
+}
+.lang-dropdown-button i {
     margin-left: 8px;
     font-size: 0.8rem;
+    transition: transform 0.3s;
 }
+.lang-dropdown-button i.rotate-180 {
+    transform: rotate(180deg);
+}
+.lang-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0; /* Або left: 0 */
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 110; /* Вище хедера */
+    min-width: 150px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    /* Додамо display: none за замовчуванням, Alpine буде керувати */
+    /* display: none; */ /* Закоментував, бо є x-show */
+}
+/* Додамо стилі для x-transition */
+.lang-dropdown-menu[x-transition] {
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.lang-dropdown-menu[x-transition]:enter-start,
+.lang-dropdown-menu[x-transition]:leave-end {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+.lang-dropdown-menu[x-transition]:enter-end,
+.lang-dropdown-menu[x-transition]:leave-start {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+.lang-dropdown-item {
+    padding: 0.8rem 1.2rem;
+    color: var(--secondary-text);
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+.lang-dropdown-item:hover, .lang-dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    outline: none;
+}
+.lang-dropdown-item.active {
+    color: var(--accent-red);
+    /* background-color: rgba(153, 0, 0, 0.1); */
+}
+.lang-dropdown-item i {
+    margin-left: 10px;
+    color: var(--accent-red); /* Колір галочки */
+}
+
 
 .btn {
     display: inline-flex;
@@ -183,6 +317,9 @@ header:after {
     position: relative;
     overflow: hidden;
     white-space: nowrap; /* Додаємо це, щоб текст не переносився на новий рядок */
+}
+.btn:hover {
+    text-decoration: none; /* Прибираємо підкреслення */
 }
 
 .btn i {
@@ -204,6 +341,11 @@ header:after {
 .btn:hover:after {
     left: 100%;
 }
+/* Стиль для стану фокусу кнопок */
+.btn:focus-visible {
+    outline: 2px solid var(--accent-red);
+    outline-offset: 2px;
+}
 
 .btn-outline {
     background-color: transparent;
@@ -213,6 +355,7 @@ header:after {
 
 .btn-outline:hover {
     border-color: var(--accent-red);
+    background-color: rgba(153, 0, 0, 0.1); /* Додамо легкий фон при ховері */
 }
 
 .btn-primary {
@@ -225,6 +368,13 @@ header:after {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(153, 0, 0, 0.4);
 }
+.btn:disabled { /* Стиль для всіх заблокованих кнопок */
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important; /* Прибираємо ефекти ховера/фокуса */
+    box-shadow: none !important;
+}
+
 
 /* Hero секція */
 .hero {
@@ -290,6 +440,7 @@ header:after {
 .hero-buttons {
     display: flex;
     gap: 1.5rem;
+    flex-wrap: wrap; /* Додано */
 }
 
 /* Пошук */
@@ -334,6 +485,7 @@ header:after {
     outline: none;
     background-color: rgba(255, 255, 255, 0.08);
     border-color: rgba(153, 0, 0, 0.3);
+    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1); /* Додано для відповідності іншим полям */
 }
 
 .search-input::placeholder {
@@ -346,11 +498,12 @@ header:after {
     top: 50%;
     transform: translateY(-50%);
     color: rgba(255, 255, 255, 0.4);
+    pointer-events: none; /* Щоб не заважав фокусу */
 }
 
 .search-button {
     padding: 1rem 2rem;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius); /* Зробимо як інпут */
     background: var(--button-gradient);
     color: white;
     border: none;
@@ -358,6 +511,7 @@ header:after {
     cursor: pointer;
     transition: all 0.3s;
     min-width: 150px;
+    flex-shrink: 0; /* Не стискати кнопку */
 }
 
 .search-button:hover {
@@ -376,6 +530,8 @@ header:after {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
+    flex-wrap: wrap; /* Додано */
+    gap: 1rem; /* Додано */
 }
 
 .section-title {
@@ -383,9 +539,10 @@ header:after {
     margin-bottom: 0;
     position: relative;
     display: inline-block;
+    /* Прибрали :after, щоб він не заважав при переносі */
 }
-
-.section-title:after {
+/* Можна додати підкреслення інакше */
+.section-title::after {
     content: '';
     position: absolute;
     width: 60px;
@@ -402,10 +559,12 @@ header:after {
     align-items: center;
     font-size: 0.95rem;
     transition: all 0.3s;
+    white-space: nowrap; /* Не переносити */
 }
 
 .view-all:hover {
     color: var(--accent-red);
+    text-decoration: none; /* Прибираємо */
 }
 
 .view-all i {
@@ -431,6 +590,9 @@ header:after {
     transition: all 0.3s;
     position: relative;
     overflow: hidden;
+}
+.category-tag:hover {
+    text-decoration: none; /* Прибираємо */
 }
 
 .category-tag:before {
@@ -470,7 +632,7 @@ header:after {
 
 .stories-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Змінив minmax */
     gap: 2.5rem;
 }
 
@@ -482,13 +644,23 @@ header:after {
     position: relative;
     border: 1px solid rgba(153, 0, 0, 0.05);
     background-image: var(--card-gradient);
+    display: flex; /* Для вирівнювання контенту */
+    flex-direction: column; /* Вміст вертикально */
 }
-
 .story-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
     border-color: rgba(153, 0, 0, 0.2);
 }
+/* Додамо стан фокусу для доступності */
+.story-card:focus-within {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    border-color: rgba(153, 0, 0, 0.2);
+    outline: 2px solid var(--accent-red);
+    outline-offset: 2px;
+}
+
 
 .story-card-image {
     height: 220px;
@@ -531,6 +703,9 @@ header:after {
 
 .story-card-content {
     padding: 1.5rem;
+    flex-grow: 1; /* Дозволяє рости */
+    display: flex; /* Для мета-даних внизу */
+    flex-direction: column; /* Вміст вертикально */
 }
 
 .story-tags {
@@ -545,11 +720,17 @@ header:after {
     font-size: 0.8rem;
     display: inline-block;
 }
+.story-tag:hover { /* Додамо ховер для тегів */
+    color: var(--premium-gold-light);
+    text-decoration: underline;
+}
 
 .story-tag:not(:last-child):after {
     content: '•';
     margin-left: 0.5rem;
     color: rgba(255, 255, 255, 0.3);
+    text-decoration: none; /* Прибираємо підкреслення для роздільника */
+    display: inline-block; /* Щоб не впливало на :hover */
 }
 
 .story-title {
@@ -566,6 +747,7 @@ header:after {
 
 .story-title a:hover {
     color: var(--accent-red);
+    text-decoration: none; /* Не підкреслюємо заголовок */
 }
 
 .story-excerpt {
@@ -573,6 +755,7 @@ header:after {
     margin-bottom: 1.5rem;
     font-size: 0.95rem;
     line-height: 1.7;
+    flex-grow: 1; /* Росте, щоб вирівняти мета-дані */
 }
 
 .story-meta {
@@ -581,6 +764,9 @@ header:after {
     align-items: center;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: auto; /* Притискає до низу */
+    flex-wrap: wrap; /* Додано */
+    gap: 0.5rem 1rem; /* Додано */
 }
 
 .story-meta-item {
@@ -611,6 +797,7 @@ header:after {
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(8px);
+    padding: 1rem; /* Додамо падінг для малих екранів */
 }
 
 .age-verification-content {
@@ -658,6 +845,7 @@ header:after {
     display: flex;
     gap: 1.5rem;
     justify-content: center;
+    flex-wrap: wrap; /* Додано */
 }
 
 .age-buttons .btn {
@@ -687,51 +875,13 @@ header:after {
 .floating-button:hover {
     transform: translateY(-5px) rotate(90deg);
     box-shadow: 0 8px 25px rgba(153, 0, 0, 0.5);
+    text-decoration: none; /* Прибираємо */
+}
+.floating-button:focus-visible { /* Доступність */
+    outline: 2px solid var(--accent-red);
+    outline-offset: 2px;
 }
 
-/* Адаптивність */
-@media (max-width: 992px) {
-    .hero h1 {
-        font-size: 3rem;
-    }
-
-    .search-form {
-        flex-direction: column;
-    }
-
-    .stories-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .nav-links {
-        display: none;
-    }
-
-    .hero:before {
-        width: 100%;
-        opacity: 0.1;
-    }
-
-    .hero p {
-        max-width: 100%;
-    }
-
-    .hero-buttons {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .hero-buttons .btn {
-        width: 100%;
-    }
-
-    .section-title {
-        font-size: 2rem;
-    }
-}
-/* css/main.css - ДОДАТИ В КІНЕЦЬ ФАЙЛУ */
 
 /* Footer */
 footer {
@@ -745,7 +895,7 @@ footer {
 .footer-content {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 2rem;
+    gap: 2rem 3rem; /* Збільшимо горизонтальний gap */
     margin-bottom: 2rem;
 }
 
@@ -756,7 +906,7 @@ footer {
 }
 
 .footer-section ul {
-    list-style: none;
+    /* list-style: none; */ /* Вже скинуто */
     padding: 0;
 }
 
@@ -773,6 +923,7 @@ footer {
 
 .footer-section a:hover {
     color: var(--accent-red);
+    text-decoration: underline; /* Повертаємо підкреслення для футера */
 }
 
 .footer-about p {
@@ -791,10 +942,12 @@ footer {
     color: var(--secondary-text);
     font-size: 1.4rem;
     transition: color 0.3s;
+    display: inline-block; /* Для кращого кліку */
 }
 
 .social-link:hover {
     color: var(--accent-red);
+    text-decoration: none; /* Прибираємо */
 }
 
 .footer-bottom {
@@ -814,81 +967,17 @@ footer {
 .footer-bottom a:hover {
     text-decoration: underline;
 }
-/* main.css - Стилі для нового мовного перемикача */
-.lang-dropdown-container {
-    position: relative;
-    margin-right: 1rem;
-}
-.lang-dropdown-button {
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: background-color 0.3s;
-}
-.lang-dropdown-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.lang-dropdown-button i {
-    margin-left: 8px;
-    font-size: 0.8rem;
-    transition: transform 0.3s;
-}
-.lang-dropdown-button i.rotate-180 {
-    transform: rotate(180deg);
-}
-.lang-dropdown-menu {
-    position: absolute;
-    top: calc(100% + 5px);
-    right: 0; /* Або left: 0 */
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 110; /* Вище хедера */
-    min-width: 150px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-}
-.lang-dropdown-item {
-    padding: 0.8rem 1.2rem;
-    color: var(--secondary-text);
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.9rem;
-}
-.lang-dropdown-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-}
-.lang-dropdown-item.active {
-    color: var(--accent-red);
-    /* background-color: rgba(153, 0, 0, 0.1); */
-}
-.lang-dropdown-item i {
-    margin-left: 10px;
-    color: var(--accent-red); /* Колір галочки */
-}
 
-/* === Pagination Styles (Add to main.css) === */
+/* === Pagination Styles === */
 
 .pagination {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 3rem; /* Додав верхній відступ для відокремлення */
-    margin-bottom: 4rem; /* Стандартний нижній відступ */
-    /* background-color: var(--card-color); */ /* Можна додати фон, якщо потрібно виділити */
-    /* padding: 1rem 1.5rem; */ /* Відповідно, якщо є фон */
-    /* border-radius: var(--border-radius); */ /* Відповідно, якщо є фон */
-    /* border: 1px solid rgba(153, 0, 0, 0.1); */ /* Відповідно, якщо є фон */
+    margin-top: 3rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap; /* Додано */
+    gap: 1rem; /* Додано */
 }
 
 .pagination-button {
@@ -896,24 +985,28 @@ footer {
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: var(--text-color);
     padding: 0.8rem 1.5rem;
-    border-radius: var(--button-radius); /* Використовуємо глобальну змінну */
+    border-radius: var(--button-radius);
     cursor: pointer;
     transition: all 0.3s;
     display: flex;
     align-items: center;
-    font-family: 'Montserrat', sans-serif; /* Додамо шрифт для консистентності */
-    font-size: 0.95rem; /* Додамо розмір шрифту */
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
 }
 
 .pagination-button:hover:not(:disabled) {
     background-color: rgba(153, 0, 0, 0.1);
     border-color: rgba(153, 0, 0, 0.2);
-    color: var(--text-color); /* Переконатись, що колір тексту не міняється на гірший */
+    color: var(--text-color);
 }
 
 .pagination-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+.pagination-button:focus-visible { /* Доступність */
+    outline: 2px solid var(--accent-red);
+    outline-offset: 2px;
 }
 
 .prev-button i {
@@ -927,6 +1020,8 @@ footer {
 .pagination-info {
     color: var(--secondary-text);
     font-size: 0.95rem;
+    text-align: center; /* Центруємо при переносі */
+    flex-grow: 1; /* Займає місце між кнопками */
 }
 
 .current-page {
@@ -936,47 +1031,36 @@ footer {
 
 .total-pages {
     color: var(--text-color);
-    font-weight: 500; /* Трохи виділимо */
-}
-
-/* Адаптивність для пагінації */
-@media (max-width: 768px) {
-    .pagination {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .pagination-info {
-        order: -1; /* Інформація про сторінки буде зверху */
-    }
+    font-weight: 500;
 }
 
 /* === End of Pagination Styles === */
 
-/* === Filter Bar & Sort Dropdown Styles (Add to main.css) === */
+/* === Filter Bar & Sort Dropdown Styles === */
 
 /* --- Filter Bar Base --- */
 .filter-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem; /* Уніфікований відступ */
+    margin-bottom: 2rem;
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     padding: 1rem 1.5rem;
     border: 1px solid rgba(153, 0, 0, 0.1);
-    gap: 1rem; /* Додамо проміжок між елементами */
+    gap: 1rem;
+    flex-wrap: wrap; /* Додано */
 }
 
 /* --- Sort Dropdown (Повна уніфікація) --- */
-.sort-dropdown { /* Цей клас тепер є обгорткою для кнопки та меню */
+.sort-dropdown {
     position: relative;
 }
 
 .sort-button {
     display: flex;
     align-items: center;
-    padding: 0.7rem 1.2rem; /* Зробимо універсальний падінг */
+    padding: 0.7rem 1.2rem;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 30px;
@@ -984,16 +1068,19 @@ footer {
     cursor: pointer;
     transition: all 0.3s;
     font-size: 0.9rem;
-    white-space: nowrap; /* Запобігаємо переносу тексту кнопки */
+    white-space: nowrap;
+}
+.sort-button:focus-visible { /* Доступність */
+    outline: 2px solid var(--accent-red);
+    outline-offset: 2px;
 }
 
 .sort-button i {
     margin-left: 8px;
-    transition: transform 0.3s; /* Додамо анімацію стрілки */
+    transition: transform 0.3s;
 }
 
-/* Опціонально: анімація стрілки при відкритті меню (потребує JS для додавання класу 'open') */
-.sort-button.open i {
+.sort-button[aria-expanded="true"] i { /* Використовуємо aria-expanded */
     transform: rotate(180deg);
 }
 
@@ -1004,19 +1091,31 @@ footer {
 
 .sort-menu {
     position: absolute;
-    top: calc(100% + 0.5rem); /* Відступ від кнопки */
+    top: calc(100% + 0.5rem);
     right: 0;
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     border: 1px solid rgba(153, 0, 0, 0.1);
     z-index: 100;
-    min-width: 220px; /* Збільшено для довгих назв */
+    min-width: 220px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    /* display: none; /* Прибираємо, бо керування буде через x-show в Alpine.js */
-    overflow: hidden; /* Для гарного вигляду кутів */
+    overflow: hidden;
+    /* Анімація через x-transition */
 }
-
-/* Не використовуємо .sort-menu.active, бо є x-show */
+/* Додамо стилі для x-transition меню */
+.sort-menu[x-transition] {
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.sort-menu[x-transition]:enter-start,
+.sort-menu[x-transition]:leave-end {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+.sort-menu[x-transition]:enter-end,
+.sort-menu[x-transition]:leave-start {
+    opacity: 1;
+    transform: translateY(0);
+}
 
 .sort-option {
     padding: 0.8rem 1.2rem;
@@ -1026,10 +1125,17 @@ footer {
     display: flex;
     align-items: center;
     white-space: nowrap;
-    font-size: 0.9rem; /* Узгоджуємо розмір */
+    font-size: 0.9rem;
+    background: none; /* Явно вказуємо */
+    border: none; /* Явно вказуємо */
+    width: 100%; /* Займає всю ширину */
+    text-align: left; /* Вирівнюємо текст */
+}
+.sort-option:focus {
+    outline: none; /* Прибираємо стандартний outline */
 }
 
-.sort-option:hover {
+.sort-option:hover, .sort-option:focus-visible {
     background-color: rgba(255, 255, 255, 0.05);
     color: var(--text-color);
 }
@@ -1038,102 +1144,95 @@ footer {
     margin-right: 8px;
     width: 16px;
     text-align: center;
-    color: var(--accent-red); /* Зробимо іконки червоними для кращої видимості */
-    opacity: 0; /* Ховаємо іконки за замовчуванням */
+    color: var(--accent-red);
+    opacity: 0;
     transition: opacity 0.2s;
 }
 
 .sort-option.active i {
-    opacity: 1; /* Показуємо іконку тільки для активного */
+    opacity: 1;
 }
 
 .sort-option.active {
-    color: var(--text-color); /* Активний елемент теж білий, виділяється іконкою */
-    /* background-color: rgba(153, 0, 0, 0.1); /* Можна додати легкий фон */
+    color: var(--text-color);
 }
 
+/* --- End of Filter Bar & Sort Dropdown Styles --- */
 
-/* --- Адаптивність для Filter Bar та Sort Dropdown --- */
-@media (max-width: 768px) {
-    .filter-bar {
-        flex-direction: column;
-        align-items: stretch; /* Вирівнювання елементів по ширині */
-    }
-
-    /* Специфічні стилі для `.search-authors`, `.filter-options` будуть у відповідних файлах */
-
-    .sort-dropdown {
-        width: 100%; /* Меню сортування займає всю ширину */
-    }
-
-    .sort-button {
-        justify-content: center; /* Центруємо текст кнопки сортування */
-    }
-
-    .sort-menu {
-        left: 0; /* Розтягуємо меню на всю ширину */
-        right: 0;
-        min-width: unset; /* Скидаємо мінімальну ширину */
-    }
-}
-/* === End of Filter Bar & Sort Dropdown Styles === */
-
-/* === Base Form Styles (Add to main.css) === */
+/* === Base Form Styles === */
 
 .form-group {
-    margin-bottom: 1.5rem; /* Стандартний відступ знизу для групи */
+    margin-bottom: 1.5rem;
 }
 
 .form-label {
     display: block;
-    margin-bottom: 0.6rem; /* Трохи збільшимо відступ */
+    margin-bottom: 0.6rem;
     font-weight: 500;
-    color: var(--secondary-text); /* Базовий колір */
-    font-size: 0.95rem; /* Уніфікуємо розмір */
+    color: var(--secondary-text);
+    font-size: 0.95rem;
+}
+/* Додамо стиль для обов'язкових полів */
+.form-label[for]:after { /* Якщо є атрибут for */
+    /* content: ' *'; */ /* Зірочка */
+    /* color: var(--accent-red); */
+    /* font-weight: normal; */
+    /* margin-left: 2px; */
 }
 
 .form-input,
 .form-textarea,
 .form-select {
     width: 100%;
-    padding: 1rem; /* Уніфікований падінг */
+    padding: 1rem;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius); /* Глобальний радіус */
+    border-radius: var(--border-radius);
     color: var(--text-color);
-    font-family: 'Montserrat', sans-serif; /* Явно вказуємо шрифт */
-    font-size: 1rem; /* Стандартний розмір шрифту */
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
     transition: all 0.3s;
-    line-height: 1.5; /* Додамо для кращої читабельності */
+    line-height: 1.5;
 }
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-    color: rgba(255, 255, 255, 0.4); /* Уніфікований колір плейсхолдера */
+    color: rgba(255, 255, 255, 0.4);
 }
 
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
     outline: none;
-    border-color: rgba(153, 0, 0, 0.3); /* Підсвітка при фокусі */
-    background-color: rgba(255, 255, 255, 0.08); /* Зміна фону при фокусі */
-    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1); /* Додамо тінь при фокусі */
+    border-color: rgba(153, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1);
+}
+/* Стилі для невалідних полів */
+.form-input:invalid,
+.form-textarea:invalid,
+.form-select:invalid,
+input[aria-invalid="true"] { /* Додаємо aria-invalid */
+    border-color: #ff6b6b; /* Червона рамка */
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.1); /* Червона тінь */
 }
 
 .form-textarea {
-    resize: vertical; /* Дозволяємо змінювати висоту */
-    min-height: 120px; /* Мінімальна висота */
+    resize: vertical;
+    min-height: 120px;
 }
 
-/* Опціонально: Стилі для select, щоб він виглядав схоже */
 .form-select {
-    appearance: none; /* Прибираємо стандартний вигляд */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff80'%3E%3Cpath fill-rule='evenodd' d='M7.21 10.79a.75.75 0 0 1 1.58 0l3.25 4.5a.75.75 0 0 1-.63 1.21H4.59a.75.75 0 0 1-.63-1.21l3.25-4.5Z' clip-rule='evenodd'/%3E%3Cpath fill-rule='evenodd' d='M8.79 5.21a.75.75 0 0 1-1.58 0L3.96.71a.75.75 0 0 1 .63-1.21h7.82a.75.75 0 0 1 .63 1.21l-3.25 4.5Z' clip-rule='evenodd'/%3E%3C/svg%3E"); /* SVG стрілочка */
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff80'%3E%3Cpath fill-rule='evenodd' d='M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z'/%3E%3C/svg%3E"); /* Інша стрілка */
     background-repeat: no-repeat;
     background-position: right 1rem center;
-    background-size: 1em 1em;
-    padding-right: 3rem; /* Додаємо місце для стрілки */
+    background-size: 1.2em 1.2em; /* Збільшимо стрілку */
+    padding-right: 3rem;
+}
+.form-select option { /* Стиль для опцій */
+    background-color: var(--card-color);
+    color: var(--text-color);
 }
 
 .form-help {
@@ -1142,21 +1241,22 @@ footer {
     margin-top: 0.5rem;
 }
 
-/* --- Base Checkbox/Radio Styles (Optional but Recommended) --- */
+/* --- Base Checkbox/Radio Styles --- */
 .checkbox-group, .form-agreement {
     display: flex;
-    align-items: flex-start; /* Вирівнювання по верху */
-    gap: 0.7rem; /* Проміжок між чекбоксом та текстом */
-    margin-top: 0.5rem; /* Невеликий відступ зверху */
+    align-items: flex-start;
+    gap: 0.7rem;
+    margin-top: 0.5rem;
 }
 
 .checkbox-group input[type="checkbox"],
 .form-agreement input[type="checkbox"] {
     flex-shrink: 0;
-    margin-top: 0.25em; /* Вирівнюємо по тексту */
+    margin-top: 0.25em;
     width: 1.1em;
     height: 1.1em;
     cursor: pointer;
+    accent-color: var(--accent-red); /* Використовуємо accent-color для сучасних браузерів */
 }
 
 .checkbox-group label,
@@ -1166,7 +1266,7 @@ footer {
     line-height: 1.5;
     cursor: pointer;
 }
-.form-agreement a { /* Стилі для посилань всередині згоди */
+.form-agreement a {
     color: var(--accent-red);
     text-decoration: none;
     transition: color 0.3s;
@@ -1179,25 +1279,26 @@ footer {
 /* --- Form Actions --- */
 .form-actions {
     display: flex;
-    justify-content: flex-end; /* За замовчуванням кнопки справа */
+    justify-content: flex-end;
     gap: 1rem;
-    margin-top: 1.5rem; /* Відступ перед кнопками */
+    margin-top: 1.5rem;
+    flex-wrap: wrap; /* Додано */
 }
 
 /* === End of Base Form Styles === */
 
 
-/* === Notification Messages (Add to main.css) === */
+/* === Notification Messages === */
 
 .error-message,
 .success-message {
-    padding: 0.8rem 1.2rem; /* Трохи збільшимо падінг */
+    padding: 0.8rem 1.2rem;
     margin-bottom: 1.5rem;
     border-radius: var(--border-radius);
     font-size: 0.95rem;
     display: flex;
     align-items: center;
-    border: 1px solid transparent; /* Додаємо для консистентності */
+    border: 1px solid transparent;
 }
 
 .error-message {
@@ -1214,29 +1315,226 @@ footer {
 
 .error-message i,
 .success-message i {
-    margin-right: 0.8rem; /* Трохи збільшимо відступ */
-    font-size: 1.1em; /* Зробимо іконку трохи більшою */
+    margin-right: 0.8rem;
+    font-size: 1.1em;
 }
 /* Додамо стилі для inline помилок, якщо потрібні біля полів */
 .error-message-inline {
     color: #ff6b6b;
     font-size: 0.85rem;
     margin-top: 0.3rem;
-    display: block; /* Щоб займало окремий рядок */
+    display: block;
 }
 
 
 /* === End of Notification Messages === */
 
-/* === Base Author Avatar Style (Add to main.css) === */
+/* === Global Notification Style (Перенесено з premium.html) === */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(150%);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    min-width: 250px;
+    max-width: 90%;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left-width: 4px;
+}
+
+.notification[x-show] { /* Стиль коли видимий через x-show */
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto; /* Активний коли видимий */
+}
+
+.notification.success {
+    border-left-color: #4cd964;
+}
+
+.notification.error {
+    border-left-color: #ff6b6b;
+}
+/* === End of Global Notification Style === */
+
+
+/* === Base Author Avatar Style === */
 .author-avatar {
-    width: 50px; /* Стандартний розмір, може бути змінений контекстно */
+    width: 50px;
     height: 50px;
     border-radius: 50%;
     background-size: cover;
     background-position: center;
-    flex-shrink: 0; /* Щоб аватар не стискався у flex контейнерах */
-    border: 2px solid rgba(255, 255, 255, 0.1); /* Легка рамка за замовчуванням */
-    /* transition: transform 0.3s; /* Забрали звідси, додамо де потрібно */
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05); /* Фон для випадків, коли немає картинки */
 }
 /* === End of Base Author Avatar Style === */
+
+/* === Breadcrumbs Style === */
+.breadcrumbs {
+    padding: 1.5rem 0;
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+.breadcrumbs a {
+    color: var(--secondary-text);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.breadcrumbs a:hover {
+    color: var(--accent-red);
+    text-decoration: underline;
+}
+
+.breadcrumbs .separator {
+    margin: 0 0.5rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.breadcrumbs .current {
+    color: var(--text-color);
+    font-weight: 500;
+}
+/* === End of Breadcrumbs Style === */
+
+/* === Visually Hidden Class === */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+/* === End of Visually Hidden Class === */
+
+
+/* Адаптивність */
+@media (max-width: 992px) {
+    .hero h1 {
+        font-size: 3rem;
+    }
+    .hero p {
+        max-width: 95%;
+    }
+
+    .search-form {
+        flex-direction: column;
+    }
+
+    .stories-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    .footer-content {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Трохи зменшимо */
+        gap: 2rem;
+    }
+
+    .filter-bar {
+        padding: 0.8rem 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none; /* Залишаємо прихованим для мобільних */
+        /* TODO: Реалізувати мобільне меню (бургер) */
+    }
+    .auth-buttons {
+        gap: 0.3rem; /* Зменшимо */
+    }
+    .btn {
+        padding: 0.6rem 1.2rem; /* Зменшимо */
+        font-size: 0.85rem;
+    }
+    .lang-dropdown-button {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    .logo { font-size: 1.6rem; }
+    .logo:after { right: -20px; font-size: 0.55rem;}
+
+
+    .hero:before {
+        width: 100%;
+        opacity: 0.1;
+    }
+    .hero h1 { font-size: 2.5rem; }
+    .hero p { font-size: 1rem; max-width: 100%; }
+
+
+    .hero-buttons {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+    }
+
+    .search-section { margin-bottom: 3rem; }
+    .search-container { padding: 1.5rem; }
+    .search-input { padding: 0.8rem 0.8rem 0.8rem 2.5rem; font-size: 0.9rem;}
+    .search-icon { left: 0.8rem; }
+    .search-button { padding: 0.8rem 1.5rem; min-width: 100px;}
+
+    .section-header { margin-bottom: 2rem; }
+    .section-title { font-size: 2rem; }
+
+    .stories-grid { gap: 1.5rem; }
+    .story-card-image { height: 180px; }
+    .story-card-content { padding: 1rem; }
+    .story-title { font-size: 1.3rem; }
+    .story-excerpt { font-size: 0.9rem; }
+    .story-meta { font-size: 0.8rem; }
+
+    .floating-button { width: 50px; height: 50px; font-size: 1.3rem; bottom: 1rem; right: 1rem;}
+
+    .footer-content {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Ще зменшимо */
+        gap: 1.5rem;
+    }
+    .footer-section h4 { font-size: 1.1rem; }
+    .footer-section a, .footer-about p { font-size: 0.9rem; }
+
+    .pagination {
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 2rem;
+        margin-bottom: 3rem;
+    }
+    .pagination-button { padding: 0.7rem 1.2rem; font-size: 0.9rem; }
+    .pagination-info { order: -1; font-size: 0.9rem; }
+
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .sort-dropdown { width: 100%; }
+    .sort-button { justify-content: center; }
+    .sort-menu { left: 0; right: 0; min-width: unset; }
+
+    .age-verification-content { padding: 2rem; }
+    .age-verification h2 { font-size: 1.8rem; }
+    .age-verification p { font-size: 1rem; }
+    .age-buttons .btn { min-width: 150px; }
+
+    .form-input, .form-textarea, .form-select {
+        padding: 0.8rem;
+        font-size: 0.95rem;
+    }
+    .form-label { font-size: 0.9rem; }
+}

@@ -650,7 +650,11 @@ export default {
         step2Desc: "Inserisci dettagli pagamento", // PHT: Enter payment details
         step3Title: "Conferma", // PHT: Confirmation
         step3Desc: "Il tuo abbonamento è attivo", // PHT: Your subscription is active
-        processingInfo: "Elaborazione informazioni abbonamento..." // PHT: Processing subscription information...
+        processingInfo: "Elaborazione informazioni abbonamento...",
+        benefitExclusive: "Contenuto esclusivo", // PHT: Exclusive Content
+        benefitNoAds: "Senza annunci", // PHT: Without Ads
+        benefitOffline: "Lettura offline", // PHT: Offline Reading
+        benefitTranslation: "Traduzione della storia", // PHT: History Translation// PHT: Processing subscription information...
     },
     faq: {
         title: "Domande Frequenti", // PHT: Frequently Asked Questions
@@ -727,7 +731,7 @@ export default {
         errorEmailInvalid: "Inserisci un indirizzo valido.", // PHT: Please enter a valid address.
         errorSubjectRequired: "Specifica l'oggetto.", // PHT: Please specify the subject.
         errorMessageRequired: "Inserisci il tuo messaggio.", // PHT: Please enter your message.
-        errorGeneral: "Errore nell'invio del messaggio. Riprova." // PHT: Error sending message. Please try again.
+        errorGeneral: "Errore nell'invio del messaggio. Riprova.", // PHT: Error sending message. Please try again.
     },
     policyPages: {
         termsTitle: "Termini di Utilizzo", // PHT: Terms of Use

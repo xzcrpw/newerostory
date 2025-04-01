@@ -650,7 +650,11 @@ export default {
         step2Desc: "Введите платежные данные", // PHT: Enter payment details
         step3Title: "Подтверждение", // PHT: Confirmation
         step3Desc: "Ваша подписка активна", // PHT: Your subscription is active
-        processingInfo: "Обработка информации о подписке..." // PHT: Processing subscription information...
+        processingInfo: "Обработка информации о подписке...", // PHT: Processing subscription information...
+        benefitExclusive: "Эксклюзивный контент", // PHT: Exclusive Content
+        benefitNoAds: "Без рекламы", // PHT: Without Ads
+        benefitOffline: "Оффлайн-чтение", // PHT: Offline Reading
+        benefitTranslation: "Перевод историй", // PHT: Story Translation
     },
     faq: {
         title: "Часто задаваемые вопросы", // PHT: Frequently Asked Questions

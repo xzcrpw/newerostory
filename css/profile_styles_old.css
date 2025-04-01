@@ -1,0 +1,871 @@
+/* css/profile_styles.css */
+
+/* Стилі для сторінки профілю */
+
+/* Загальна структура профілю */
+.profile-section {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2.5rem;
+    margin-bottom: 4rem;
+}
+
+/* Сайдбар профілю */
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.profile-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    background-image: var(--card-gradient);
+}
+
+.profile-header {
+    position: relative;
+    padding: 2rem;
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    background-size: cover;
+    background-position: center;
+    border: 3px solid rgba(153, 0, 0, 0.3);
+}
+
+.profile-status {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.profile-status.premium-status {
+    background-color: rgba(var(--accent-gold-rgb), 0.2);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.profile-status i {
+    font-size: 0.9rem;
+}
+
+.profile-info {
+    padding: 0 2rem 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile-name {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-email {
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.profile-bio {
+    color: var(--secondary-text);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile-stat {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-family: 'Cormorant Garamond', serif;
+    margin-bottom: 0.2rem;
+    color: var(--accent-gold);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--secondary-text);
+}
+
+.profile-actions {
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.btn-action {
+    width: 100%;
+    padding: 0.7rem;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius);
+    color: var(--text-color);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-action i {
+    margin-right: 8px;
+}
+
+.btn-action:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(153, 0, 0, 0.3);
+}
+
+.premium-action {
+    background-color: rgba(var(--accent-gold-rgb), 0.1);
+    border-color: rgba(var(--accent-gold-rgb), 0.3);
+    color: var(--accent-gold);
+}
+
+.premium-action:hover {
+    background-color: rgba(var(--accent-gold-rgb), 0.15);
+    border-color: rgba(var(--accent-gold-rgb), 0.5);
+}
+
+.profile-menu {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    background-image: var(--card-gradient);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 2rem;
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+    text-align: left;
+    color: var(--text-color);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.menu-item i {
+    margin-right: 15px;
+    width: 18px;
+    text-align: center;
+}
+
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.menu-item.active {
+    background-color: rgba(153, 0, 0, 0.1);
+    position: relative;
+}
+
+.menu-item.active:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary-gradient);
+}
+
+/* Вміст профілю */
+.profile-content {
+    min-height: 600px;
+}
+
+.content-container {
+    margin-bottom: 2rem;
+}
+
+.content-title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.content-title:after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--accent-red);
+}
+
+/* Форма редагування профілю */
+.profile-form-container {
+    margin-bottom: 2rem;
+}
+
+.form-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    background-image: var(--card-gradient);
+}
+
+.form-title {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-title:after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: var(--accent-red);
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Налаштування підписки */
+.subscription-card {
+    padding: 2rem;
+}
+
+.subscription-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.subscription-status {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.subscription-status i {
+    font-size: 2.5rem;
+    color: var(--accent-gold);
+}
+
+.status-text h3 {
+    margin-bottom: 0.5rem;
+    color: var(--accent-gold);
+}
+
+.status-text p {
+    color: var(--secondary-text);
+    font-size: 0.95rem;
+}
+
+.subscription-info {
+    padding: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subscription-info p {
+    margin-bottom: 1rem;
+    color: var(--secondary-text);
+}
+
+.subscription-info p:last-child {
+    margin-bottom: 0;
+}
+
+.subscription-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.subscription-actions .btn {
+    flex: 1;
+}
+
+.btn-danger {
+    background-color: rgba(255, 50, 50, 0.2);
+    border: 1px solid rgba(255, 50, 50, 0.3);
+    color: #ff6b6b;
+    border-radius: var(--button-radius);
+    padding: 0.7rem 1.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-danger:hover {
+    background-color: rgba(255, 50, 50, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Збережені історії */
+.saved-item {
+    display: flex;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(153, 0, 0, 0.05);
+    background-image: var(--card-gradient);
+    transition: all 0.3s;
+}
+
+.saved-item:hover {
+    transform: translateY(-5px);
+    border-color: rgba(153, 0, 0, 0.2);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.saved-item-image {
+    width: 120px;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.saved-item-content {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+.saved-item-category {
+    color: var(--accent-gold);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.saved-item-title {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.saved-item-title a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.saved-item-title a:hover {
+    color: var(--accent-red);
+}
+
+.saved-item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.saved-item-author {
+    display: flex;
+    align-items: center;
+}
+
+.saved-item-author .author-avatar {
+    margin-right: 0.8rem;
+}
+
+.saved-item-author .author-name {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+.saved-item-date {
+    font-size: 0.85rem;
+    color: var(--secondary-text);
+}
+
+.saved-item-actions {
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+}
+
+.action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--secondary-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    background-color: rgba(255, 50, 50, 0.1);
+    border-color: rgba(255, 50, 50, 0.2);
+    color: #ff6b6b;
+}
+
+/* Історія переглядів */
+.history-section {
+    margin-bottom: 2.5rem;
+}
+
+.history-date {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.2rem;
+    color: var(--accent-gold);
+    display: flex;
+    align-items: center;
+}
+
+.history-date:after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(var(--accent-gold-rgb), 0.3);
+    margin-left: 1rem;
+}
+
+.history-item {
+    display: flex;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-time {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+    width: 60px;
+    flex-shrink: 0;
+}
+
+.history-content {
+    flex: 1;
+}
+
+.history-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.history-title a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.history-title a:hover {
+    color: var(--accent-red);
+}
+
+.history-category {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+/* Вподобані історії */
+.likes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+}
+
+.liked-item {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 1px solid rgba(153, 0, 0, 0.05);
+    background-image: var(--card-gradient);
+    transition: all 0.3s;
+}
+
+.liked-item:hover {
+    transform: translateY(-5px);
+    border-color: rgba(153, 0, 0, 0.2);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.liked-item-image {
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+}
+
+.liked-item-content {
+    padding: 1.5rem;
+}
+
+.liked-item-category {
+    color: var(--accent-gold);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.liked-item-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.liked-item-title a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.liked-item-title a:hover {
+    color: var(--accent-red);
+}
+
+.liked-item-author {
+    display: flex;
+    align-items: center;
+}
+
+.liked-item-author .author-avatar {
+    margin-right: 0.8rem;
+}
+
+.liked-item-author .author-name {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+/* Коментарі */
+.comment-item {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(153, 0, 0, 0.05);
+    background-image: var(--card-gradient);
+    transition: all 0.3s;
+}
+
+.comment-item:hover {
+    border-color: rgba(153, 0, 0, 0.2);
+}
+
+.comment-story {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.comment-story a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.comment-story a:hover {
+    color: var(--accent-red);
+}
+
+.comment-text {
+    color: var(--secondary-text);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.comment-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--secondary-text);
+}
+
+/* Підписки */
+.following-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.following-item {
+    display: flex;
+    align-items: flex-start;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    border: 1px solid rgba(153, 0, 0, 0.05);
+    background-image: var(--card-gradient);
+    transition: all 0.3s;
+}
+
+.following-item:hover {
+    border-color: rgba(153, 0, 0, 0.2);
+}
+
+.following-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-right: 1.5rem;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 3px solid rgba(153, 0, 0, 0.3);
+}
+
+.following-info {
+    flex: 1;
+}
+
+.following-name {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.following-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.following-stat {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+.following-stat i {
+    color: var(--accent-gold);
+}
+
+.following-bio {
+    color: var(--secondary-text);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.following-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    min-width: 150px;
+}
+
+/* Преміум-повідомлення */
+.premium-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    max-width: 400px;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(153, 0, 0, 0.2);
+    z-index: 100;
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.premium-notification-content {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.premium-icon {
+    font-size: 2rem;
+    color: var(--accent-gold);
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.premium-message {
+    flex: 1;
+}
+
+.premium-message h3 {
+    color: var(--accent-gold);
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.premium-message p {
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+.btn-premium {
+    margin-left: 1rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, #a67c3f 100%);
+    color: #000;
+    font-weight: 600;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(166, 124, 63, 0.3);
+}
+
+.close-notification {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.close-notification:hover {
+    color: var(--text-color);
+}
+
+/* Адаптивність */
+@media (max-width: 992px) {
+    .profile-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-sidebar {
+        margin-bottom: 2rem;
+    }
+    
+    .subscription-actions {
+        flex-direction: column;
+    }
+    
+    .premium-notification {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        max-width: none;
+        border-radius: 0;
+    }
+    
+    .premium-notification-content {
+        flex-wrap: wrap;
+    }
+    
+    .premium-message {
+        margin-bottom: 1rem;
+        width: 100%;
+    }
+    
+    .btn-premium {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+    
+    .saved-item {
+        flex-direction: column;
+    }
+    
+    .saved-item-image {
+        width: 100%;
+        height: 150px;
+    }
+    
+    .saved-item-actions {
+        padding: 1rem;
+    }
+    
+    .likes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+    
+    .following-item {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .following-avatar {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .following-actions {
+        width: 100%;
+        margin-top: 1rem;
+    }
+}

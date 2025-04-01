@@ -22,15 +22,15 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
 
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <!-- API Config & Utils -->
   <script src="js/api-config.js" defer></script>
   <script src="js/api-utils.js" defer></script>
-
-  <!-- Internationalization -->
-  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
   <!-- CSS -->
   <link rel="stylesheet" href="css/main.css">
@@ -293,7 +293,9 @@ fetchAuthorData().then(() => {
 <header>
   <div class="container">
     <nav class="navbar">
-      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+      <a href="index.html" class="logo" aria-label="На головну">
+        <span x-text="$store.i18n?.t('general.siteNamePart1') || 'Таємний'"></span><span style="color: var(--accent-red);" x-text="$store.i18n?.t('general.siteNamePart2') || 'Світ'"></span>
+      </a>
       <!-- Навігація з i18n -->
       <ul class="nav-links">
         <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
@@ -305,20 +307,44 @@ fetchAuthorData().then(() => {
       <div class="auth-buttons">
         <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
-          <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
-            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+          <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+            <!-- Безпечний доступ до selectedLang -->
+            <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
-          <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n.available" :key="lang.code">
-              <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                   @click="$store.i18n.setLanguage(lang.code); open = false;">
-                <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
-              </div>
-            </template>
-          </div>
+          <!-- Перевіряємо наявність $store.i18n -->
+          <template x-if="$store?.i18n">
+            <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+              <!-- Безпечний доступ до available та ітерація -->
+              <template x-for="lang in $store.i18n.available || []" :key="lang.code">
+                <div class="lang-dropdown-item"
+                     :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                     @click="
+                 const newLang = lang.code;
+                 open = false;
+                 try {
+                     // Виклик setLanguage всередині try...catch
+                     $store.i18n.setLanguage(newLang);
+                     console.log('Language set to:', newLang);
+                 } catch(e) {
+                     console.error('Error setting language:', e);
+                     // Можна додати сповіщення для користувача тут
+                 }
+              "
+                     role="menuitemradio"
+                     :aria-checked="lang.code === $store.i18n.selectedLang"
+                     tabindex="0"
+                     @keydown.enter.space.prevent="
+                 const newLang = lang.code;
+                 open = false;
+                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
+              ">
+                  <span x-text="lang.name"></span>
+                  <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
         <!-- Кнопки авторизації -->
         <template x-if="!isLoggedIn">
