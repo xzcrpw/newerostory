@@ -1,0 +1,51 @@
+# Файл конфігурації середовища
+.env
+*.env
+.env.*
+!.env.example
+
+# Залежності Node.js
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Логи
+logs/
+*.log
+*.log.*
+
+# Файли IDE та системи
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+.DS_Store
+Thumbs.db
+
+# Файли збірки (якщо використовуються)
+dist/
+build/
+coverage/
+
+# Завантажені файли (папка uploads буде створюватися, але не відслідковуватись)
+public/uploads/
+# Папка для локальних завантажень, якщо GCS не використовується
+uploads/
+
+# Google Cloud Storage key file (не зберігати в репозиторії!)
+*.json
+
+# Файли сесії (якщо використовуються файлові сесії)
+sessions/
+
+# Кеш та тимчасові файли
+.cache/
+.tmp/
+
+gcs-keyfile.json
+config/gcs-keyfile.json

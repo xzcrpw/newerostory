@@ -1,163 +1,149 @@
 // js/api-utils.js
 
 (function(window) {
-    // Перевірка наявності конфігурації API
+    // --- AppError Class (moved inside for encapsulation) ---
+    class AppError extends Error {
+        constructor(message, statusCode) {
+            super(message);
+            this.statusCode = statusCode;
+            this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+            this.isOperational = true; // Mark as operational error
+            // Capture stack trace (optional)
+            if (Error.captureStackTrace) {
+                Error.captureStackTrace(this, this.constructor);
+            } else {
+                this.stack = (new Error(message)).stack;
+            }
+        }
+    }
+    window.AppError = AppError; // Make it available globally if needed, or remove this line
+
+    // --- API Configuration Check ---
     if (!window.apiConfig) {
         console.error('API Config (api-config.js) not found or loaded after api-utils.js');
-        // Зупиняємо виконання, якщо конфігурації немає
+        document.body.innerHTML = '<div style="padding: 2rem; text-align: center; color: red;">Помилка конфігурації API. Будь ласка, спробуйте оновити сторінку або зв\'яжіться з підтримкою.</div>';
         return;
     }
 
     const { baseUrl, endpoints } = window.apiConfig;
 
-    // --- Допоміжні функції для роботи з локальним сховищем ---
+    // --- Session Data Management ---
+    let currentUser = null; // Stores current user data
+    let userLoadPromise = null; // Prevents parallel /me requests
 
-    /**
-     * Отримує токен автентифікації з localStorage.
-     * @returns {string | null} Токен або null.
-     */
-    function getToken() {
-        return localStorage.getItem('userToken');
-    }
-
-    /**
-     * Зберігає токен автентифікації в localStorage.
-     * @param {string} token - Токен для збереження.
-     */
-    function setToken(token) {
-        if (token) {
-            localStorage.setItem('userToken', token);
-        } else {
-            console.warn('Attempted to set an invalid token.');
+    function setCurrentUser(user) {
+        currentUser = user ? { ...user } : null; // Store a copy
+        try {
+            if (user) {
+                localStorage.setItem('isPremium', user.isPremium ? 'true' : 'false');
+                localStorage.setItem('userId', user._id);
+                localStorage.setItem('userRole', user.role || 'user');
+            } else {
+                localStorage.removeItem('isPremium');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userRole');
+            }
+        } catch (e) {
+            console.warn('Could not access localStorage to store user session info:', e);
         }
     }
 
-    /**
-     * Видаляє дані користувача (токен, статус, ID) з localStorage.
-     */
-    function removeToken() {
-        localStorage.removeItem('userToken');
-        localStorage.removeItem('isPremium');
-        localStorage.removeItem('userId');
-        console.log('User session data removed from localStorage.');
-    }
-
-    /**
-     * Перевіряє, чи користувач автентифікований (наявність токена).
-     * @returns {boolean} true, якщо є токен, інакше false.
-     */
-    function isAuthenticated() {
-        return !!getToken();
-    }
-
-    /**
-     * Перевіряє, чи користувач має преміум-статус (з localStorage).
-     * @returns {boolean} true, якщо преміум, інакше false.
-     */
-    function isPremium() {
-        return localStorage.getItem('isPremium') === 'true';
-    }
-
-    /**
-     * Зберігає преміум-статус користувача в localStorage.
-     * @param {boolean} status - true або false.
-     */
-    function setPremiumStatus(status) {
-        localStorage.setItem('isPremium', status ? 'true' : 'false');
-    }
-
-    /**
-     * Зберігає ID користувача в localStorage.
-     * @param {string} userId - ID користувача.
-     */
-    function setUserId(userId) {
-        if (userId) {
-            localStorage.setItem('userId', userId);
-        } else {
+    function clearCurrentUser() {
+        currentUser = null;
+        try {
+            localStorage.removeItem('isPremium');
             localStorage.removeItem('userId');
+            localStorage.removeItem('userRole');
+            console.log('User session data cleared.');
+        } catch (e) {
+            console.warn('Could not access localStorage to clear user session info:', e);
         }
     }
 
     /**
-     * Отримує ID поточного користувача з localStorage.
-     * @returns {string | null} ID користувача або null.
+     * Asynchronously loads or returns the current user data.
+     * Uses caching and prevents parallel requests.
+     * @param {boolean} forceRefresh - Force refresh data from the server.
+     * @returns {Promise<object|null>} - User object or null.
      */
-    function getUserId() {
-        return localStorage.getItem('userId');
+    async function fetchOrGetCurrentUser(forceRefresh = false) {
+        if (currentUser && !forceRefresh) {
+            return currentUser;
+        }
+        if (userLoadPromise && !forceRefresh) {
+            return userLoadPromise;
+        }
+
+        userLoadPromise = (async () => {
+            try {
+                console.log('API Request: GET /users/me');
+                const response = await request(endpoints.currentUser, {}, true); // true = needsAuth
+                const user = response?.data?.user || response?.data; // Handle both structures
+                if (user && user._id) { // Check for a valid user object
+                    setCurrentUser(user);
+                    console.log('Current user data loaded:', user);
+                    return user;
+                } else {
+                    console.log('No valid user data in /me response, clearing session.');
+                    clearCurrentUser();
+                    return null;
+                }
+            } catch (error) {
+                if (error.statusCode === 401 || error.statusCode === 403) {
+                    console.log('/me request failed with auth error, clearing session.');
+                    clearCurrentUser();
+                } else {
+                    console.warn('Failed to fetch current user:', error);
+                }
+                return null;
+            } finally {
+                userLoadPromise = null; // Reset promise after completion
+            }
+        })();
+        return userLoadPromise;
     }
 
 
+    // --- Status Functions ---
+    function isAuthenticated() { return !!currentUser; }
+    function isPremium() { return !!currentUser?.isPremium; }
+    function getUserId() { return currentUser?._id || null; }
+    function getUserRole() { return currentUser?.role || 'guest'; }
+
+    function logoutSession() {
+        clearCurrentUser();
+        // Backend should clear the httpOnly cookie on a /logout request
+        // Or the cookie will simply expire.
+    }
+
     /**
-     * Універсальна функція для виконання API запитів за допомогою Fetch API.
-     * Обробляє JSON та FormData, додає токен авторизації, обробляє відповіді та помилки.
-     *
-     * @param {string} endpoint - Шлях до API ендпоінту (напр., '/stories' або функція, що повертає шлях).
-     * @param {object} options - Опції для fetch (method, body, headers тощо).
-     * @param {boolean} needsAuth - Чи потрібна автентифікація для цього запиту (за замовчуванням false).
-     * @returns {Promise<any>} - Розпарсені дані відповіді від API (зазвичай об'єкт).
-     * @throws {Error} - Викидає помилку у разі невдалого запиту (статус не 2xx) або мережевої помилки.
+     * Universal function for making API requests.
+     * @param {string} endpoint - API path (e.g., '/users/me').
+     * @param {object} options - Fetch options (method, body, headers).
+     * @param {boolean} needsAuth - Whether auth is required (for error handling logic).
+     * @returns {Promise<any>} Parsed response data.
+     * @throws {AppError} Throws AppError on failure.
      */
     async function request(endpoint, options = {}, needsAuth = false) {
         const url = `${baseUrl}${endpoint}`;
-        const headers = { ...options.headers };
+        const headers = { ...(options.headers || {}) };
         let body = options.body;
-        
-        // Додаємо таймаут для fetch
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-            controller.abort();
-        }, window.apiConfig.requestDefaults?.timeout || 30000);
-        
-        // Додаємо обробку автентифікації з перевіркою JWT дати закінчення
-        const token = getToken();
-        if (needsAuth) {
-            if (!token) {
-                console.error(`Authentication token is missing for protected request: ${options.method || 'GET'} ${url}`);
-                clearTimeout(timeoutId);
-                
-                // Перевіряємо, чи це AJAX запит або завантаження сторінки
-                if (isAjaxRequest()) {
-                    throw new Error('Необхідна автентифікація');
-                } else {
-                    const redirectParam = '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                    window.location.href = 'login.html' + redirectParam;
-                    return new Promise(() => {}); // Запобігаємо продовженню виконання
-                }
-            }
-            
-            // Перевірка JWT на дату закінчення
-            try {
-                if (isTokenExpired(token)) {
-                    console.warn('Token expired. Redirecting to login.');
-                    clearTimeout(timeoutId);
-                    removeToken();
-                    
-                    if (isAjaxRequest()) {
-                        throw new Error('Термін дії токена закінчився');
-                    } else {
-                        const redirectParam = '?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                        window.location.href = 'login.html' + redirectParam;
-                        return new Promise(() => {});
-                    }
-                }
-            } catch (e) {
-                console.error('Error checking token expiration:', e);
-            }
-            
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        // Налаштування конфігурації Fetch
+        const timeoutDuration = window.apiConfig.requestDefaults?.timeout || 30000;
+        const timeoutId = setTimeout(() => controller.abort('Request Timeout'), timeoutDuration);
+
         const config = {
             method: options.method || 'GET',
             headers,
             signal: controller.signal,
+            credentials: 'include' // Send cookies automatically
         };
-        
-        // Обробка тіла запиту
+
         if (body) {
             if (body instanceof FormData) {
                 config.body = body;
+                // Content-Type is set automatically by the browser for FormData
             } else if (typeof body === 'object') {
                 try {
                     config.body = JSON.stringify(body);
@@ -166,616 +152,274 @@
                         config.headers = headers;
                     }
                 } catch (jsonError) {
-                    console.error('Error stringifying request body:', jsonError);
-                    throw new Error('Не вдалося перетворити тіло запиту в JSON.');
+                    clearTimeout(timeoutId);
+                    throw new AppError('Не вдалося перетворити тіло запиту в JSON.', 400);
                 }
             } else {
                 config.body = body;
                 if (typeof body === 'string' && !headers['Content-Type']) {
-                    headers['Content-Type'] = 'text/plain';
-                    config.headers = headers;
+                    headers['Content-Type'] = 'text/plain'; config.headers = headers;
                 }
             }
         }
-        
-        // Функція для виконання запиту з повторними спробами
-        const executeRequestWithRetry = async (retriesLeft = window.apiConfig.requestDefaults?.retryAttempts || 3) => {
+
+        const executeRequestWithRetry = async (retriesLeft = window.apiConfig.requestDefaults?.retryAttempts || 2) => {
             try {
                 const requestInfo = `${config.method} ${url}`;
-                console.log(`API Request (${retriesLeft} retries left): ${requestInfo}`);
-                
+                console.log(`API Request (${retriesLeft} retries left): ${requestInfo}`, config.body ? `Body type: ${body?.constructor?.name}` : '');
+
                 const response = await fetch(url, config);
                 clearTimeout(timeoutId);
-                
-                // Успіх без контенту (наприклад, DELETE або деякі PUT/POST)
+
                 if (response.status === 204) {
                     console.log(`API Response: ${response.status} No Content`);
-                    return { success: true };
+                    return { success: true }; // Indicate success for 204
                 }
-                
+
                 let responseData;
-                try {
-                    responseData = await response.json();
-                    console.log(`API Response: ${response.status}`, responseData);
-                } catch (parseError) {
-                    if (response.ok) {
-                        console.warn(`API Response ${response.status} was not JSON, but status is OK.`);
-                        return { success: true, message: 'Відповідь не містить JSON, але статус ОК.' };
-                    } else {
-                        console.error('Error parsing JSON response:', parseError);
-                        throw new Error(`Помилка сервера (статус ${response.status}, відповідь не JSON)`);
+                const contentType = response.headers.get('content-type');
+
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        responseData = await response.json();
+                        console.log(`API Response: ${response.status}`, responseData);
+                    } catch (parseError) {
+                        if (response.ok) {
+                            console.warn(`API Response ${response.status} was not valid JSON, but status is OK.`);
+                            return { success: true, message: 'Відповідь не є валідним JSON, але статус ОК.' };
+                        } else {
+                            console.error('Error parsing JSON error response:', parseError);
+                            let errorText = 'Не вдалося розпарсити відповідь сервера.'; try { errorText = await response.text(); } catch (e) {}
+                            throw new AppError(`Помилка сервера (статус ${response.status}). ${errorText.substring(0, 150)}`, response.status);
+                        }
                     }
+                } else {
+                    // Handle non-JSON responses if necessary, e.g., text/plain
+                    const responseText = await response.text();
+                    console.log(`API Response: ${response.status} (Non-JSON)`, responseText.substring(0, 100) + '...');
+                    if (!response.ok) throw new AppError(`Помилка сервера (статус ${response.status}): ${responseText.substring(0, 150)}`, response.status);
+                    // Return text data if response is OK but not JSON
+                    return { success: true, data: responseText };
                 }
-                
-                if (!response.ok) {
-                    const errorMessage = responseData?.message || responseData?.error || `Помилка HTTP: ${response.status}`;
+
+                // Check response status and backend status field
+                if (!response.ok || responseData.status !== 'success') {
+                    const errorMessage = responseData?.message || responseData?.error?.message || `Помилка HTTP: ${response.status}`;
                     console.error('API Error:', errorMessage, responseData);
-                    
-                    if (response.status === 401 || response.status === 403) {
-                        console.log('Authentication/Authorization error detected. Removing token.');
-                        removeToken();
+                    const error = new AppError(errorMessage, response.status || 500);
+                    error.data = responseData; // Attach full response data to error
+
+                    if (error.statusCode === 401 || error.statusCode === 403) {
+                        console.log('Auth error detected, clearing front-end session.');
+                        logoutSession(); // Use logoutSession which calls clearCurrentUser
+                        // Optionally, redirect to login immediately
+                        // window.location.href = '/login.html';
                     }
-                    throw new Error(errorMessage);
+                    throw error;
                 }
-                
-                return responseData;
-                
+
+                return responseData; // Return successful JSON response
+
             } catch (error) {
                 clearTimeout(timeoutId);
-                
-                if (error.name === 'AbortError') {
-                    console.error('Request timed out after', window.apiConfig.requestDefaults?.timeout || 30000, 'ms');
-                    throw new Error('Запит перевищив час очікування. Спробуйте пізніше.');
+
+                // If it's already an AppError, rethrow it
+                if (error instanceof AppError) {
+                    if (error.statusCode === 401 || error.statusCode === 403) {
+                        console.log('Auth error detected during fetch, clearing front-end session.');
+                        logoutSession(); // Use logoutSession
+                    }
+                    throw error;
                 }
-                
-                if ((error instanceof TypeError && error.message === 'Failed to fetch' || 
-                    error.message.includes('NetworkError')) && retriesLeft > 0) {
-                    
-                    console.warn(`Network error. Retrying... (${retriesLeft} left)`);
-                    const delay = window.apiConfig.requestDefaults?.retryDelay || 1000;
-                    
+
+                // Handle AbortError (timeout)
+                if (error.name === 'AbortError') {
+                    console.error(`Request aborted: ${url}`, error.message);
+                    // Use i18n for messages if available
+                    const i18nStore = window.$store?.i18n;
+                    const timeoutMsg = i18nStore?.t('errors.requestTimeout') || 'Час очікування відповіді сервера вийшов.';
+                    const cancelledMsg = i18nStore?.t('errors.requestCancelled') || 'Запит було скасовано.';
+                    throw new AppError(error.message === 'Request Timeout' ? timeoutMsg : cancelledMsg, 408);
+                }
+
+                // Handle Network errors with retries
+                const isNetworkError = (error instanceof TypeError && (error.message === 'Failed to fetch' || error.message.includes('NetworkError') || error.message.includes('fetch failed')));
+                if (isNetworkError && retriesLeft > 0) {
+                    const delay = (window.apiConfig.requestDefaults?.retryDelay || 1500) * Math.pow(2, (window.apiConfig.requestDefaults.retryAttempts || 2) - retriesLeft);
+                    console.warn(`Network error on request to ${url}. Retrying in ${delay/1000}s... (${retriesLeft} left)`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return executeRequestWithRetry(retriesLeft - 1);
                 }
-                
-                throw error;
+
+                // Other unhandled errors
+                console.error(`Unhandled request error to ${url}:`, error);
+                const i18nStore = window.$store?.i18n;
+                const networkErrorMsg = i18nStore?.t('errors.networkError') || 'Помилка мережі. Перевірте з\'єднання.';
+                throw new AppError(isNetworkError ? networkErrorMsg : (error.message || 'Невідома помилка запиту'), 503); // 503 Service Unavailable
             }
         };
-        
         return executeRequestWithRetry();
     }
 
-    // Функція для перевірки, чи запит є AJAX (не завантажує нову сторінку)
-    function isAjaxRequest() {
-        try {
-            const stack = new Error().stack || '';
-            return stack.includes('fetch') || stack.includes('xhr') || 
-                   stack.includes('api.') || stack.includes('async');
-        } catch (e) {
-            return false;
-        }
-    }
-
-    // Функція для перевірки закінчення терміну дії JWT
-    function isTokenExpired(token) {
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const payload = JSON.parse(window.atob(base64));
-            
-            return payload.exp * 1000 < Date.now() + 10000;
-        } catch (e) {
-            console.error('Error parsing JWT:', e);
-            return false;
-        }
-    }
-
-    // --- Об'єкт API з методами для взаємодії з бекендом ---
+    // --- API Object with Methods ---
     window.api = {
-        // --- Утиліти ---
         utils: {
-            getToken,
-            setToken,
-            removeToken,
-            isAuthenticated,
-            isPremium,
-            setPremiumStatus,
-            setUserId,
-            getUserId,
-            request, // Надаємо доступ до базової функції запиту, якщо потрібно
+            isAuthenticated, isPremium, getUserId, getUserRole,
+            logoutSession, request, getCurrentUser: fetchOrGetCurrentUser,
+            setPremiumStatus(status) {
+                if (currentUser) currentUser.isPremium = status;
+                try { localStorage.setItem('isPremium', status ? 'true' : 'false'); } catch (e) {}
+            }
         },
-
-        // --- Автентифікація ---
         auth: {
-            /**
-             * Вхід користувача.
-             * @param {string} email
-             * @param {string} password
-             * @returns {Promise<object>} Відповідь API (включаючи токен та дані користувача).
-             */
             async login(email, password) {
-                const data = await request(endpoints.login, {
-                    method: 'POST',
-                    body: { email, password }, // Об'єкт автоматично перетвориться в JSON
-                });
-                // Зберігаємо дані сесії після успішного входу
-                if (data.token) {
-                    setToken(data.token);
-                    if (data.user) {
-                        setPremiumStatus(data.user.isPremium || false);
-                        setUserId(data.user._id || null);
-                        console.log('User session data saved:', { premium: data.user.isPremium, id: data.user._id });
-                    } else {
-                        console.warn('User data not found in login response. Fetching separately...');
-                        // Якщо бекенд не повертає користувача при логіні, робимо дод. запит
-                        try {
-                            await api.users.getCurrentUser(); // Завантажить та збереже дані
-                        } catch (e) {
-                            console.error('Failed to fetch user data after login:', e);
-                            // Вирішити, чи є це критичною помилкою
-                        }
-                    }
+                const response = await request(endpoints.login, { method: 'POST', body: { email, password } });
+                if (response.status === 'success' && response.data?.user) {
+                    setCurrentUser(response.data.user);
+                    return response.data.user;
                 } else {
-                    console.error('Token not found in login response.');
-                    throw new Error('Не вдалося отримати токен автентифікації.');
+                    throw new AppError(response.message || 'Помилка входу: некоректна відповідь сервера.', 500);
                 }
-                return data;
             },
-
-            /**
-             * Реєстрація нового користувача.
-             * @param {string} name
-             * @param {string} email
-             * @param {string} password
-             * @returns {Promise<object>} Відповідь API (зазвичай підтвердження або дані нового користувача).
-             */
             async register(name, email, password) {
-                return await request(endpoints.register, {
-                    method: 'POST',
-                    body: { name, email, password },
-                });
-                // Після успішної реєстрації може бути автоматичний логін або перенаправлення на сторінку входу
-            },
-
-            /**
-             * Вихід користувача (очищення локальних даних).
-             */
-            logout() {
-                removeToken();
-                console.log('User logged out.');
-                // Опціонально: повідомити бекенд про вихід для інвалідації токена на сервері
-                // request(endpoints.logout, { method: 'POST' }, true).catch(e => console.warn('Logout API call failed:', e));
-            },
-
-            /**
-             * Запит на відновлення паролю.
-             * @param {string} email
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async forgotPassword(email) {
-                return await request(endpoints.forgotPassword, {
-                    method: 'POST',
-                    body: { email },
-                });
-            },
-
-            /**
-             * Встановлення нового паролю за токеном відновлення.
-             * @param {string} token - Токен відновлення (з email або URL).
-             * @param {string} password - Новий пароль.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async resetPassword(token, password) {
-                // Ендпоінт може відрізнятися, можливо /auth/reset-password/:token
-                // Передаємо токен в тілі або змінюємо ендпоінт
-                return await request(endpoints.resetPassword, {
-                    method: 'POST',
-                    body: { token, password },
-                });
-            },
-
-            /**
-             * Перенаправлення на сторінку Google OAuth на бекенді.
-             */
-            googleLoginRedirect() {
-                console.log(`Redirecting to Google OAuth endpoint: ${baseUrl}${endpoints.googleLogin}`);
-                window.location.href = `${baseUrl}${endpoints.googleLogin}`;
-            },
-            // facebookLoginRedirect() { ... } // Аналогічно для Facebook
-        },
-
-        // --- Користувачі ---
-        users: {
-            /**
-             * Отримати дані поточного авторизованого користувача.
-             * @returns {Promise<object>} Дані користувача.
-             */
-            async getCurrentUser() {
-                const data = await request(endpoints.currentUser, {}, true);
-                // Оновлюємо локальні дані після отримання
-                if (data) {
-                    setPremiumStatus(data.isPremium || false);
-                    setUserId(data._id || null);
+                const response = await request(endpoints.register, { method: 'POST', body: { name, email, password } });
+                if (response.status === 'success' && response.data?.user) {
+                    setCurrentUser(response.data.user); // Auto-login
+                    return response.data.user;
                 }
-                return data;
+                return response;
             },
-
-            /**
-             * Оновити профіль поточного користувача.
-             * @param {object} profileData - Об'єкт з полями для оновлення (name, bio, avatarUrl).
-             * @returns {Promise<object>} Оновлені дані користувача.
-             */
-            async updateUser(profileData) {
-                // Перевірка даних перед відправкою
-                const validData = {};
-                if (profileData.name !== undefined) validData.name = profileData.name;
-                if (profileData.email !== undefined) validData.email = profileData.email; // Увага до зміни email
-                if (profileData.bio !== undefined) validData.bio = profileData.bio;
-                if (profileData.avatarUrl !== undefined) validData.avatarUrl = profileData.avatarUrl;
-                // TODO: Обробка завантаження файлу аватара, якщо потрібно
-
-                return await request(endpoints.updateUser, {
-                    method: 'PUT', // Або PATCH
-                    body: validData,
-                }, true);
-            },
-
-            /**
-             * Змінити пароль поточного користувача.
-             * @param {string} currentPassword - Поточний пароль.
-             * @param {string} newPassword - Новий пароль.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async changePassword(currentPassword, newPassword) {
-                return await request(endpoints.changePassword, {
-                    method: 'POST', // Або PUT/PATCH
-                    body: { currentPassword, newPassword },
-                }, true);
-            },
-
-            /**
-             * Отримати список збережених історій (закладок) користувача.
-             * @param {object} params - Параметри запиту (напр., { page: 1, limit: 10 }).
-             * @returns {Promise<object>} Відповідь API зі списком історій та пагінацією.
-             */
-            async getBookmarks(params = {}) {
-                const query = new URLSearchParams(params).toString();
-                return await request(`${endpoints.getUserBookmarks}?${query}`, {}, true);
-            },
-
-            /**
-             * Додати або видалити історію з закладок.
-             * @param {string} storyId - ID історії.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async toggleBookmark(storyId) {
-                // Метод POST для перемикання стану
-                return await request(endpoints.toggleBookmark(storyId), { method: 'POST' }, true);
-            },
-
-            /**
-             * Отримати список авторів, на яких підписаний користувач.
-             * @param {object} params - Параметри запиту (напр., { page: 1, limit: 10 }).
-             * @returns {Promise<object>} Відповідь API зі списком авторів та пагінацією.
-             */
-            async getFollowing(params = {}) {
-                const query = new URLSearchParams(params).toString();
-                return await request(`${endpoints.getUserFollowing}?${query}`, {}, true);
-            },
-
-            /**
-             * Підписатися або відписатися від автора.
-             * @param {string} authorId - ID автора.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async toggleFollow(authorId) {
-                return await request(endpoints.toggleFollow(authorId), { method: 'POST' }, true);
-            },
-
-            // TODO: Додати ендпоінти та методи для getReadingHistory, getLikedStories, getMyComments
-            // async getReadingHistory(params = {}) { ... }
-            // async getLikedStories(params = {}) { ... }
-            // async getMyComments(params = {}) { ... }
-        },
-
-        // --- Історії ---
-        stories: {
-            /**
-             * Отримати список історій з фільтрами та сортуванням.
-             * @param {object} params - Параметри (page, limit, sort, filter, category, authorId, tags).
-             * @returns {Promise<object>} Відповідь API зі списком історій та пагінацією.
-             */
-            async getStories(params = {}) {
-                const query = new URLSearchParams(params).toString();
-                // Автентифікація не потрібна для загального списку
-                return await request(`${endpoints.stories}?${query}`);
-            },
-
-            /**
-             * Отримати дані однієї історії за ID.
-             * @param {string} storyId - ID історії.
-             * @returns {Promise<object>} Дані історії.
-             */
-            async getStoryById(storyId) {
-                // Може бути потрібна автентифікація для перевірки статусу преміум, лайків тощо
-                return await request(endpoints.storyById(storyId), {}, isAuthenticated());
-            },
-
-            /**
-             * Створити нову історію.
-             * @param {object} storyData - Дані історії (title, content, category, tags, image: File, etc.).
-             * @returns {Promise<object>} Дані створеної історії.
-             */
-            async createStory(storyData) {
-                let body;
-                let headers = {};
-                let hasFile = storyData.image instanceof File;
-
-                if (hasFile) {
-                    body = new FormData();
-                    Object.keys(storyData).forEach(key => {
-                        if (key === 'tags' && Array.isArray(storyData[key])) {
-                            storyData[key].forEach(tag => body.append('tags', tag));
-                        } else if (storyData[key] !== null && storyData[key] !== undefined) {
-                            body.append(key, storyData[key]);
-                        }
-                    });
-                } else {
-                    const dataToSend = { ...storyData };
-                    if ('image' in dataToSend) delete dataToSend.image; // Видаляємо ключ, якщо це не файл
-                    body = dataToSend; // Передаємо об'єкт для автоматичного JSON.stringify
-                }
-
-                return await request(endpoints.stories, {
-                    method: 'POST',
-                    body: body,
-                    // Заголовки встановляться автоматично в `request`
-                }, true); // Потрібна автентифікація
-            },
-
-            /**
-             * Оновити існуючу історію.
-             * @param {string} storyId - ID історії.
-             * @param {object} storyData - Дані для оновлення.
-             * @returns {Promise<object>} Оновлені дані історії.
-             */
-            async updateStory(storyId, storyData) {
-                let body;
-                let headers = {};
-                let hasFile = storyData.image instanceof File;
-
-                if (hasFile) {
-                    body = new FormData();
-                    Object.keys(storyData).forEach(key => {
-                        if (key === 'tags' && Array.isArray(storyData[key])) {
-                            storyData[key].forEach(tag => body.append('tags', tag));
-                        } else if (storyData[key] !== null && storyData[key] !== undefined) {
-                            body.append(key, storyData[key]);
-                        }
-                    });
-                } else {
-                    const dataToSend = { ...storyData };
-                    if ('image' in dataToSend) delete dataToSend.image;
-                    body = dataToSend;
-                }
-
-                return await request(endpoints.storyById(storyId), {
-                    method: 'PUT', // Або PATCH
-                    body: body,
-                }, true);
-            },
-
-            /**
-             * Лайкнути або зняти лайк з історії.
-             * @param {string} storyId - ID історії.
-             * @returns {Promise<object>} Відповідь API (може містити нову кількість лайків).
-             */
-            async likeStory(storyId) {
-                return await request(endpoints.likeStory(storyId), { method: 'POST' }, true);
-            },
-
-            /**
-             * Оцінити історію.
-             * @param {string} storyId - ID історії.
-             * @param {number} rating - Оцінка (0-5). 0 для скасування.
-             * @returns {Promise<object>} Відповідь API (новий середній рейтинг, кількість оцінок).
-             */
-            async rateStory(storyId, rating) {
-                return await request(endpoints.rateStory(storyId), {
-                    method: 'POST',
-                    body: { rating }, // Передаємо об'єкт
-                }, true);
-            },
-
-            // TODO: Додати методи deleteStory(storyId), getRelatedStories(storyId)
-            // async deleteStory(storyId) { ... }
-            // async getRelatedStories(storyId, params = {}) { ... }
-        },
-
-        // --- Автори ---
-        authors: {
-            /**
-             * Отримати список авторів.
-             * @param {object} params - Параметри (page, limit, sort, search).
-             * @returns {Promise<object>} Відповідь API зі списком авторів та пагінацією.
-             */
-            async getAuthors(params = {}) {
-                const query = new URLSearchParams(params).toString();
-                return await request(`${endpoints.authors}?${query}`);
-            },
-            /**
-             * Отримати дані одного автора за ID.
-             * @param {string} authorId - ID автора.
-             * @returns {Promise<object>} Дані автора.
-             */
-            async getAuthorById(authorId) {
-                return await request(endpoints.authorById(authorId));
-            },
-            /**
-             * Отримати історії конкретного автора.
-             * @param {string} authorId - ID автора.
-             * @param {object} params - Параметри (page, limit, sort).
-             * @returns {Promise<object>} Відповідь API зі списком історій та пагінацією.
-             */
-            async getAuthorStories(authorId, params = {}) {
-                const query = new URLSearchParams(params).toString();
-                return await request(`${endpoints.authorStories(authorId)}?${query}`);
-            }
-            // toggleFollow реалізовано в api.users
-        },
-
-        // --- Категорії ---
-        categories: {
-            /**
-             * Отримати список всіх категорій.
-             * @returns {Promise<Array>} Масив об'єктів категорій.
-             */
-            async getCategories() {
-                // Зазвичай категорії не змінюються часто, можна додати кешування
-                return await request(endpoints.categories);
-            },
-            /**
-             * Отримати дані однієї категорії за її slug (або ID).
-             * @param {string} slug - Slug або ID категорії.
-             * @returns {Promise<object>} Дані категорії.
-             */
-            async getCategoryBySlug(slug) {
-                return await request(endpoints.categoryBySlug(slug));
-            },
-            /**
-             * Підписатися або відписатися від категорії.
-             * @param {string} slug - Slug категорії.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async subscribeCategory(slug) {
-                // TODO: Уточнити метод (POST для перемикання чи PUT/DELETE)
-                return await request(endpoints.subscribeCategory(slug), { method: 'POST' }, true);
-            }
-        },
-
-        // --- Коментарі ---
-        comments: {
-            /**
-             * Отримати коментарі до історії.
-             * @param {string} storyId - ID історії.
-             * @param {object} params - Параметри (page, limit, sort).
-             * @returns {Promise<object>} Відповідь API зі списком коментарів та пагінацією.
-             */
-            async getComments(storyId, params = {}) {
-                const query = new URLSearchParams(params).toString();
-                return await request(`${endpoints.commentsByStory(storyId)}?${query}`);
-            },
-            /**
-             * Створити новий коментар до історії.
-             * @param {string} storyId - ID історії.
-             * @param {string} text - Текст коментаря.
-             * @returns {Promise<object>} Дані створеного коментаря.
-             */
-            async createComment(storyId, text) {
-                return await request(endpoints.commentsByStory(storyId), {
-                    method: 'POST',
-                    body: { text },
-                }, true);
-            },
-            /**
-             * Лайкнути або зняти лайк з коментаря.
-             * @param {string} commentId - ID коментаря.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async likeComment(commentId) {
-                return await request(endpoints.likeComment(commentId), { method: 'POST' }, true);
-            }
-            // TODO: Додати методи updateComment(commentId, text), deleteComment(commentId)
-        },
-
-        // --- Преміум ---
-        premium: {
-            /**
-             * Отримати список доступних планів підписки.
-             * @returns {Promise<Array>} Масив об'єктів планів.
-             */
-            async getPlans() {
-                // Цей ендпоінт зазвичай публічний
-                return await request(endpoints.getPlans);
-            },
-            /**
-             * Отримати інформацію про поточну підписку користувача.
-             * @returns {Promise<object | null>} Дані підписки або null, якщо немає.
-             */
-            async getCurrentSubscription() {
-                // Потребує автентифікації
+            async logout() {
                 try {
-                    // Спробуємо отримати дані, якщо користувач має підписку
-                    return await request(endpoints.getCurrentSubscription, {}, true);
-                } catch (error) {
-                    // Якщо API повертає 404 Not Found, коли підписки немає, обробляємо це
-                    if (error.message.includes('404') || error.message.toLowerCase().includes('not found')) {
-                        console.log('User has no active subscription.');
-                        return null; // Підписки немає
-                    }
-                    // Інші помилки кидаємо далі
-                    throw error;
+                    // await request('/auth/logout', { method: 'POST' }, true); // Optional backend logout call
+                    console.log('Logout initiated.');
+                } catch (e) { console.warn('Logout API call failed:', e); }
+                finally {
+                    logoutSession(); // Always clear frontend session
                 }
             },
-            /**
-             * Перевірити валідність промокоду для певного плану.
-             * @param {string} code - Промокод.
-             * @param {string} planId - ID обраного плану.
-             * @param {string} billingCycle - 'monthly' або 'yearly'.
-             * @returns {Promise<object>} Відповідь API з деталями знижки або помилкою.
-             */
-            async validateCoupon(code, planId, billingCycle) {
-                return await request(endpoints.validateCoupon, {
-                    method: 'POST',
-                    body: { code, planId, billingCycle },
-                }, true); // Можливо, не вимагає auth, залежить від логіки
-            },
-            /**
-             * Створити (оформити) преміум-підписку.
-             * @param {object} subscriptionData - Дані для створення підписки.
-             *   Має містити ID плану, тип оплати (card/crypto),
-             *   платіжні дані (токен Stripe/LiqPay або ID крипто-транзакції), промокод (якщо є).
-             * @returns {Promise<object>} Відповідь API (статус нової підписки).
-             */
-            async subscribe(subscriptionData) {
-                return await request(endpoints.createSubscription, {
-                    method: 'POST',
-                    body: subscriptionData,
-                }, true); // Потрібна автентифікація
-            },
-            /**
-             * Скасувати активну преміум-підписку.
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async cancel() {
-                return await request(endpoints.cancelSubscription, { method: 'DELETE' }, true);
-            }
-        }, // кінець premium
-
-        // --- Контактна форма ---
-        contact: {
-            /**
-             * Надіслати повідомлення з контактної форми.
-             * @param {object} formData - Дані форми (name, email, subject, message).
-             * @returns {Promise<object>} Відповідь API.
-             */
-            async sendMessage(formData) {
-                return await request(endpoints.contact, {
-                    method: 'POST',
-                    body: formData, // Не потребує автентифікації
+            async forgotPassword(email) { return await request(endpoints.forgotPassword, { method: 'POST', body: { email } }); },
+            async resetPassword(token, password, confirmPassword) {
+                const response = await request(`${endpoints.resetPassword}/${token}`, {
+                    method: 'PATCH', body: { password, confirmPassword },
                 });
-            }
+                if (response.status === 'success' && response.data?.user) {
+                    setCurrentUser(response.data.user);
+                    return response.data.user;
+                } else {
+                    throw new AppError(response.message || 'Помилка скидання пароля.', 500);
+                }
+            },
+            googleLoginRedirect() { window.location.href = `${baseUrl}${endpoints.googleLogin}`; },
         },
-
-        // Модуль translation поки що не потрібен для контенту
+        users: {
+            async updateUser(profileData) {
+                const response = await request(endpoints.updateUser, { method: 'PATCH', body: profileData }, true);
+                return response?.data;
+            },
+            async updateUserWithAvatar(formData) {
+                const response = await request(endpoints.updateUser, { method: 'PATCH', body: formData }, true);
+                return response?.data;
+            },
+            async changePassword(currentPassword, newPassword, confirmNewPassword) {
+                const response = await request(endpoints.changePassword, { method: 'PATCH', body: { currentPassword, newPassword, confirmNewPassword }}, true);
+                if (response.status === 'success' && response.data?.user) {
+                    setCurrentUser(response.data.user); // Update user data
+                }
+                return response;
+            },
+            async getBookmarks(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.getUserBookmarks}?${q}`, {}, true); },
+            async toggleBookmark(storyId) { return await request(endpoints.toggleBookmark(storyId), { method: 'POST' }, true); },
+            async getFollowing(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.getUserFollowing}?${q}`, {}, true); },
+            async toggleFollow(authorId) { return await request(endpoints.toggleFollow(authorId), { method: 'POST' }, true); },
+            async checkIfFollowing(authorId) { return await request(endpoints.checkFollowStatus(authorId), {}, true); },
+            async getStoryInteractionStatus(storyId) { return await request(endpoints.getStoryInteractionStatus(storyId), {}, true); },
+        },
+        stories: {
+            async getStories(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.stories}?${q}`, {}, false); }, // Allow anonymous
+            async getStoryById(storyId, params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.storyById(storyId)}?${q}`, {}, false); }, // Allow anonymous
+            async createStory(storyData) {
+                const isFormData = storyData instanceof FormData;
+                return await request(endpoints.createStory, { method: 'POST', body: storyData }, true);
+            },
+            async updateStory(storyId, storyData) {
+                const isFormData = storyData instanceof FormData;
+                return await request(endpoints.updateStory(storyId), { method: 'PATCH', body: storyData }, true);
+            },
+            async getRelatedStories(storyId, params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.getRelatedStories(storyId)}?${q}`, {}, false); }, // Allow anonymous
+            async deleteStory(storyId) { return await request(endpoints.deleteStory(storyId), { method: 'DELETE' }, true); }
+        },
+        authors: {
+            async getAuthors(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.authors}?${q}`); },
+            async getAuthorById(authorId, params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.authorById(authorId)}?${q}`); },
+            async getAuthorStories(authorId, params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.authorStories(authorId)}?${q}`); }
+        },
+        categories: {
+            async getCategories(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.categories}?${q}`); },
+            async getCategoryBySlug(slug, params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.categoryBySlug(slug)}?${q}`); },
+            async getCategoryStatus(slug) { return await request(endpoints.getCategoryStatus(slug), {}, true); },
+            async toggleFavorite(slug) { return await request(endpoints.toggleFavoriteCategory(slug), { method: 'POST' }, true); },
+            async subscribeCategory(slug) { return await request(endpoints.subscribeCategory(slug), { method: 'POST' }, true); }
+        },
+        tags: {
+            async getTags(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.tags}?${q}`); },
+            async getPopularTags(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.popularTags}?${q}`); },
+            async getTagBySlug(slug, params = {}) { const q = new URLSearchParams(params).toString(); return await request(`${endpoints.tagBySlug(slug)}?${q}`); }
+        },
+        comments: {
+            async getComments(storyId, params = {}) { const q = new URLSearchParams(params).toString(); return await request(endpoints.commentsByStory(storyId) + `?${q}`, {}, true); }, // Needs auth for like status
+            async createComment(storyId, text, parentComment = null) { return await request(endpoints.createComment(storyId), { method: 'POST', body: { text, parentComment } }, true); },
+            async getLikeStatuses(commentIds) { return await request(endpoints.getCommentLikeStatuses, { method: 'POST', body: { commentIds } }, true); },
+            async updateComment(commentId, text) { return await request(endpoints.updateComment(commentId), { method: 'PATCH', body: { text } }, true); },
+            async deleteComment(commentId) { return await request(endpoints.deleteComment(commentId), { method: 'DELETE' }, true); }
+        },
+        likes: {
+            async toggleLike(targetId, targetModel) { return await request(endpoints.toggleLike, { method: 'POST', body: { targetId, targetModel } }, true); }
+        },
+        ratings: {
+            async rateStory(storyId, rating) { return await request(endpoints.rateStory(storyId), { method: 'POST', body: { rating } }, true); }
+        },
+        premium: {
+            async getPlans() { return await request(endpoints.getPlans); },
+            async getCurrentSubscription() {
+                try { return await request(endpoints.getCurrentSubscription, {}, true); }
+                catch (error) { if (error.statusCode === 404) return null; throw error; }
+            },
+            async validateCoupon(code, planId, billingCycle) { return await request(endpoints.validateCoupon, { method: 'POST', body: { code, planId, billingCycle } }, true); },
+            async subscribe(subscriptionData) { return await request(endpoints.createSubscription, { method: 'POST', body: subscriptionData }, true); },
+            async cancel() { return await request(endpoints.cancelSubscription, { method: 'DELETE' }, true); }
+        },
+        contact: {
+            async sendMessage(formData) { return await request(endpoints.contact, { method: 'POST', body: formData }); }
+        },
         translation: {
             async translateText(text, targetLanguage) {
-                console.warn('Client-side story translation is disabled. Implement on backend.');
-                throw new Error('Функцію перекладу контенту буде реалізовано на сервері.');
+                console.warn('Backend translation endpoint needed for /api/translate.');
+                // Mock translation
+                await new Promise(resolve => setTimeout(resolve, 500));
+                return { translatedText: `[${targetLanguage.toUpperCase()}-Sim] ${text}` };
             }
+        },
+        reports: {
+            async createReport(reportData) { return await request('/reports', { method: 'POST', body: reportData }, true); }
+        },
+        admin: { // Added Admin API methods
+            async getDashboardStats() { return await request('/admin/dashboard', {}, true); },
+            async getPendingStories(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`/admin/stories/pending?${q}`, {}, true); },
+            async approveStory(storyId) { return await request(`/admin/stories/${storyId}/approve`, { method: 'PATCH' }, true); },
+            async rejectStory(storyId, reason) { return await request(`/admin/stories/${storyId}/reject`, { method: 'PATCH', body: { rejectionReason: reason } }, true); },
+            async getPendingComments(params = {}) { const q = new URLSearchParams(params).toString(); return await request(`/admin/comments/pending?${q}`, {}, true); },
+            async approveComment(commentId) { return await request(`/admin/comments/${commentId}/approve`, { method: 'PATCH' }, true); },
+            async rejectComment(commentId) { return await request(`/admin/comments/${commentId}/reject`, { method: 'PATCH' }, true); },
+            async getSettings() { return await request('/admin/settings', {}, true); },
+            async updateSettings(settingsData) { return await request('/admin/settings', { method: 'PATCH', body: settingsData }, true); },
+            // TODO: Add other admin methods as needed
         }
     };
 
-    console.log('API Utils loaded successfully.');
+    console.log('API Utils loaded with httpOnly cookie strategy. Admin methods added.');
+
+    // Attempt to load user data on script load
+    fetchOrGetCurrentUser();
 
 })(window);

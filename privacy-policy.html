@@ -191,36 +191,40 @@
         <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li>
       </ul>
       <div class="auth-buttons">
-        <!-- ОНОВЛЕНО: Мовний перемикач з правильною логікою -->
+        <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+            <!-- Безпечний доступ до selectedLang -->
             <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
+          <!-- Перевіряємо наявність $store.i18n -->
           <template x-if="$store?.i18n">
             <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
-              <template x-for="lang in $store.i18n.available" :key="lang.code">
+              <!-- Безпечний доступ до available та ітерація -->
+              <template x-for="lang in $store.i18n.available || []" :key="lang.code">
                 <div class="lang-dropdown-item"
                      :class="{ 'active': lang.code === $store.i18n.selectedLang }"
                      @click="
-                                const newLang = lang.code;
-                                open = false;
-                                try {
-                                    // Викликаємо функцію зміни мови
-                                    await $store.i18n.setLanguage(newLang);
-                                    console.log('Language set to:', newLang);
-                                } catch(e) {
-                                    console.error('Error setting language:', e);
-                                }
-                             "
+                 const newLang = lang.code;
+                 open = false;
+                 try {
+                     // Виклик setLanguage всередині try...catch
+                     $store.i18n.setLanguage(newLang);
+                     console.log('Language set to:', newLang);
+                 } catch(e) {
+                     console.error('Error setting language:', e);
+                     // Можна додати сповіщення для користувача тут
+                 }
+              "
                      role="menuitemradio"
                      :aria-checked="lang.code === $store.i18n.selectedLang"
                      tabindex="0"
                      @keydown.enter.space.prevent="
-                                const newLang = lang.code;
-                                open = false;
-                                try { await $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
-                             ">
+                 const newLang = lang.code;
+                 open = false;
+                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
+              ">
                   <span x-text="lang.name"></span>
                   <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
                 </div>

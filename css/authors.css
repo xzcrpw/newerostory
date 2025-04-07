@@ -1,80 +1,87 @@
 /* css/authors.css */
 
-/* Заголовок */
+/* --- Заголовок сторінки --- */
 .authors-header {
     text-align: center;
-    margin: 3rem 0;
+    margin: 3rem 0; /* Відступи зверху/знизу */
 }
 
 .authors-title {
-    font-size: 2.8rem;
-    margin-bottom: 1rem;
-    position: relative;
-    display: inline-block;
+    font-size: 2.8rem; /* Розмір заголовка */
+    margin-bottom: 1rem; /* Відступ під заголовком */
+    position: relative; /* Для позиціонування псевдоелемента */
+    display: inline-block; /* Щоб :after працював коректно */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
+    color: var(--text-color); /* Додано основний колір тексту */
 }
 
+/* TODO: Уніфікувати стиль :after для заголовків у main.css */
 .authors-title:after {
     content: '';
     position: absolute;
-    bottom: -15px;
+    bottom: -15px; /* Позиція лінії під заголовком */
     left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 3px;
-    background: var(--accent-red);
+    transform: translateX(-50%); /* Центрування лінії */
+    width: 100px; /* Ширина лінії */
+    height: 3px; /* Товщина лінії */
+    background: var(--accent-red); /* Колір лінії */
 }
 
 .authors-description {
-    color: var(--secondary-text);
-    font-size: 1.1rem;
-    max-width: 700px;
-    margin: 0 auto;
+    color: var(--secondary-text); /* Колір тексту опису */
+    font-size: 1.1rem; /* Розмір шрифту опису */
+    max-width: 700px; /* Максимальна ширина опису */
+    margin: 0 auto; /* Центрування опису */
+}
+
+/* --- Пошук авторів --- */
+/* Використовуємо стилі .search-section, .search-container з main.css */
+/* Додаємо лише необхідні перекриття або доповнення, якщо вони потрібні */
+/* Наприклад, якщо потрібна інша ширина поля пошуку */
+.search-authors {
+    display: flex; /* Додано для можливого центрування */
+    justify-content: center; /* Центруємо блок пошуку */
+    margin-bottom: 3rem; /* Відступ під пошуком */
 }
 
 .search-authors form {
     display: flex;
     align-items: center;
+    max-width: 450px; /* Обмежимо максимальну ширину форми */
+    width: 100%; /* Займає доступну ширину до max-width */
 }
 
 .search-authors .search-input {
-    padding: 0.7rem 1rem;
-    border-radius: var(--border-radius) 0 0 var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-    font-size: 0.95rem;
-    width: 300px; /* Або інша ширина */
-    border-right: none;
-}
-
-.search-authors .search-input:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
-    background-color: rgba(255, 255, 255, 0.08);
+    /* Успадковує стилі з main.css, але можна перевизначити */
+    /* Наприклад, якщо потрібна інша ширина */
+    /* width: 300px; */
+    flex-grow: 1; /* Дозволяємо полю розтягуватись */
+    border-right: none; /* Прибираємо праву рамку, бо є кнопка */
+    border-radius: var(--button-radius) 0 0 var(--button-radius); /* Закруглення як у кнопки */
+    padding: 0.8rem 1.2rem; /* Трохи змінимо падінг */
 }
 
 .search-authors .search-button {
-    padding: 0.7rem 1rem;
-    border-radius: 0 var(--border-radius) var(--border-radius) 0;
-    background: var(--button-gradient);
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
+    /* Успадковує стилі з main.css, але можна перевизначити */
+    border-radius: 0 var(--button-radius) var(--button-radius) 0; /* Закруглення */
+    padding: 0.8rem 1.5rem; /* Трохи змінимо падінг */
+    flex-shrink: 0; /* Не стискати кнопку */
 }
 
 .search-authors .search-button:hover {
-    transform: none; /* Не потрібно зміщення для кнопки пошуку */
-    box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
+    /* Перевизначаємо hover-ефект з main.css, якщо потрібно */
+    /* transform: none; */ /* Залишаємо стандартний hover з main.css */
+    /* box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3); */
 }
 
 
-/* Сітка авторів */
+/* --- Сітка авторів --- */
 .authors-grid {
     display: grid;
+    /* Використовуємо auto-fill для автоматичного заповнення */
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
+    gap: 2rem; /* Проміжок між картками */
+    margin-bottom: 3rem; /* Відступ знизу сітки */
 }
 
 .author-card {
@@ -82,140 +89,159 @@
     border-radius: var(--border-radius);
     padding: 1.5rem;
     display: flex;
-    align-items: center;
-    border: 1px solid rgba(153, 0, 0, 0.05);
+    align-items: center; /* Вирівнювання по вертикалі */
+    /* Використовуємо змінну для кольору рамки */
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.05));
     background-image: var(--card-gradient);
-    transition: all 0.3s;
-    position: relative;
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; /* Додано border-color */
+    position: relative; /* Для можливих псевдоелементів або позиціонування */
 }
 
 .author-card:hover {
+    transform: translateY(-5px); /* Ефект підняття при наведенні */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Тінь при наведенні */
+    /* Використовуємо змінну для кольору рамки */
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2));
+}
+/* Доступність: стиль фокусу для картки */
+.author-card:focus-within {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    border-color: rgba(153, 0, 0, 0.2);
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2));
+    outline: 2px solid var(--accent-gold); /* Змінено на золотий */
+    outline-offset: 2px;
 }
 
 .author-avatar-link {
-    display: block;
-    flex-shrink: 0;
+    display: block; /* Робимо посилання блочним */
+    flex-shrink: 0; /* Забороняємо стискання аватара */
+    margin-right: 1.5rem; /* Відступ справа від аватара */
 }
 
 .author-avatar {
-    margin-right: 1.5rem;
-    transition: transform 0.3s;
-    border: 3px solid rgba(153, 0, 0, 0.3);
-    transform: scale(1.05);
+    /* Успадковує базові стилі з main.css */
+    width: 80px; /* Розмір аватара */
+    height: 80px;
+    border-radius: 50%;
+    /* Використовуємо змінну для кольору рамки */
+    border: 3px solid var(--border-color-medium, rgba(153, 0, 0, 0.3));
+    transition: transform 0.3s; /* Плавний перехід для scale */
+    /* transform: scale(1.05); - Прибрано з базового стану */
 }
 
 .author-card:hover .author-avatar {
-    transform: scale(1.05);
+    transform: scale(1.05); /* Збільшення аватара при наведенні на картку */
 }
 
 .author-info {
-    flex: 1;
-    min-width: 0; /* Для правильного переносу тексту */
+    flex: 1; /* Займає весь доступний простір */
+    min-width: 0; /* Дозволяє тексту переноситись коректно */
 }
 
 .author-name {
-    font-size: 1.4rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.4rem; /* Розмір імені */
+    margin-bottom: 0.5rem; /* Відступ під іменем */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
 }
 
 .author-name a {
-    color: var(--text-color);
+    color: var(--text-color); /* Колір посилання */
     text-decoration: none;
     transition: color 0.3s;
 }
 
 .author-name a:hover {
-    color: var(--accent-red);
+    color: var(--accent-red); /* Колір при наведенні */
+    text-decoration: none; /* Прибираємо підкреслення */
 }
 
 .author-stats {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem; /* Зменшено відстань */
-    margin-bottom: 0.8rem;
-    font-size: 0.85rem; /* Зменшено шрифт */
-    color: var(--secondary-text);
+    flex-wrap: wrap; /* Дозволяє переносити статистику */
+    gap: 1rem; /* Зменшено відстань між елементами */
+    margin-bottom: 0.8rem; /* Відступ під статистикою */
+    font-size: 0.85rem; /* Зменшено шрифт статистики */
+    color: var(--secondary-text); /* Колір тексту статистики */
 }
 
 .author-stat {
     display: flex;
-    align-items: center;
+    align-items: center; /* Вирівнювання іконки та тексту */
 }
 
 .author-stat i {
-    margin-right: 5px;
-    color: var(--accent-gold);
+    margin-right: 5px; /* Відступ від іконки */
+    color: var(--accent-gold); /* Колір іконки */
+    width: 1em; /* Фіксована ширина для іконки */
+    text-align: center; /* Центрування іконки */
 }
 
 .author-bio {
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-    line-height: 1.6;
+    color: var(--secondary-text); /* Колір біографії */
+    font-size: 0.9rem; /* Розмір шрифту біографії */
+    line-height: 1.6; /* Міжрядковий інтервал */
+    /* Обмеження тексту до 2 рядків */
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Обмеження до 2 рядків */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 1rem;
+    margin-bottom: 1rem; /* Відступ під біографією */
+    /* Мінімальна висота, щоб уникнути стрибків при завантаженні */
+    min-height: calc(1.6em * 2);
 }
 
 .btn-follow {
+    /* Стилі успадковуються від .btn */
     align-self: center; /* Вирівнюємо кнопку по центру вертикально */
-    padding: 0.5rem 1.2rem;
-    font-size: 0.9rem;
-    white-space: nowrap; /* Заборона переносу */
+    padding: 0.5rem 1.2rem; /* Розмір кнопки */
+    font-size: 0.9rem; /* Розмір шрифту кнопки */
+    white-space: nowrap; /* Заборона переносу тексту */
+    margin-left: 1rem; /* Додаємо відступ зліва */
+    flex-shrink: 0; /* Не стискати кнопку */
 }
 
-/* Адаптивність */
+/* --- Адаптивність --- */
 @media (max-width: 992px) {
     .authors-grid {
-        grid-template-columns: 1fr; /* Один автор на рядок */
+        grid-template-columns: 1fr; /* Один автор на рядок на планшетах */
     }
 }
 
 @media (max-width: 768px) {
+    .authors-title { font-size: 2.2rem; } /* Додано зменшення заголовку */
+    .authors-description { font-size: 1rem; } /* Додано зменшення опису */
 
     .search-authors {
-        width: 100%;
+        width: 100%; /* Пошук на всю ширину */
     }
-
-    .search-authors form {
-        width: 100%;
-    }
-
-    .search-authors .search-input {
-        width: 100%;
-    }
+    /* Форма пошуку вже адаптивна через flex-direction: column у main.css */
 
     .author-card {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+        flex-direction: column; /* Картка стає вертикальною */
+        align-items: center; /* Центрування вмісту */
+        text-align: center; /* Центрування тексту */
     }
 
-    .author-avatar {
-        margin-right: 0;
-        margin-bottom: 1rem;
+    .author-avatar-link {
+        margin-right: 0; /* Прибираємо відступ справа */
+        margin-bottom: 1rem; /* Додаємо відступ знизу */
+    }
+
+    .author-info {
+        width: 100%; /* Інформація займає всю ширину */
     }
 
     .author-stats {
-        justify-content: center;
+        justify-content: center; /* Центруємо статистику */
     }
 
     .btn-follow {
-        margin-top: 1rem;
-        width: 100%;
+        margin-left: 0; /* Прибираємо відступ зліва */
+        margin-top: 1rem; /* Додаємо відступ зверху */
+        width: 100%; /* Кнопка на всю ширину */
+        max-width: 250px; /* Обмежуємо максимальну ширину */
     }
 
-    .pagination {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .pagination-info {
-        order: -1;
-    }
+    /* Стилі пагінації з main.css вже адаптивні */
 }

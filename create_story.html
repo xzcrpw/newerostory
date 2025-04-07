@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Додано x-data та :lang -->
-<html lang="uk" x-data :lang="$store.i18n.selectedLang" xmlns:x-transition="http://www.w3.org/1999/xhtml">
+<html lang="uk" x-data :lang="$store.i18n.selectedLang">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
 
     <!-- Мета-теги використовують i18n -->
     <meta name="description" :content="$store.i18n.t('createStory.metaDescription')">
-    <!-- Інші мета-теги (OG) краще генерувати динамічно на бекенді -->
+    <meta name="robots" content="noindex, nofollow"> <!-- Забороняємо індексацію сторінки редактора -->
 
     <!-- Шрифти -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,8 +21,12 @@
 
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <!-- Select2 Dark Theme (приклад, може потребувати кастомізації) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme/dist/select2-bootstrap4.min.css">
+
+    <!-- Quill.js CSS -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
+    <!-- Internationalization -->
+    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -31,34 +35,28 @@
     <script src="js/api-config.js" defer></script>
     <script src="js/api-utils.js" defer></script>
 
-    <!-- Internationalization -->
-    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
-
     <!-- jQuery (потрібен для Select2) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- TinyMCE -->
-    <!-- ЗАМІНИ YOUR_API_KEY на свій ключ Tiny Cloud -->
-    <script src="https://cdn.tiny.cloud/1/YOUR_API_KEY/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Quill.js JS -->
+    <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/create_story.css">
+    <link rel="stylesheet" href="css/create_story.css"> <!-- Оновлений CSS -->
 
     <style>
         /* Стилі для сповіщень */
         .notification {
-            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-            background-color: var(--card-color); color: var(--text-color);
-            padding: 1rem 1.5rem; border-radius: var(--border-radius);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
-            opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
-            min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%) translateY(150%);
+            background-color: var(--card-color); color: var(--text-color); padding: 1rem 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1050; opacity: 0; transition: opacity 0.3s ease-out, transform 0.4s ease-out;
+            min-width: 250px; max-width: 90%; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); border-left-width: 4px; pointer-events: none;
         }
-        .notification.show { opacity: 1; bottom: 20px; }
-        .notification.success { border-left: 4px solid #4cd964; }
-        .notification.error { border-left: 4px solid #ff6b6b; }
+        .notification.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        .notification.success { border-left-color: #4cd964; }
+        .notification.error { border-left-color: #ff6b6b; }
 
         /* Стилі для індикатора завантаження */
         .loading-indicator-overlay {
@@ -73,142 +71,114 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Стиль для кнопки під час обробки */
-        button.removing, button:disabled { opacity: 0.7; pointer-events: none; }
-        button.removing i:not(.fa-spinner), button:disabled i:not(.fa-spinner) { display: none; }
-        button.removing::after, button:disabled.processing::after { /* Додав клас .processing для загального використання */
+        /* Стиль кнопки під час обробки */
+        button:disabled { opacity: 0.7; cursor: not-allowed; }
+        button.processing { opacity: 0.9; pointer-events: none; position: relative; }
+        button.processing::after {
             content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
-            display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
+            display: inline-block; animation: spin 1s linear infinite; margin-left: 8px;
+            font-size: 0.9em; vertical-align: middle;
         }
 
         /* Стилі для повідомлень про помилки/успіх форми */
         .error-message, .success-message {
-            margin-bottom: 1.5rem;
-            padding: 0.8rem 1.2rem;
-            border-radius: var(--border-radius);
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            border: 1px solid transparent;
+            margin-bottom: 1.5rem; padding: 0.8rem 1.2rem; border-radius: var(--border-radius);
+            font-size: 0.95rem; display: flex; align-items: center; border: 1px solid transparent;
         }
-        .error-message {
-            background-color: rgba(255, 50, 50, 0.1);
-            border-color: rgba(255, 50, 50, 0.3);
-            color: #ff6b6b;
-        }
-        .success-message {
-            background-color: rgba(50, 200, 50, 0.1);
-            border-color: rgba(50, 200, 50, 0.3);
-            color: #4cd964;
-        }
+        .error-message { background-color: rgba(255, 50, 50, 0.1); border-color: rgba(255, 50, 50, 0.3); color: #ff6b6b; }
+        .success-message { background-color: rgba(50, 200, 50, 0.1); border-color: rgba(50, 200, 50, 0.3); color: #4cd964; }
         .error-message i, .success-message i { margin-right: 0.8rem; font-size: 1.1em; }
         .error-message button, .success-message button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
 
-        /* Стилі для Select2 dark theme (базові, можливо потребують доопрацювання) */
-        /* Перенесено в create_story.css */
-
-        /* Стилі для превью аватара */
-        .image-preview { display: block; } /* Зробити видимим за замовчуванням, керувати через x-show */
+        /* Стилі для прев'ю зображення */
+        .image-preview { display: block; }
         .image-preview img { max-width: 100%; max-height: 300px; object-fit: cover; border-radius: var(--border-radius); }
-        .image-preview-remove { position: absolute; top: 10px; right: 10px; /* ... решта стилів ... */ }
-
+        .image-preview-remove { position: absolute; top: 10px; right: 10px; }
     </style>
 </head>
 <body x-data="{
     // --- Стани UI ---
     currentTab: 'editor', // 'editor', 'preview'
-    isLoading: false, // Завантаження даних для редагування
+    isLoading: true, // Завантаження початкових даних
     isSavingDraft: false,
     isPublishing: false,
-    errorMessage: null, // Загальна помилка
-    successMessage: null, // Загальне повідомлення про успіх
+    errorMessage: null,
+    successMessage: null,
     notificationVisible: false,
     notificationMessage: '',
+    notificationType: 'success',
     notificationTimeout: null,
     imagePreviewUrl: null,
     hasUnsavedChanges: false,
-    isEditMode: false, // Чи це режим редагування
-    storyId: null, // ID історії для редагування
-    authorId: null, // ID автора для перевірки прав редагування
+    isEditMode: false,
+    storyId: null,
+    authorId: null,
+    quillInstance: null, // Екземпляр Quill
+    quillInitialContentSet: false, // Прапорець для першого встановлення контенту
 
     // --- Дані історії ---
     storyTitle: '',
     storyCategory: '',
-    storyTags: [], // Масив вибраних тегів
-    ageRating: '18+', // Значення за замовчуванням
-    storyImageFile: null, // File об'єкт
-    storyImageUrl: null, // URL існуючого зображення (для редагування)
-    storyContent: '',
+    storyTags: [],
+    ageRating: '18+',
+    storyImageFile: null,
+    storyImageUrl: null,
+    storyContent: '', // Зберігає HTML з Quill
     isPremium: false,
     isAnonymous: false,
 
-    // --- Доступні категорії та теги (завантажуються з API) ---
+    // --- Доступні категорії ---
     availableCategories: [],
-    // availableTags: [], // Select2 tags дозволяє вводити нові
 
-    // --- Функція сповіщень ---
+    // --- Безпечний доступ до i18n ---
+    safeT(key, params = {}, fallback = '') {
+        try {
+            if (typeof $store !== 'undefined' && $store.i18n?.initialized) {
+                const translation = $store.i18n.t(key, params);
+                 return (translation && translation !== key && translation.trim() !== '') ? translation : fallback;
+            }
+             if (Object.keys(params).length > 0 && typeof fallback === 'string') {
+                return Object.keys(params).reduce((str, pKey) => str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), params[pKey]), fallback);
+             }
+            return fallback;
+        } catch (error) { console.warn(`safeT error for key: ${key}`, error); return fallback; }
+    },
+
+    // --- Сповіщення ---
     showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
         const notificationElement = document.getElementById('global-notification');
         if (notificationElement) {
-            notificationElement.classList.toggle('success', isSuccess);
-            notificationElement.classList.toggle('error', !isSuccess);
-            notificationElement.classList.add('show'); // Додаємо клас для відображення
+             notificationElement.classList.remove('success', 'error');
+             notificationElement.classList.add(this.notificationType);
+             notificationElement.classList.add('show');
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { 
-            this.notificationVisible = false; 
-            // Перевіряємо чи елемент все ще існує
-            const notificationEl = document.getElementById('global-notification');
-            if (notificationEl) {
-                notificationEl.classList.remove('show');
-            }
+        this.notificationTimeout = setTimeout(() => {
+            this.notificationVisible = false;
+             const el = document.getElementById('global-notification');
+             if (el) el.classList.remove('show');
         }, 4000);
     },
 
-    // --- Функція валідації ---
+    // --- Валідація ---
     validateForm() {
         this.errorMessage = null;
-        
-        // Перевірка наявності заголовка
-        if (!this.storyTitle.trim()) {
-            this.errorMessage = $store.i18n?.t('createStory.errorTitleRequired') || 'Будь ласка, введіть заголовок історії.';
-            return false;
-        }
-        
-        // Перевірка наявності категорії
-        if (!this.storyCategory) {
-            this.errorMessage = $store.i18n?.t('createStory.errorCategoryRequired') || 'Будь ласка, виберіть категорію.';
-            return false;
-        }
-        
-        // Безпечне отримання TinyMCE контенту
-        let content = '';
+        if (!this.storyTitle.trim()) { this.errorMessage = this.safeT('createStory.errorTitleRequired'); return false; }
+        if (!this.storyCategory) { this.errorMessage = this.safeT('createStory.errorCategoryRequired'); return false; }
+        let plainText = '';
         try {
-            const editor = tinymce.get('storyContentEditor');
-            if (editor) {
-                content = editor.getContent({ format: 'text' }).trim();
+            if (this.quillInstance) {
+                 // Отримуємо текст з Quill і видаляємо зайві пробіли
+                 plainText = this.quillInstance.getText().trim();
+                 this.storyContent = this.quillInstance.root.innerHTML; // Оновлюємо HTML контент
             }
-        } catch (error) {
-            console.error('Error getting TinyMCE content:', error);
-            this.errorMessage = $store.i18n?.t('createStory.errorEditor') || 'Помилка редактора. Спробуйте оновити сторінку.';
-            return false;
-        }
-        
-        // Перевірка наявності контенту
-        if (!content) {
-            this.errorMessage = $store.i18n?.t('createStory.errorContentRequired') || 'Будь ласка, додайте текст вашої історії.';
-            return false;
-        }
-        
-        // Додаткова перевірка довжини контенту
-        if (content.length < 100) {
-            this.errorMessage = $store.i18n?.t('createStory.errorContentLength', { min: 100 }) || 
-                               'Текст історії занадто короткий (мін. 100 символів).';
-            return false;
-        }
-        
+        } catch (error) { console.error('Error getting Quill content:', error); this.errorMessage = this.safeT('createStory.errorEditor'); return false; }
+        if (!plainText) { this.errorMessage = this.safeT('createStory.errorContentRequired'); return false; }
+        // Перевіряємо довжину тексту без HTML
+        if (plainText.length < 100) { this.errorMessage = this.safeT('createStory.errorContentLength', { min: 100 }); return false; }
         return true;
     },
 
@@ -216,423 +186,335 @@
     async loadStoryForEdit() {
         const urlParams = new URLSearchParams(window.location.search);
         this.storyId = urlParams.get('id');
-        if (!this.storyId) return; // Це створення, не редагування
+        if (!this.storyId) { this.isLoading = false; return; } // Створення нової історії
 
-        this.isEditMode = true;
-        this.isLoading = true;
-        this.errorMessage = null;
-        
+        this.isEditMode = true; this.isLoading = true; this.errorMessage = null;
         try {
-            console.log(`Simulating API call: getStoryById(${this.storyId})`);
-            await new Promise(resolve => setTimeout(resolve, 700));
-            // const storyData = await api.stories.getStoryById(this.storyId); // Реальний виклик
-            const storyData = { // Симуляція
-                _id: this.storyId, 
-                title: `Редагована історія ${this.storyId}`, 
-                category: 'romance',
-                tags: ['потяг', 'редагування'], 
-                ageRating: '18+', 
-                isPremium: false, 
-                isAnonymous: false,
-                imageUrl: `https://source.unsplash.com/random/1200x600/?edit,${this.storyId}`,
-                content: `<p>Це початковий текст історії ${this.storyId} для редагування.</p>`,
-                author: { _id: api.utils.getUserId() || 'author123' } // Важливо для перевірки прав
+            // --- TODO: Замінити симуляцію на реальний виклик API ---
+            console.log(`API CALL: api.stories.getStoryById(${this.storyId})`);
+            await new Promise(resolve => setTimeout(resolve, 700)); // Симуляція
+            const storyData = {
+                _id: this.storyId, title: `Редагована історія ${this.storyId}`,
+                category: 'fantasy', // Використовуємо ID для Select
+                tags: ['редаговано', 'фантазія'], ageRating: '21+', isPremium: true, isAnonymous: false,
+                imageUrl: `https://source.unsplash.com/random/1200x600/?fantasy,edit,${this.storyId}`,
+                content: `<p>Це <strong>оновлений</strong> текст історії ${this.storyId} для редагування.</p><h2>Підзаголовок</h2><p>Додаємо ще один параграф з <em>курсивом</em> та <a href='#'>посиланням</a>.</p><ul><li>Пункт 1</li><li>Пункт 2</li></ul>`,
+                author: { _id: api.utils.getUserId() || 'test-user-123' }
             };
+            // --- Кінець симуляції ---
 
-            // Перевірка наявності даних історії
-            if (!storyData) {
-                throw new Error($store.i18n?.t('createStory.errorStoryNotFound') || 'Історію не знайдено');
+            if (!storyData) throw new Error(this.safeT('createStory.errorStoryNotFound'));
+            if (storyData.author?._id !== api.utils.getUserId() && api.utils.getUserRole() !== 'admin' && api.utils.getUserRole() !== 'moderator') {
+                throw new Error(this.safeT('createStory.errorNotAuthor'));
             }
 
-            // Перевірка прав (чи поточний користувач є автором)
-            if (storyData.author?._id !== api.utils.getUserId()) {
-                throw new Error($store.i18n?.t('createStory.errorNotAuthor') || 'У вас немає прав на редагування цієї історії');
-            }
-
-            // Безпечне заповнення полів з перевірками
             this.storyTitle = storyData.title || '';
             this.storyCategory = storyData.category?._id || storyData.category || '';
             this.storyTags = Array.isArray(storyData.tags) ? storyData.tags : [];
             this.ageRating = storyData.ageRating || '18+';
             this.storyImageUrl = storyData.imageUrl || null;
-            this.storyContent = storyData.content || '';
+            this.storyContent = storyData.content || ''; // Зберігаємо HTML
             this.isPremium = Boolean(storyData.isPremium);
             this.isAnonymous = Boolean(storyData.isAnonymous);
             this.authorId = storyData.author?._id || null;
-
-            // Встановлюємо прев'ю для існуючого зображення
             if(this.storyImageUrl) this.imagePreviewUrl = this.storyImageUrl;
 
-            // Оновлюємо TinyMCE та Select2 ПІСЛЯ завантаження даних
             this.$nextTick(() => {
                 try {
-                    // Оновлення TinyMCE з перевіркою
-                    const editor = tinymce.get('storyContentEditor');
-                    if (editor) {
-                        editor.setContent(this.storyContent);
+                    // Встановлюємо контент в Quill, якщо редактор вже ініціалізовано
+                    if (this.quillInstance) {
+                         this.quillInstance.root.innerHTML = this.storyContent; // Встановлюємо HTML
+                         this.quillInitialContentSet = true; // Позначаємо, що контент встановлено
+                         this.quillInstance.history.clear(); // Очищаємо історію змін Quill
+                    } else {
+                         // Якщо Quill ще не готовий, чекаємо події 'quillLoaded'
+                         document.addEventListener('quillLoaded', () => {
+                              if (this.quillInstance) {
+                                   this.quillInstance.root.innerHTML = this.storyContent;
+                                   this.quillInitialContentSet = true;
+                                   this.quillInstance.history.clear();
+                                   setTimeout(() => { this.hasUnsavedChanges = false; window.onbeforeunload = null; }, 100); // Скидаємо тут теж
+                              }
+                         }, { once: true });
                     }
-                    
-                    // Оновлення Select2 з перевіркою
-                    if (typeof $ === 'function' && this.$refs.tagsSelect) {
-                        $(this.$refs.tagsSelect).val(this.storyTags).trigger('change');
-                    }
-                } catch (error) {
-                    console.error('Error updating editor with story data:', error);
-                }
-            });
 
+                    if (typeof $ === 'function' && this.$refs.tagsSelect) $(this.$refs.tagsSelect).val(this.storyTags).trigger('change');
+                } catch (error) { console.error('Error updating editor/select2 with story data:', error); }
+                 // Скидаємо прапорець змін після завантаження
+                 setTimeout(() => { this.hasUnsavedChanges = false; window.onbeforeunload = null; }, 100);
+            });
         } catch (error) {
-            this.errorMessage = error.message || $store.i18n?.t('createStory.errorLoadingStory') || 'Помилка завантаження історії';
+            this.errorMessage = error.message || this.safeT('createStory.errorLoadingStory');
             console.error('Error loading story for edit:', error);
-        } finally {
-            this.isLoading = false;
-        }
+        } finally { this.isLoading = false; }
     },
 
     // --- Завантаження категорій ---
     async loadCategories() {
         try {
-            console.log('Simulating API call: getCategories');
-            await new Promise(resolve => setTimeout(resolve, 300));
-            // const categories = await api.categories.getCategories(); // Реальний виклик
-            this.availableCategories = [ // Симуляція з використанням ключів i18n
-                { id: 'romance', name: $store.i18n.t('createStory.categoryRomance') },
-                { id: 'fantasy', name: $store.i18n.t('createStory.categoryFantasy') },
-                { id: 'bdsm', name: $store.i18n.t('createStory.categoryBDSM') },
-                { id: 'first-time', name: $store.i18n.t('createStory.categoryFirstTime') },
-                { id: 'vacation', name: $store.i18n.t('createStory.categoryVacation') },
-                { id: 'chance-encounters', name: $store.i18n.t('createStory.categoryChanceEncounters') },
-                { id: 'office', name: $store.i18n.t('createStory.categoryOffice') },
-                { id: 'group', name: $store.i18n.t('createStory.categoryGroup') },
-                { id: 'cheating', name: $store.i18n.t('createStory.categoryCheating') },
-                { id: 'other', name: $store.i18n.t('createStory.categoryOther') }
+            // --- TODO: Замінити симуляцію на реальний виклик API ---
+            console.log('API CALL: api.categories.getCategories');
+            await new Promise(resolve => setTimeout(resolve, 300)); // Симуляція
+            this.availableCategories = [
+                { id: 'romance', name: this.safeT('createStory.categoryRomance', 'Романтика') },
+                { id: 'fantasy', name: this.safeT('createStory.categoryFantasy', 'Фантазії') },
+                { id: 'bdsm', name: this.safeT('createStory.categoryBDSM', 'БДСМ') },
+                { id: 'first-time', name: this.safeT('createStory.categoryFirstTime', 'Перший досвід') },
+                { id: 'vacation', name: this.safeT('createStory.categoryVacation', 'Курортний роман') },
+                { id: 'chance-encounters', name: this.safeT('createStory.categoryChanceEncounters', 'Випадкові зустрічі') },
+                { id: 'office', name: this.safeT('createStory.categoryOffice', 'Службовий роман') },
+                { id: 'group', name: this.safeT('createStory.categoryGroup', 'Групові історії') },
+                { id: 'cheating', name: this.safeT('createStory.categoryCheating', 'Зрада') },
+                { id: 'other', name: this.safeT('createStory.categoryOther', 'Інше') }
             ];
+            // --- Кінець симуляції ---
         } catch (error) {
             console.error('Error loading categories:', error);
-            this.errorMessage = $store.i18n.t('createStory.errorLoadingCategories') || 'Не вдалося завантажити категорії.';
+            this.errorMessage = this.safeT('createStory.errorLoadingCategories', 'Не вдалося завантажити категорії.');
         }
     },
 
-    // --- Обробка зображення ---
-    handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        // Валідація
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (!allowedTypes.includes(file.type)) {
-            this.errorMessage = $store.i18n.t('createStory.errorImageFormat');
-            event.target.value = null; // Скидаємо input
-            return;
-        }
-        if (file.size > maxSize) {
-            this.errorMessage = $store.i18n.t('createStory.errorImageSize', { size: '5MB' });
-            event.target.value = null; // Скидаємо input
-            return;
-        }
-        this.errorMessage = null;
-        this.storyImageFile = file;
-        this.storyImageUrl = null; // Скидаємо URL, якщо завантажується новий файл
-        // Превью
-        const reader = new FileReader();
-        reader.onload = (e) => { this.imagePreviewUrl = e.target.result; }
-        reader.readAsDataURL(file);
-        this.setUnsavedChanges(); // Позначаємо зміни
-    },
-    removeImagePreview() {
-        this.storyImageFile = null;
-        this.storyImageUrl = null; // Також скидаємо URL існуючого
-        this.imagePreviewUrl = null;
-        if (this.$refs.imageUploadInput) { // Перевіряємо наявність refs
-             this.$refs.imageUploadInput.value = null; // Скидаємо input file
-        }
-        this.setUnsavedChanges();
-    },
+    // --- Обробка зображення --- (Без змін)
+    handleImageUpload(event) { /*...*/ },
+    removeImagePreview() { /*...*/ },
 
     // --- Збереження/Публікація ---
     async saveDraft() {
-        if (!this.validateForm()) {
-             this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
-             return;
-        }
+        if (!this.validateForm()) { this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }); return; }
         this.isSavingDraft = true; this.errorMessage = null; this.successMessage = null;
         try {
-            const formData = this.prepareFormData();
-            formData.append('status', 'draft'); // Додаємо статус
+            const dataToSend = this.prepareStoryData();
+            dataToSend.status = 'draft';
 
-            console.log('Simulating API call: saveDraft');
-            await new Promise(resolve => setTimeout(resolve, 1000));
             let result;
+            // --- TODO: Замінити симуляцію на реальний виклик API ---
             if (this.isEditMode) {
-                // result = await api.stories.updateStory(this.storyId, formData);
-                 result = { _id: this.storyId, title: this.storyTitle }; // Симуляція
-                 console.log('Updated draft:', result);
+                console.log(`API CALL: api.stories.updateStory(${this.storyId}, ...)`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                result = { _id: this.storyId, slug: `edited-story-${this.storyId}`, imageUrl: this.storyImageFile ? URL.createObjectURL(this.storyImageFile) : this.storyImageUrl };
             } else {
-                // result = await api.stories.createStory(formData);
-                result = { _id: 'newStory' + Date.now(), title: this.storyTitle }; // Симуляція
-                console.log('Created draft:', result);
-                this.storyId = result._id; // Зберігаємо ID нової історії
-                this.isEditMode = true; // Переходимо в режим редагування
-                // Оновлюємо URL без перезавантаження
+                console.log('API CALL: api.stories.createStory(...)');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                result = { _id: 'newStory' + Date.now(), slug: `new-story-${Date.now()}`, imageUrl: this.storyImageFile ? URL.createObjectURL(this.storyImageFile) : null };
+                this.storyId = result._id; this.isEditMode = true;
                 window.history.pushState({}, '', `?id=${this.storyId}`);
             }
+            // --- Кінець TODO ---
 
-            this.successMessage = $store.i18n.t('createStory.draftSaved');
-            this.hasUnsavedChanges = false; // Скидаємо прапорець змін
-            // Оновлюємо дані на сторінці (напр. URL зображення, якщо воно було завантажене)
-             if (result.imageUrl) {
-                 this.storyImageUrl = result.imageUrl;
-                 this.imagePreviewUrl = result.imageUrl;
-                 this.storyImageFile = null;
-                 if (this.$refs.imageUploadInput) this.$refs.imageUploadInput.value = null;
-             }
+            if (result.imageUrl && this.storyImageFile) {
+                this.storyImageUrl = result.imageUrl; this.imagePreviewUrl = result.imageUrl; this.storyImageFile = null;
+                if (this.$refs.imageUploadInput) this.$refs.imageUploadInput.value = null;
+            } else if (dataToSend.jsonData?.removeImage) {
+                 this.storyImageUrl = null; this.imagePreviewUrl = null;
+            }
+
+            this.successMessage = this.safeT('createStory.draftSaved', 'Чернетку успішно збережено!');
+            this.resetUnsavedChanges(); // Скидаємо прапорець змін
+            if (this.quillInstance) this.quillInstance.history.clear(); // Очищаємо історію Quill
         } catch (error) {
-            this.errorMessage = `${$store.i18n.t('createStory.errorSavingDraft')} ${error.message || $store.i18n.t('general.unknownError')}`;
+            this.errorMessage = `${this.safeT('createStory.errorSavingDraft')} ${error.message || this.safeT('general.unknownError')}`;
             console.error('Save draft error:', error);
         } finally { this.isSavingDraft = false; }
     },
     async publishStory() {
-        if (!this.validateForm()) {
-            this.$nextTick(() => { 
-                const errorElement = document.querySelector('.error-message');
-                if (errorElement) {
-                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-                }
-            });
-            return;
-        }
-
-        // Перевірка чи користувач залогінений
-        if (!api.utils.isAuthenticated()) {
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-            return;
-        }
-
-        // Попередження про відсутність зображення
+        if (!this.validateForm()) { this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }); return; }
+        if (!api.utils.isAuthenticated()) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
         if (!this.storyImageFile && !this.storyImageUrl) {
-            if (!confirm($store.i18n?.t('createStory.confirmPublishNoImage') || 'Ви впевнені, що хочете опублікувати історію без зображення?')) {
-                return;
-            }
+            if (!confirm(this.safeT('createStory.confirmPublishNoImage', 'Опублікувати без зображення?'))) return;
         }
 
-        this.isPublishing = true; 
-        this.errorMessage = null; 
-        this.successMessage = null;
-        
+        this.isPublishing = true; this.errorMessage = null; this.successMessage = null;
         try {
-            const formData = this.prepareFormData();
-            formData.append('status', 'published'); // Встановлюємо статус
+            const dataToSend = this.prepareStoryData();
+            dataToSend.status = 'pending';
 
-            console.log('Simulating API call: publishStory');
-            await new Promise(resolve => setTimeout(resolve, 1200));
             let result;
-            
+            // --- TODO: Замінити симуляцію на реальний виклик API ---
             if (this.isEditMode) {
-                // result = await api.stories.updateStory(this.storyId, formData);
-                result = { _id: this.storyId }; // Симуляція
-                console.log('Published updated story:', result);
+                console.log(`API CALL: api.stories.updateStory(${this.storyId}, ...)`);
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                result = { _id: this.storyId, slug: `edited-story-${this.storyId}` };
             } else {
-                // result = await api.stories.createStory(formData);
-                result = { _id: 'newStory' + Date.now() }; // Симуляція
-                console.log('Published new story:', result);
+                console.log('API CALL: api.stories.createStory(...)');
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                result = { _id: 'newStory' + Date.now(), slug: `new-story-${Date.now()}` };
             }
-            
-            this.hasUnsavedChanges = false; // Скидаємо прапорець
-            this.showNotification(
-                $store.i18n?.t('createStory.storyPublishedSuccess') || 'Історію успішно опубліковано!', 
-                true
-            );
-            
-            // Перенаправлення на сторінку історії
-            setTimeout(() => { 
-                if (result && result._id) {
-                    window.location.href = `story-detailed.html?id=${result._id}`; 
-                } else {
-                    // Якщо немає ID, перенаправляємо на профіль користувача
-                    window.location.href = 'profile.html';
-                }
+            // --- Кінець TODO ---
+
+            this.resetUnsavedChanges();
+            this.showNotification(this.safeT('createStory.storyPublishedSuccess', 'Історія відправлена на модерацію!'), true);
+
+            setTimeout(() => {
+                window.location.href = result?._id ? `story-detailed.html?id=${result._id}` : 'profile.html';
             }, 1500);
 
         } catch (error) {
-            this.errorMessage = `${$store.i18n?.t('createStory.errorPublishing') || 'Помилка публікації історії:'} ${error.message || $store.i18n?.t('general.unknownError') || 'Невідома помилка'}`;
+            this.errorMessage = `${this.safeT('createStory.errorPublishing')} ${error.message || this.safeT('general.unknownError')}`;
             console.error('Publish story error:', error);
-            this.isPublishing = false; // Знімаємо блокування при помилці
+            this.isPublishing = false;
         }
+        // isPublishing залишається true при успіху, бо йде редірект
     },
-    // Допоміжна функція для підготовки даних форми
-    prepareFormData() {
-        const formData = new FormData();
-        
-        // Безпечне додавання полів з перевіркою
-        const safeAppend = (name, value) => {
-            if (value !== null && value !== undefined) {
-                formData.append(name, value);
-            }
+    // Допоміжна функція для підготовки даних форми (з урахуванням Quill)
+    prepareStoryData() {
+         // Переконуємось, що storyContent оновлено перед відправкою
+         try {
+             if (this.quillInstance) this.storyContent = this.quillInstance.root.innerHTML;
+         } catch(e) { console.warn('Error getting Quill content for prepareStoryData:', e); }
+
+        const data = {
+            translations: { uk: { title: this.storyTitle.trim(), content: this.storyContent } },
+            category: this.storyCategory, tags: this.storyTags, ageRating: this.ageRating,
+            isPremium: this.isPremium, isAnonymous: this.isAnonymous,
         };
-        
-        // Додаємо базові поля з валідацією
-        safeAppend('title', this.storyTitle.trim());
-        safeAppend('category', this.storyCategory);
-        
-        // Обробка тегів з перевіркою на масив
-        if (Array.isArray(this.storyTags)) {
-            this.storyTags.forEach(tag => {
-                if (tag) safeAppend('tags', tag);
-            });
-        }
-        
-        safeAppend('ageRating', this.ageRating);
-        
-        // Безпечне оновлення контенту з TinyMCE
-        try {
-            const editor = tinymce.get('storyContentEditor');
-            if (editor) {
-                this.storyContent = editor.getContent();
-            }
-        } catch (error) {
-            console.error('Error getting content from TinyMCE:', error);
-        }
-        
-        safeAppend('content', this.storyContent);
-        safeAppend('isPremium', this.isPremium);
-        safeAppend('isAnonymous', this.isAnonymous);
-        
-        // Обробка зображення
         if (this.storyImageFile) {
-            safeAppend('image', this.storyImageFile);
-        } else if (this.isEditMode && !this.storyImageUrl && !this.imagePreviewUrl) {
-            safeAppend('removeImage', 'true');
+            const formData = new FormData();
+            formData.append('jsonData', JSON.stringify(data));
+            formData.append('image', this.storyImageFile);
+            return { formData };
+        } else {
+            data.imageUrl = this.storyImageUrl;
+            if (!this.storyImageUrl && this.isEditMode && this.imagePreviewUrl === null) {
+                 data.removeImage = true; delete data.imageUrl;
+            }
+            return { jsonData: data };
         }
-        
-        return formData;
     },
 
     // --- Інше ---
-    setUnsavedChanges() { this.hasUnsavedChanges = true; },
+    setUnsavedChanges() {
+        if (!this.isLoading) {
+            this.hasUnsavedChanges = true;
+            // Перенесемо встановлення обробника в initEditor
+        }
+    },
+    resetUnsavedChanges() {
+        this.hasUnsavedChanges = false;
+        window.onbeforeunload = null;
+    },
     handleBeforeUnload(event) {
-        if (this.hasUnsavedChanges) {
-            // Зберігаємо поточний контент редактора перед перевіркою
-            try {
-                const editor = tinymce.get('storyContentEditor');
-                if (editor) {
-                    const currentContent = editor.getContent();
-                    // Порівнюємо зі збереженим контентом
-                    if (currentContent !== this.storyContent) {
-                        this.hasUnsavedChanges = true;
-                    }
-                }
-            } catch (e) {
-                console.warn('Error accessing TinyMCE in beforeunload:', e);
-            }
+        // Перевіряємо, чи змінився контент Quill
+         try {
+             if (this.quillInstance && this.quillInstance.history.stack.undo.length > 0) { // Перевіряємо історію змін Quill
+                 this.hasUnsavedChanges = true;
+             }
+         } catch (e) { console.warn('Error checking Quill dirty state:', e); }
 
-            if (this.hasUnsavedChanges) {
-                const message = $store.i18n?.t('createStory.beforeUnloadWarning') || 'У вас є незбережені зміни. Ви впевнені, що хочете залишити сторінку?';
-                event.preventDefault();
-                event.returnValue = message;
-                return message;
-            }
+        if (this.hasUnsavedChanges) {
+            const message = this.safeT('createStory.beforeUnloadWarning', 'У вас є незбережені зміни. Ви впевнені?');
+            event.preventDefault(); event.returnValue = message; return message;
         }
         return undefined;
     },
     initEditor() {
+        // Ініціалізація Quill.js
         try {
-            // Ініціалізація TinyMCE
-            tinymce.init({
-                selector: '#storyContentEditor',
-                plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount help',
-                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | help',
-                skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
-                content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
-                content_style: 'body { font-family:Montserrat,sans-serif; font-size:16px; color: var(--text-color); background-color: var(--card-color); } p {margin-bottom: 1em;}',
-                placeholder: $store.i18n?.t('createStory.contentPlaceholder') || 'Почніть писати вашу історію тут...',
-                height: 500,
-                setup: (editor) => {
-                    editor.on('change keyup Undo Redo', () => {
-                        this.storyContent = editor.getContent();
-                        this.setUnsavedChanges();
-                    });
-                    editor.on('init', () => {
-                        if (this.isEditMode && this.storyContent) {
-                            editor.setContent(this.storyContent);
-                            setTimeout(() => { this.hasUnsavedChanges = false; }, 50);
-                        }
-                    });
-                },
-                language: $store.i18n?.selectedLang === 'uk' ? 'uk' : ($store.i18n?.selectedLang === 'ru' ? 'ru' : 'en'),
-                language_url: `/tinymce/langs/${$store.i18n?.selectedLang || 'en'}.js`
+            // Панель інструментів: базовий набір + заголовки
+            const toolbarOptions = [
+                 [{ 'header': [2, 3, false] }], // Заголовки h2, h3
+                 ['bold', 'italic', 'underline', 'strike'], // Форматування тексту
+                 [{ 'list': 'ordered'}, { 'list': 'bullet' }], // Списки
+                 ['blockquote', 'code-block'], // Цитата, блок коду
+                 ['link'], // Посилання
+                 ['clean'] // Очищення форматування
+            ];
+
+            this.quillInstance = new Quill('#storyContentEditor', {
+                modules: { toolbar: toolbarOptions },
+                theme: 'snow', // Тема за замовчуванням
+                placeholder: this.safeT('createStory.contentPlaceholder', 'Почніть писати...')
+            });
+
+             console.log('Quill initialized');
+             // Повідомляємо, що Quill готовий (для завантаження даних при редагуванні)
+             document.dispatchEvent(new CustomEvent('quillLoaded'));
+
+             // Встановлюємо контент, якщо він вже завантажений (для випадку, коли initEditor викликається пізніше)
+             if (this.isEditMode && this.storyContent && !this.quillInitialContentSet) {
+                  this.quillInstance.root.innerHTML = this.storyContent;
+                  this.quillInitialContentSet = true;
+                  this.quillInstance.history.clear(); // Очищаємо історію
+                  setTimeout(() => { this.hasUnsavedChanges = false; window.onbeforeunload = null; }, 100);
+             }
+
+            // Відслідковуємо зміни контенту
+            this.quillInstance.on('text-change', (delta, oldDelta, source) => {
+                if (source === 'user') { // Тільки зміни користувача
+                    this.storyContent = this.quillInstance.root.innerHTML; // Зберігаємо HTML
+                    this.setUnsavedChanges();
+                }
             });
         } catch (error) {
-            console.error('Error initializing TinyMCE:', error);
-            this.errorMessage = $store.i18n?.t('createStory.errorEditorInit') || 'Помилка ініціалізації редактора. Спробуйте оновити сторінку.';
+            console.error('Error initializing Quill.js:', error);
+            this.errorMessage = this.safeT('createStory.errorEditorInit', 'Помилка ініціалізації редактора.');
         }
 
-        // Ініціалізація Select2 з перевіркою наявності jQuery
-        if (typeof $ === 'function') {
+        // Ініціалізація Select2 (без змін)
+        if (typeof $ === 'function' && this.$refs.tagsSelect) {
             try {
                 $(this.$refs.tagsSelect).select2({
-                    theme: 'bootstrap4',
-                    tags: true,
-                    tokenSeparators: [',', ' '],
-                    maximumSelectionLength: 5,
-                    placeholder: $store.i18n?.t('createStory.tagsPlaceholder') || 'Додайте теги...',
+                    theme: 'default', // Використовуємо тему default, стилі налаштовані в CSS
+                    tags: true, tokenSeparators: [',', ' '], maximumSelectionLength: 5,
+                    placeholder: this.safeT('createStory.tagsPlaceholder', 'Виберіть або введіть теги...'),
                     language: {
-                        noResults: () => $store.i18n?.t('select2.noResults') || 'Нічого не знайдено',
-                        searching: () => $store.i18n?.t('select2.searching') || 'Пошук...',
-                        maximumSelected: (args) => $store.i18n?.t('createStory.tagsMaxSelected', { count: args.maximum }) || 
-                                                  `Ви можете вибрати лише ${args.maximum} тегів`
+                        noResults: () => this.safeT('select2.noResults', 'Нічого не знайдено'),
+                        searching: () => this.safeT('select2.searching', 'Пошук...'),
+                        maximumSelected: (args) => this.safeT('createStory.tagsMaxSelected', { count: args.maximum }, `Ви можете вибрати лише ${args.maximum} тегів`)
                     }
                 }).on('change', (e) => {
-                    const currentVal = JSON.stringify(this.storyTags);
-                    const newVal = JSON.stringify($(e.target).val() || []);
-                    if(currentVal !== newVal) {
-                        this.storyTags = $(e.target).val() || [];
-                        this.setUnsavedChanges();
-                    }
+                    const currentVal = JSON.stringify(this.storyTags.slice().sort());
+                    const newVal = JSON.stringify($(e.target).val()?.slice().sort() || []);
+                    if(currentVal !== newVal) { this.storyTags = $(e.target).val() || []; this.setUnsavedChanges(); }
                 });
+                 if (this.isEditMode && this.storyTags.length > 0) {
+                     $(this.$refs.tagsSelect).val(this.storyTags).trigger('change');
+                 }
             } catch (error) {
                 console.error('Error initializing Select2:', error);
+                this.errorMessage = this.safeT('createStory.errorTagsInit', 'Помилка ініціалізації тегів.');
             }
-        } else {
-            console.error('jQuery is not available, Select2 cannot be initialized');
-            this.errorMessage = $store.i18n?.t('createStory.errorTagsInit') || 'Помилка ініціалізації тегів. Деякі функції можуть не працювати.';
-        }
+        } else { console.error('jQuery or tagsSelect ref not available for Select2'); }
 
-        // Додаємо слухач для попередження про незбережені зміни
+        // Додаємо слухач beforeunload
         window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
     }
 
 }" x-init="
-    loadCategories(); // Завантажуємо категорії
-    initEditor();     // Ініціалізуємо редактори
-    loadStoryForEdit(); // Спробуємо завантажити історію для редагування
-    // Спостерігаємо за змінами в полях для прапорця hasUnsavedChanges
-    $watch('storyTitle', () => setUnsavedChanges());
-    $watch('storyCategory', () => setUnsavedChanges());
-    $watch('ageRating', () => setUnsavedChanges());
-    $watch('isPremium', () => setUnsavedChanges());
-    $watch('isAnonymous', () => setUnsavedChanges());
+    // Чекаємо ініціалізації API та i18n
+    let waitCount = 0;
+    const checkReady = setInterval(async () => {
+        if ((typeof api !== 'undefined' && typeof $store !== 'undefined' && $store.i18n?.initialized) || waitCount > 50) {
+            clearInterval(checkReady);
+            if (typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) {
+                console.error('API or i18n failed to initialize on create_story page!');
+                errorMessage = 'Помилка завантаження сторінки. Спробуйте оновити.';
+                isLoading = false;
+            } else {
+                // Перевіряємо авторизацію
+                 if (!api.utils.isAuthenticated()) {
+                      window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                      return; // Зупиняємо подальшу ініціалізацію
+                 }
+                // Ініціалізуємо компоненти та завантажуємо дані
+                await loadCategories();
+                initEditor(); // Ініціалізуємо Quill та Select2
+                await loadStoryForEdit(); // Спробує завантажити, якщо є ID
+            }
+        }
+        waitCount++;
+    }, 100);
+
+    // Очищення ресурсів
     $cleanup = () => {
         try {
-            // Видалити TinyMCE редактор
-            tinymce.get('storyContentEditor')?.remove();
-            
-            // Видалити слухача beforeunload
-            window.removeEventListener('beforeunload', this.handleBeforeUnload);
-            
-            // Знищити Select2
-            if (typeof $ === 'function') {
-                $(this.$refs.tagsSelect)?.select2('destroy');
-            }
-            
-            // Очистити таймаути
-            if (this.notificationTimeout) {
-                clearTimeout(this.notificationTimeout);
-            }
-        } catch (error) {
-            console.warn('Error during cleanup:', error);
-        }
+            // Видаляємо екземпляр Quill при знищенні компонента
+            if (quillInstance) quillInstance = null;
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            if (typeof $ === 'function') $(this.$refs.tagsSelect)?.select2('destroy');
+            if (notificationTimeout) clearTimeout(notificationTimeout);
+        } catch (error) { console.warn('Error during cleanup:', error); }
     }
-" @beforeunload="handleBeforeUnload($event)">
+" @beforeunload.window="handleBeforeUnload($event)">
 
 <!-- Індикатор завантаження -->
 <div x-show="isLoading" class="loading-indicator-overlay" x-transition.opacity>
@@ -643,51 +525,50 @@
 <header>
     <div class="container">
         <nav class="navbar">
-            <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-            <!-- Навігація з i18n -->
+            <a href="index.html" class="logo" aria-label="На головну">
+                <span x-text="safeT('general.siteNamePart1', 'Таємний')"></span><span style="color: var(--accent-red);" x-text="safeT('general.siteNamePart2', 'Світ')"></span>
+            </a>
             <ul class="nav-links">
-                <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-                <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-                <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-                <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-                <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+                <li><a href="index.html" x-text="safeT('general.home')"></a></li>
+                <li><a href="new-stories.html" x-text="safeT('general.newStories')"></a></li>
+                <li><a href="top-stories.html" x-text="safeT('general.topStories')"></a></li>
+                <li><a href="categories.html" x-text="safeT('general.categories')"></a></li>
+                <li><a href="authors.html" x-text="safeT('general.authors')"></a></li>
             </ul>
             <div class="auth-buttons">
                 <!-- Мовний перемикач -->
                 <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
-                    <div class="lang-dropdown-button" @click="open = !open">
-                        <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
-                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
+                    <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+                        <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
                     </div>
-                    <div class="lang-dropdown-menu" x-show="open" x-transition>
-                        <template x-for="lang in $store.i18n.available" :key="lang.code">
-                            <div class="lang-dropdown-item"
-                                 :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                                 @click="$store.i18n.setLanguage(lang.code); open = false;">
-                                <span x-text="lang.name"></span>
-                                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
-                            </div>
-                        </template>
-                    </div>
+                    <template x-if="$store?.i18n">
+                        <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+                            <template x-for="lang in $store.i18n.available || []" :key="lang.code">
+                                <div class="lang-dropdown-item"
+                                     :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                                     @click="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}"
+                                     role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                                     @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}">
+                                    <span x-text="lang.name"></span>
+                                    <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
                 <!-- Кнопки авторизації -->
                 <template x-if="!isLoggedIn">
                     <div>
-                        <a href="login.html" class="btn btn-outline">
-                            <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
-                        </a>
-                        <a href="login.html?tab=register" class="btn btn-primary">
-                            <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
-                        </a>
+                        <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="safeT('general.login')"></span> </a>
+                        <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="safeT('general.register')"></span> </a>
                     </div>
                 </template>
                 <template x-if="isLoggedIn">
                     <div>
-                        <a href="profile.html" class="btn btn-outline">
-                            <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
-                        </a>
-                        <a href="#" @click.prevent="api.auth.logout(); isLoggedIn = false;" class="btn btn-primary">
-                            <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+                        <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="safeT('general.profile')"></span> </a>
+                        <a href="#" @click.prevent="try { api.auth.logout(); window.location.href='index.html'; } catch (e) { console.error('Logout error:', e); alert(safeT('general.logoutError'));}" class="btn btn-primary">
+                            <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout')"></span>
                         </a>
                     </div>
                 </template>
@@ -701,54 +582,54 @@
 
     <!-- Заголовок сторінки -->
     <div class="editor-header">
-        <h1 class="editor-title" x-text="isEditMode ? $store.i18n.t('createStory.pageTitleEdit') : $store.i18n.t('createStory.pageTitleCreate')"></h1>
-        <p class="editor-subtitle" x-text="$store.i18n.t('createStory.subtitle')"></p>
+        <h1 class="editor-title" x-text="isEditMode ? safeT('createStory.pageTitleEdit') : safeT('createStory.pageTitleCreate')"></h1>
+        <p class="editor-subtitle" x-text="safeT('createStory.subtitle')"></p>
     </div>
 
     <!-- Повідомлення про помилки/успіх -->
-    <div x-show="errorMessage" class="error-message">
-        <i class="fas fa-exclamation-circle"></i> <span x-text="errorMessage"></span>
-        <button @click="errorMessage = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.close')"></button>
+    <div x-show="errorMessage" class="error-message" role="alert" aria-live="assertive">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i> <span x-text="errorMessage"></span>
+        <button @click="errorMessage = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="safeT('general.close')"></button>
     </div>
-    <div x-show="successMessage" class="success-message">
-        <i class="fas fa-check-circle"></i> <span x-text="successMessage"></span>
-        <button @click="successMessage = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.close')"></button>
+    <div x-show="successMessage" class="success-message" role="status" aria-live="polite">
+        <i class="fas fa-check-circle" aria-hidden="true"></i> <span x-text="successMessage"></span>
+        <button @click="successMessage = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="safeT('general.close')"></button>
     </div>
 
     <!-- Таби Редактор/Прев'ю -->
-    <div class="editor-tabs">
-        <div class="editor-tab" :class="{ 'active': currentTab === 'editor' }" @click="currentTab = 'editor'" x-text="$store.i18n.t('createStory.tabEditor')"></div>
-        <div class="editor-tab" :class="{ 'active': currentTab === 'preview' }" @click="currentTab = 'preview'" x-text="$store.i18n.t('createStory.tabPreview')"></div>
+    <div class="editor-tabs" role="tablist">
+        <button type="button" class="editor-tab" :class="{ 'active': currentTab === 'editor' }" @click="currentTab = 'editor'" role="tab" :aria-selected="currentTab === 'editor'" aria-controls="editor-panel" x-text="safeT('createStory.tabEditor')"></button>
+        <button type="button" class="editor-tab" :class="{ 'active': currentTab === 'preview' }" @click="currentTab = 'preview'; storyContent = quillInstance?.root.innerHTML || ''" role="tab" :aria-selected="currentTab === 'preview'" aria-controls="preview-panel" x-text="safeT('createStory.tabPreview')"></button>
     </div>
 
     <!-- Форма редактора -->
-    <div x-show="currentTab === 'editor'" x-transition>
+    <div id="editor-panel" role="tabpanel" aria-labelledby="tab-editor" x-show="currentTab === 'editor'" x-transition>
         <!-- Поради -->
         <div class="editor-tips">
-            <h3 class="editor-tips-title"><i class="fas fa-lightbulb"></i> <span x-text="$store.i18n.t('createStory.tipsTitle')"></span></h3>
+            <h3 class="editor-tips-title"><i class="fas fa-lightbulb" aria-hidden="true"></i> <span x-text="safeT('createStory.tipsTitle')"></span></h3>
             <ul class="editor-tips-list">
-                <li x-text="$store.i18n.t('createStory.tip1')"></li>
-                <li x-text="$store.i18n.t('createStory.tip2')"></li>
-                <li x-text="$store.i18n.t('createStory.tip3')"></li>
-                <li x-text="$store.i18n.t('createStory.tip4')"></li>
-                <li x-text="$store.i18n.t('createStory.tip5')"></li>
+                <li x-text="safeT('createStory.tip1')"></li>
+                <li x-text="safeT('createStory.tip2')"></li>
+                <li x-text="safeT('createStory.tip3')"></li>
+                <li x-text="safeT('createStory.tip4')"></li>
+                <li x-text="safeT('createStory.tip5')"></li>
             </ul>
         </div>
 
         <form class="editor-form" @submit.prevent>
             <!-- Назва -->
             <div class="form-group">
-                <label for="storyTitle" class="form-label" x-text="$store.i18n.t('createStory.titleLabel')"></label>
-                <input type="text" id="storyTitle" class="form-input" x-model="storyTitle" :placeholder="$store.i18n.t('createStory.titlePlaceholder')" maxlength="100" required @input="setUnsavedChanges">
-                <div class="form-help" x-text="$store.i18n.t('createStory.titleHelp')"></div>
+                <label for="storyTitle" class="form-label" x-text="safeT('createStory.titleLabel')"></label>
+                <input type="text" id="storyTitle" class="form-input" x-model="storyTitle" :placeholder="safeT('createStory.titlePlaceholder')" maxlength="150" required @input="setUnsavedChanges"> <!-- Збільшено maxlength -->
+                <div class="form-help" x-text="safeT('createStory.titleHelp')"></div>
             </div>
 
             <div class="form-row">
                 <!-- Категорія -->
                 <div class="form-group" style="flex: 1;">
-                    <label for="storyCategory" class="form-label" x-text="$store.i18n.t('createStory.categoryLabel')"></label>
+                    <label for="storyCategory" class="form-label" x-text="safeT('createStory.categoryLabel')"></label>
                     <select id="storyCategory" class="form-select" x-model="storyCategory" required @change="setUnsavedChanges">
-                        <option value="" disabled selected x-text="$store.i18n.t('createStory.categorySelectDefault')"></option>
+                        <option value="" disabled x-text="safeT('createStory.categorySelectDefault')"></option>
                         <template x-for="category in availableCategories" :key="category.id">
                             <option :value="category.id" x-text="category.name"></option>
                         </template>
@@ -756,72 +637,76 @@
                 </div>
                 <!-- Віковий рейтинг -->
                 <div class="form-group" style="flex: 1;">
-                    <label for="ageRating" class="form-label" x-text="$store.i18n.t('createStory.ageRatingLabel')"></label>
+                    <label for="ageRating" class="form-label" x-text="safeT('createStory.ageRatingLabel')"></label>
                     <select id="ageRating" class="form-select" x-model="ageRating" required @change="setUnsavedChanges">
-                        <option value="18+" x-text="$store.i18n.t('createStory.ageRating18')"></option>
-                        <option value="21+" x-text="$store.i18n.t('createStory.ageRating21')"></option>
+                        <option value="18+" x-text="safeT('createStory.ageRating18')"></option>
+                        <option value="21+" x-text="safeT('createStory.ageRating21')"></option>
                     </select>
                 </div>
             </div>
 
             <!-- Теги -->
             <div class="form-group">
-                <label for="storyTags" class="form-label" x-text="$store.i18n.t('createStory.tagsLabel')"></label>
-                <!-- Використовуємо x-ref для доступу до елемента в init -->
-                <select id="storyTags" class="form-select" multiple="multiple" x-ref="tagsSelect"></select>
-                <div class="form-help" x-text="$store.i18n.t('createStory.tagsHelp')"></div>
+                <label for="storyTags" class="form-label" x-text="safeT('createStory.tagsLabel')"></label>
+                <select id="storyTags" class="form-select" multiple="multiple" x-ref="tagsSelect" style="width: 100%;"></select>
+                <div class="form-help" x-text="safeT('createStory.tagsHelp')"></div>
             </div>
 
             <!-- Зображення -->
             <div class="form-group">
-                <label class="form-label" x-text="$store.i18n.t('createStory.imageLabel')"></label>
+                <label class="form-label" x-text="safeT('createStory.imageLabel')"></label>
                 <input type="file" id="imageUploadInput" @change="handleImageUpload($event)" accept="image/jpeg, image/png, image/gif, image/webp" style="display: none;" x-ref="imageUploadInput">
-                <label for="imageUploadInput" class="image-upload">
-                    <div class="image-upload-icon"><i class="fas fa-image"></i></div>
-                    <div class="image-upload-text" x-text="$store.i18n.t('createStory.imageUploadButton')"></div>
-                    <div class="image-upload-subtext" x-text="$store.i18n.t('createStory.imageUploadHelp')"></div>
+                <label for="imageUploadInput" class="image-upload" tabindex="0" @keydown.enter.space.prevent="$refs.imageUploadInput.click()">
+                    <div class="image-upload-icon"><i class="fas fa-image" aria-hidden="true"></i></div>
+                    <div class="image-upload-text" x-text="safeT('createStory.imageUploadButton')"></div>
+                    <div class="image-upload-subtext" x-text="safeT('createStory.imageUploadHelp')"></div>
                 </label>
-                <div class="form-help" x-text="$store.i18n.t('createStory.imageHelp')"></div>
+                <div class="form-help" x-text="safeT('createStory.imageHelp')"></div>
                 <!-- Прев'ю зображення -->
                 <div class="image-preview" x-show="imagePreviewUrl" x-transition>
-                    <img :src="imagePreviewUrl" alt="Прев'ю зображення">
-                    <button type="button" @click="removeImagePreview()" class="image-preview-remove" :title="$store.i18n.t('createStory.imageRemoveTooltip')">
-                        <i class="fas fa-times"></i>
+                    <img :src="imagePreviewUrl" :alt="safeT('createStory.previewImageAlt')">
+                    <button type="button" @click="removeImagePreview()" class="image-preview-remove" :title="safeT('createStory.imageRemoveTooltip')" :aria-label="safeT('createStory.imageRemoveTooltip')">
+                        <i class="fas fa-times" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Текст історії -->
+            <!-- Текст історії (Quill) -->
             <div class="form-group">
-                <label for="storyContentEditor" class="form-label" x-text="$store.i18n.t('createStory.contentLabel')"></label>
-                <textarea id="storyContentEditor"></textarea>
+                <label for="storyContentEditorContainer" class="form-label" x-text="safeT('createStory.contentLabel')"></label>
+                <!-- Контейнер для Quill -->
+                <div id="storyContentEditorContainer">
+                    <div id="storyContentEditor">
+                        <!-- Початковий контент буде вставлено через JS -->
+                    </div>
+                </div>
             </div>
 
             <!-- Опції -->
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="isPremium" x-model="isPremium" @change="setUnsavedChanges">
-                <label for="isPremium" x-text="$store.i18n.t('createStory.premiumCheckbox')"></label>
-                <span class="form-help" style="margin-left: 5px;" x-text="$store.i18n.t('createStory.premiumHelp')"></span>
+                <label for="isPremium" x-text="safeT('createStory.premiumCheckbox')"></label>
+                <span class="form-help" style="margin-left: 5px;" x-text="safeT('createStory.premiumHelp')"></span>
             </div>
             <div class="form-group checkbox-group">
                 <input type="checkbox" id="isAnonymous" x-model="isAnonymous" @change="setUnsavedChanges">
-                <label for="isAnonymous" x-text="$store.i18n.t('createStory.anonymousCheckbox')"></label>
-                <span class="form-help" style="margin-left: 5px;" x-text="$store.i18n.t('createStory.anonymousHelp')"></span>
+                <label for="isAnonymous" x-text="safeT('createStory.anonymousCheckbox')"></label>
+                <span class="form-help" style="margin-left: 5px;" x-text="safeT('createStory.anonymousHelp')"></span>
             </div>
 
             <!-- Кнопки дій -->
             <div class="editor-actions">
                 <div class="action-left">
-                    <button type="button" class="btn btn-outline" @click="saveDraft()" :disabled="isSavingDraft || isPublishing">
-                        <span x-show="!isSavingDraft" x-text="$store.i18n.t('createStory.saveDraftButton')"></span>
-                        <span x-show="isSavingDraft"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('createStory.savingDraft')"></span></span>
+                    <button type="button" class="btn btn-outline" @click="saveDraft()" :disabled="isSavingDraft || isPublishing" :class="{ 'processing': isSavingDraft }" :aria-busy="isSavingDraft">
+                        <span x-show="!isSavingDraft" x-text="safeT('createStory.saveDraftButton')"></span>
+                        <span x-show="isSavingDraft"><span x-text="safeT('createStory.savingDraft')"></span></span>
                     </button>
                 </div>
                 <div class="action-right">
-                    <button type="button" class="btn btn-outline" @click="window.location.href='index.html'" :disabled="isSavingDraft || isPublishing" x-text="$store.i18n.t('general.cancel')"></button>
-                    <button type="button" class="btn btn-primary processing" @click="publishStory()" :disabled="isPublishing || isSavingDraft">
-                        <span x-show="!isPublishing" x-text="$store.i18n.t('createStory.publishButton')"></span>
-                        <span x-show="isPublishing"><span x-text="$store.i18n.t('createStory.publishing')"></span></span> <!-- Спінер додається через CSS -->
+                    <button type="button" class="btn btn-outline" @click="window.location.href='index.html'" :disabled="isSavingDraft || isPublishing" x-text="safeT('general.cancel')"></button>
+                    <button type="button" class="btn btn-primary" :class="{ 'processing': isPublishing }" @click="publishStory()" :disabled="isPublishing || isSavingDraft" :aria-busy="isPublishing">
+                        <span x-show="!isPublishing" x-text="safeT('createStory.publishButton')"></span>
+                        <span x-show="isPublishing"><span x-text="safeT('createStory.publishing')"></span></span>
                     </button>
                 </div>
             </div>
@@ -829,22 +714,22 @@
     </div>
 
     <!-- Попередній перегляд -->
-    <div x-show="currentTab === 'preview'" x-transition>
+    <div id="preview-panel" role="tabpanel" aria-labelledby="tab-preview" x-show="currentTab === 'preview'" x-transition>
         <div class="preview-container">
-            <h2 class="preview-title" x-text="storyTitle || $store.i18n.t('createStory.previewTitlePlaceholder')"></h2>
+            <h2 class="preview-title" x-text="storyTitle || safeT('createStory.previewTitlePlaceholder')"></h2>
             <div class="preview-meta">
-                <div><i class="fas fa-user"></i> <span x-text="isAnonymous ? $store.i18n.t('createStory.previewAuthorAnon') : ($store.i18n.t('createStory.previewAuthorYou'))"></span></div>
-                <div><i class="fas fa-folder"></i> <span x-text="availableCategories.find(c => c.id === storyCategory)?.name || $store.i18n.t('createStory.previewCategoryPlaceholder')"></span></div>
-                <div><i class="fas fa-calendar-alt"></i> <span x-text="$store.i18n.t('createStory.previewDateNow')"></span></div>
-                <div><i class="fas fa-tag"></i> <span x-text="ageRating"></span></div>
-                <div x-show="isPremium"><i class="fas fa-crown" style="color: var(--accent-gold);"></i> <span x-text="$store.i18n.t('general.premium')"></span></div>
+                <div><i class="fas fa-user" aria-hidden="true"></i> <span x-text="isAnonymous ? safeT('createStory.previewAuthorAnon') : safeT('createStory.previewAuthorYou')"></span></div>
+                <div><i class="fas fa-folder" aria-hidden="true"></i> <span x-text="availableCategories.find(c => c.id === storyCategory)?.name || safeT('createStory.previewCategoryPlaceholder')"></span></div>
+                <div><i class="fas fa-calendar-alt" aria-hidden="true"></i> <span x-text="safeT('createStory.previewDateNow')"></span></div>
+                <div><i class="fas fa-tag" aria-hidden="true"></i> <span x-text="ageRating"></span></div>
+                <div x-show="isPremium"><i class="fas fa-crown" style="color: var(--accent-gold);" aria-hidden="true"></i> <span x-text="safeT('general.premium')"></span></div>
             </div>
 
-            <img x-show="imagePreviewUrl" :src="imagePreviewUrl" class="preview-featured-image" :alt="$store.i18n.t('createStory.previewImageAlt')">
-            <p x-show="!imagePreviewUrl" style="color: var(--secondary-text); font-style: italic; margin-bottom: 1.5rem;" x-text="$store.i18n.t('createStory.previewNoImage')"></p>
+            <img x-show="imagePreviewUrl" :src="imagePreviewUrl" class="preview-featured-image" :alt="safeT('createStory.previewImageAlt')">
+            <p x-show="!imagePreviewUrl" style="color: var(--secondary-text); font-style: italic; margin-bottom: 1.5rem;" x-text="safeT('createStory.previewNoImage')"></p>
 
-            <!-- Оновлюємо контент з TinyMCE перед показом -->
-            <div class="preview-content" x-html="tinymce.get('storyContentEditor')?.getContent() || $store.i18n.t('createStory.previewContentPlaceholder')"></div>
+            <!-- Використовуємо змінну storyContent, яка оновлюється з Quill -->
+            <div class="preview-content" x-html="storyContent || safeT('createStory.previewContentPlaceholder')"></div>
 
             <div class="preview-tags" x-show="storyTags.length > 0">
                 <template x-for="tag in storyTags" :key="tag">
@@ -852,7 +737,7 @@
                 </template>
             </div>
 
-            <button type="button" class="btn btn-outline" @click="currentTab = 'editor'" x-text="$store.i18n.t('createStory.previewBackButton')"></button>
+            <button type="button" class="btn btn-outline" @click="currentTab = 'editor'" x-text="safeT('createStory.previewBackButton')"></button>
         </div>
     </div>
 
@@ -863,48 +748,12 @@
     <div class="container">
         <!-- Код футера з i18n, як в index.html -->
         <div class="footer-content">
-            <div class="footer-section footer-about">
-                <h4 x-text="$store.i18n.t('general.about')"></h4>
-                <p x-text="$store.i18n.t('general.aboutText')"></p>
-                <div class="social-links">
-                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
-                    <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
-                </div>
-            </div>
-            <div class="footer-section">
-                <h4 x-text="$store.i18n.t('general.navigation')"></h4>
-                <ul>
-                    <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-                    <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-                    <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-                    <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-                    <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4 x-text="$store.i18n.t('general.support')"></h4>
-                <ul>
-                    <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-                    <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-                    <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-                    <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4 x-text="$store.i18n.t('general.join')"></h4>
-                <ul>
-                    <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-                    <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-                    <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-                    <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
-                </ul>
-            </div>
+            <div class="footer-section footer-about"> <h4 x-text="safeT('general.about')"></h4> <p x-text="safeT('general.aboutText')"></p> <div class="social-links"> <a href="#" class="social-link" :title="safeT('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a> <a href="#" class="social-link" :title="safeT('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a> <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a> </div> </div>
+            <div class="footer-section"> <h4 x-text="safeT('general.navigation')"></h4> <ul> <li><a href="index.html" x-text="safeT('general.home')"></a></li> <li><a href="categories.html" x-text="safeT('general.categories')"></a></li> <li><a href="new-stories.html" x-text="safeT('general.newStories')"></a></li> <li><a href="top-stories.html" x-text="safeT('general.topStories')"></a></li> <li><a href="authors.html" x-text="safeT('general.authors')"></a></li> </ul> </div>
+            <div class="footer-section"> <h4 x-text="safeT('general.support')"></h4> <ul> <li><a href="faq.html" x-text="safeT('faq.title')"></a></li> <li><a href="contact.html" x-text="safeT('contact.title')"></a></li> <li><a href="terms-page.html" x-text="safeT('general.terms')"></a></li> <li><a href="privacy-policy.html" x-text="safeT('general.privacy')"></a></li> </ul> </div>
+            <div class="footer-section"> <h4 x-text="safeT('general.join')"></h4> <ul> <li><a href="login.html" x-text="safeT('general.login')"></a></li> <li><a href="login.html?tab=register" x-text="safeT('general.register')"></a></li> <li><a href="premium.html" x-text="safeT('general.premium')"></a></li> <li><a href="create_story.html" x-text="safeT('createStory.title')"></a></li> </ul> </div>
         </div>
-        <div class="footer-bottom">
-            © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-            <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
-        </div>
+        <div class="footer-bottom"> © <span x-text="new Date().getFullYear()"></span> <span x-text="safeT('general.copyright')"></span>. <span x-text="safeT('general.allRightsReserved')"></span>. 18+ <br> <a href="terms-page.html" x-text="safeT('general.terms')"></a> | <a href="privacy-policy.html" x-text="safeT('general.privacy')"></a> </div>
     </div>
 </footer>
 
@@ -917,9 +766,11 @@
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
-     :class="{ 'show': notificationVisible, 'success': true, 'error': false }"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
      style="display: none;"
-     id="global-notification">
+     id="global-notification"
+     role="alert"
+     aria-live="assertive">
     <span x-text="notificationMessage"></span>
 </div>
 

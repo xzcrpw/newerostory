@@ -1,237 +1,15 @@
 /* css/story.css */
+/* ЗАЛИШЕНО ТІЛЬКИ СТИЛІ, СПЕЦИФІЧНІ ДЛЯ ДЕТАЛЬНОЇ СТОРІНКИ ІСТОРІЇ */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    min-height: 100vh;
-    background-image: radial-gradient(circle at 10% 20%, rgba(153, 0, 0, 0.1) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(153, 0, 0, 0.08) 0%, transparent 20%);
-    background-attachment: fixed;
-}
-
-h1, h2, h3, h4, h5 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    letter-spacing: 0.3px;
-}
-
-.container {
-    width: 100%;
-    max-width: var(--container-width);
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-/* Хедер і навігація (той самий стиль) */
-header {
-    padding: 1.2rem 0;
-    position: relative;
-    z-index: 100;
-}
-
-header:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--accent-red), transparent);
-}
-
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo {
-    font-size: 1.9rem;
-    font-weight: 700;
-    font-family: 'Cormorant Garamond', serif;
-    color: var(--text-color);
-    text-decoration: none;
-    position: relative;
-    display: inline-block;
-}
-
-.logo span {
-    color: var(--accent-red);
-}
-
-.logo:after {
-    content: '18+';
-    position: absolute;
-    top: -5px;
-    right: -25px;
-    font-size: 0.6rem;
-    background: var(--accent-red);
-    color: white;
-    padding: 2px 5px;
-    border-radius: 4px;
-    font-family: 'Montserrat', sans-serif;
-}
-
-.nav-links {
-    display: flex;
-    list-style: none;
-}
-
-.nav-links li {
-    margin-right: 2.5rem;
-    position: relative;
-}
-
-.nav-links a {
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.3s;
-    padding: 8px 0;
-}
-
-.nav-links a:hover {
-    color: var(--accent-red);
-}
-
-.nav-links a:after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: 0;
-    left: 0;
-    background-color: var(--accent-red);
-    transition: width 0.3s;
-}
-
-.nav-links a:hover:after {
-    width: 100%;
-}
-
-.auth-buttons {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.lang-dropdown {
-    margin-right: 1rem;
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.lang-dropdown i {
-    margin-left: 8px;
-    font-size: 0.8rem;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.7rem 1.8rem;
-    border-radius: var(--button-radius);
-    font-weight: 500;
-    text-decoration: none;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    font-size: 0.9rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn i {
-    margin-right: 8px;
-}
-
-.btn:after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transition: all 0.4s;
-    transform: skewX(-15deg);
-}
-
-.btn:hover:after {
-    left: 100%;
-}
-
-.btn-outline {
-    background-color: transparent;
-    color: var(--text-color);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-outline:hover {
-    border-color: var(--accent-red);
-}
-
-.btn-primary {
-    background: var(--button-gradient);
-    color: white;
-    box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(153, 0, 0, 0.4);
-}
-
-/* Хлібні крихти */
-.breadcrumbs {
-    display: flex;
-    margin: 1.5rem 0;
-    font-size: 0.9rem;
-}
-
-.breadcrumbs a {
-    color: var(--secondary-text);
-    text-decoration: none;
-    transition: all 0.3s;
-}
-
-.breadcrumbs a:hover {
-    color: var(--accent-red);
-}
-
-.breadcrumbs .separator {
-    margin: 0 10px;
-    color: var(--secondary-text);
-}
-
-.breadcrumbs .current {
-    color: var(--accent-gold);
-}
+/* Хлібні крихти - стилі вже мають бути в main.css */
+/* .breadcrumbs { ... } */
 
 /* Структура основної сторінки */
 .story-page {
     display: grid;
-    grid-template-columns: 1fr 350px;
-    gap: 2.5rem;
+    /* grid-template-columns: 1fr 350px; */ /* Змінено на гнучкіший варіант */
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); /* Більша колонка для контенту */
+    gap: 3rem; /* Збільшено gap */
     margin-bottom: 4rem;
 }
 
@@ -239,6 +17,7 @@ header:after {
 .story-header {
     margin-bottom: 2rem;
     position: relative;
+    grid-column: 1 / 2; /* Займає першу колонку */
 }
 
 .story-category {
@@ -248,16 +27,27 @@ header:after {
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
 }
+.story-category a { /* Стиль для посилання категорії */
+    color: inherit;
+    text-decoration: none;
+}
+.story-category a:hover {
+    text-decoration: underline;
+}
 
 .story-title-main {
     font-size: 2.8rem;
     line-height: 1.2;
     margin-bottom: 1.5rem;
+    color: var(--text-color); /* Додано */
+    word-wrap: break-word; /* Перенос довгих слів */
 }
 
 .story-meta-info {
     display: flex;
     align-items: center;
+    flex-wrap: wrap; /* Дозволяє перенос */
+    gap: 0.5rem 1.5rem; /* Проміжки */
     color: var(--secondary-text);
     font-size: 0.9rem;
     margin-bottom: 2rem;
@@ -266,48 +56,86 @@ header:after {
 .story-meta-info > div {
     display: flex;
     align-items: center;
-    margin-right: 1.5rem;
+    /* margin-right: 1.5rem; - Замінено на gap */
 }
 
 .story-meta-info i {
     margin-right: 8px;
+    width: 1em; /* Фіксована ширина */
+    text-align: center; /* Центрування */
 }
 
+/* Блок автора */
 .story-author {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Вирівнювання по верху */
+    gap: 1rem; /* Проміжок між аватаром та інфо */
     margin-bottom: 2rem;
+    background-color: rgba(255, 255, 255, 0.03); /* Легкий фон */
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(153, 0, 0, 0.05);
 }
 
-.author-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    margin-right: 1rem;
-    background-image: url('https://source.unsplash.com/random/100x100/?portrait');
-    background-size: cover;
-    background-position: center;
+/* Стиль аватара успадковується з main.css */
+.story-author .author-avatar {
+    width: 60px; /* Збільшено розмір аватара тут */
+    height: 60px;
+    flex-shrink: 0;
+    /* margin-right: 1rem; - Замінено на gap */
 }
 
 .author-info {
     flex: 1;
+    min-width: 0; /* Для переносу тексту */
 }
 
 .author-name {
     font-weight: 600;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.3rem; /* Зменшено */
+    font-size: 1.1rem; /* Збільшено */
+    color: var(--text-color); /* Додано */
+}
+.author-name a { /* Стилі для посилання на автора */
+    color: inherit;
+    text-decoration: none;
+}
+.author-name a:hover {
+    color: var(--accent-red);
+    text-decoration: underline;
 }
 
 .author-bio {
     color: var(--secondary-text);
     font-size: 0.9rem;
+    line-height: 1.6;
 }
 
 .follow-btn {
-    padding: 0.4rem 1rem;
-    font-size: 0.8rem;
-    border-radius: 20px;
-    margin-left: 1rem;
+    /* Стилі успадковуються від .btn */
+    padding: 0.5rem 1.2rem; /* Зробимо кнопку трохи меншою */
+    font-size: 0.85rem;
+    border-radius: var(--border-radius-round);
+    margin-left: 1rem; /* Відступ зліва */
+    flex-shrink: 0; /* Не стискати кнопку */
+    align-self: center; /* Вирівнюємо по центру вертикально */
+}
+.follow-btn.following { /* Стиль для кнопки, коли вже підписаний */
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--secondary-text);
+}
+.follow-btn.following:hover {
+    background-color: rgba(153, 0, 0, 0.1);
+    border-color: var(--accent-red);
+    color: var(--text-color);
+}
+
+
+/* Основний контент історії */
+.story-main {
+    grid-column: 1 / 2; /* Займає першу колонку */
+    min-width: 0; /* Додано для запобігання переповненню */
 }
 
 /* Головне зображення історії */
@@ -315,12 +143,13 @@ header:after {
     width: 100%;
     height: 400px;
     border-radius: var(--border-radius);
-    background-image: url('https://source.unsplash.com/random/1200x600/?silhouette,night');
+    /* background-image: url(...); - Встановлюється інлайново */
     background-size: cover;
     background-position: center;
     margin-bottom: 2rem;
     position: relative;
     overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.05); /* Фон-заглушка */
 }
 
 .story-featured-image:before {
@@ -330,24 +159,27 @@ header:after {
     left: 0;
     right: 0;
     height: 100%;
-    background: linear-gradient(to bottom,
-    rgba(10, 10, 10, 0.4) 0%,
-    transparent 40%,
-    transparent 60%,
-    rgba(10, 10, 10, 0.4) 100%);
+    /* Легкий градієнт знизу для читабельності бейджа */
+    background: linear-gradient(to bottom, transparent 70%, rgba(15, 10, 12, 0.5) 100%);
 }
 
 .story-badge-large {
     position: absolute;
-    top: 1.5rem;
+    bottom: 1.5rem; /* Переміщено вниз */
     right: 1.5rem;
-    background-color: rgba(153, 0, 0, 0.8);
+    background-color: rgba(15, 10, 12, 0.8); /* Змінено фон */
     color: white;
     padding: 0.5rem 1rem;
-    border-radius: 30px;
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     font-size: 0.9rem;
     font-weight: 600;
     z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Додано легку рамку */
+}
+.story-badge-large.premium-badge { /* Стиль для преміум */
+    background-color: var(--premium-gold);
+    color: #000;
+    border: none;
 }
 
 /* Оцінка і кнопки дій */
@@ -358,53 +190,77 @@ header:after {
     margin-bottom: 2rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap; /* Дозволяє перенос */
+    gap: 1rem; /* Проміжок */
 }
 
 .story-rating {
     display: flex;
     align-items: center;
+    gap: 0.5rem; /* Змінено */
 }
 
 .rating-score {
-    font-size: 2rem;
+    font-size: 1.8rem; /* Зменшено */
     font-weight: 700;
     color: var(--accent-gold);
-    margin-right: 1rem;
+    /* margin-right: 1rem; - Замінено на gap */
 }
 
 .rating-stars {
     display: flex;
-    gap: 0.3rem;
-    margin-right: 1rem;
+    gap: 0.2rem; /* Зменшено */
+    /* margin-right: 1rem; - Замінено на gap */
 }
 
-.rating-star {
-    color: var(--accent-gold);
-    font-size: 1.2rem;
+.rating-star { /* Зроблено кнопкою для доступності */
+    color: var(--secondary-text); /* Неактивна зірка */
+    font-size: 1.3rem; /* Збільшено */
     cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    background: none;
+    border: none;
+    padding: 0.2rem; /* Збільшимо область кліку */
+}
+.rating-star:hover {
+    color: var(--accent-gold);
+    transform: scale(1.1);
+}
+.rating-star.active { /* Клас для активних зірок */
+    color: var(--accent-gold);
+}
+/* Доступність: стиль фокусу */
+.rating-star:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 1px;
+    border-radius: 50%;
+    color: var(--accent-gold);
 }
 
 .rating-count {
     color: var(--secondary-text);
     font-size: 0.9rem;
+    margin-left: 0.5rem; /* Додано відступ */
 }
 
 .story-buttons {
     display: flex;
-    gap: 1rem;
+    gap: 0.8rem; /* Зменшено */
 }
 
 .action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.7rem;
+    width: 40px; /* Фіксований розмір */
+    height: 40px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--secondary-text);
     cursor: pointer;
     transition: all 0.3s;
+    font-size: 1rem; /* Розмір іконки */
 }
 
 .action-btn:hover {
@@ -412,44 +268,86 @@ header:after {
     color: var(--text-color);
     border-color: rgba(153, 0, 0, 0.3);
 }
+.action-btn.active { /* Стиль для активних кнопок (лайк, закладка) */
+    background-color: rgba(153, 0, 0, 0.15);
+    color: var(--accent-red);
+    border-color: rgba(153, 0, 0, 0.2);
+}
+/* Доступність: стиль фокусу */
+/* Успадковується з main.css */
 
 /* Контент історії */
 .story-content {
     font-size: 1.1rem;
     line-height: 1.8;
     margin-bottom: 3rem;
+    color: var(--text-color); /* Основний колір тексту */
+    word-wrap: break-word; /* Перенос слів */
+    overflow-wrap: break-word; /* Перенос слів */
 }
 
 .story-content p {
     margin-bottom: 1.5rem;
 }
 
-.story-content p:first-of-type::first-letter {
+.story-content p:first-of-type::first-letter { /* Стиль буквиці */
     font-size: 3.5rem;
     font-family: 'Cormorant Garamond', serif;
     float: left;
     line-height: 0.8;
     margin-right: 0.5rem;
+    margin-top: 0.2rem; /* Невеликий відступ зверху */
     color: var(--accent-red);
 }
+/* Стилізація елементів всередині контенту (як у create_story.css) */
+.story-content h1, .story-content h2, .story-content h3 { font-family: 'Cormorant Garamond', serif; margin-bottom: 1rem; margin-top: 2rem; line-height: 1.3; font-weight: 700; }
+.story-content a { color: var(--accent-red); text-decoration: underline; }
+.story-content blockquote { border-left: 3px solid var(--accent-red); margin: 1.5rem 0 1.5rem 1rem; padding: 0.5rem 1rem 0.5rem 1.5rem; font-style: italic; color: var(--secondary-text); background-color: rgba(255, 255, 255, 0.03); }
+.story-content ul, .story-content ol { padding-left: 1.8rem; margin-bottom: 1.5rem; }
+.story-content li { margin-bottom: 0.6rem; }
+.story-content img { max-width: 100%; height: auto; display: block; margin: 1.5rem auto; border-radius: var(--border-radius); }
+.story-content pre { background-color: #110d0e; color: #f8f8f2; padding: 1rem; border-radius: var(--border-radius); overflow-x: auto; font-family: monospace; margin: 1.5rem 0; border: 1px solid rgba(255, 255, 255, 0.1); white-space: pre-wrap; word-wrap: break-word; }
 
+
+/* Блок преміум-контенту */
 .story-premium-notice {
-    background-color: rgba(153, 0, 0, 0.1);
-    border: 1px solid rgba(153, 0, 0, 0.2);
+    background-color: rgba(var(--premium-gold-rgb), 0.08); /* Використовуємо RGB */
+    border: 1px solid rgba(var(--premium-gold-rgb), 0.2);
+    border-left: 4px solid var(--premium-gold); /* Золота лінія */
     border-radius: var(--border-radius);
     padding: 2rem;
-    margin: 2rem 0;
+    margin: 2.5rem 0; /* Збільшено відступи */
     text-align: center;
+    display: flex; /* Додано flex */
+    flex-direction: column; /* Додано */
+    align-items: center; /* Центрування */
+}
+
+.story-premium-notice .premium-icon { /* Стилізуємо іконку */
+    font-size: 2.5rem;
+    color: var(--premium-gold);
+    margin-bottom: 1rem;
 }
 
 .story-premium-notice h3 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
+    color: var(--premium-gold); /* Золотий колір */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт */
 }
 
 .story-premium-notice p {
     margin-bottom: 1.5rem;
     color: var(--secondary-text);
+    max-width: 500px; /* Обмеження ширини */
+}
+
+.story-premium-notice .btn-primary { /* Стиль кнопки */
+    background: var(--premium-gradient);
+    color: #000; /* Темний текст */
+}
+.story-premium-notice .btn-primary:hover {
+    box-shadow: 0 8px 25px rgba(var(--premium-gold-rgb), 0.3);
 }
 
 /* Теги історії */
@@ -460,6 +358,7 @@ header:after {
 .story-tags-title {
     font-size: 1.2rem;
     margin-bottom: 1rem;
+    color: var(--text-color); /* Додано */
 }
 
 .story-tags-list {
@@ -473,7 +372,7 @@ header:after {
     padding: 0.5rem 1.2rem;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 30px;
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     color: var(--secondary-text);
     text-decoration: none;
     font-size: 0.9rem;
@@ -486,6 +385,7 @@ header:after {
     color: var(--text-color);
     transform: translateY(-2px);
 }
+/* Стиль фокусу успадковується */
 
 /* Навігація між історіями */
 .story-navigation {
@@ -500,6 +400,7 @@ header:after {
     border-radius: var(--border-radius);
     padding: 1.5rem;
     display: flex;
+    align-items: center; /* Вирівнювання */
     text-decoration: none;
     transition: all 0.3s;
     border: 1px solid rgba(153, 0, 0, 0.05);
@@ -509,7 +410,13 @@ header:after {
 .prev-story:hover, .next-story:hover {
     transform: translateY(-5px);
     border-color: rgba(153, 0, 0, 0.2);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Додано тінь */
 }
+.prev-story:focus-visible, .next-story:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+}
+
 
 .nav-direction {
     font-size: 0.9rem;
@@ -522,30 +429,30 @@ header:after {
     color: var(--text-color);
     font-size: 1.1rem;
     margin-bottom: 0;
+    line-height: 1.4; /* Додано */
+    /* Обмеження тексту */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nav-content { /* Контейнер для тексту */
+    flex-grow: 1;
+    min-width: 0; /* Для переносу тексту */
 }
 
 .prev-story-icon, .next-story-icon {
     font-size: 1.5rem;
     color: var(--secondary-text);
-    margin: auto 0;
+    flex-shrink: 0; /* Заборона стискання іконки */
+    /* margin: auto 0; - Замінено на align-items у батьківському */
 }
 
-.prev-story-icon {
-    margin-right: 1rem;
-}
-
-.next-story-icon {
-    margin-left: 1rem;
-}
-
-.prev-story {
-    text-align: left;
-}
-
-.next-story {
-    text-align: right;
-    flex-direction: row-reverse;
-}
+.prev-story-icon { margin-right: 1rem; }
+.next-story-icon { margin-left: 1rem; }
+.prev-story { text-align: left; }
+.next-story { text-align: right; flex-direction: row-reverse; } /* Іконка справа */
 
 /* Коментарі */
 .comments-section {
@@ -556,8 +463,10 @@ header:after {
     font-size: 1.8rem;
     margin-bottom: 2rem;
     position: relative;
+    color: var(--text-color); /* Додано */
 }
 
+/* TODO: Уніфікувати стиль :after для заголовків у main.css */
 .comments-title:after {
     content: '';
     position: absolute;
@@ -572,6 +481,7 @@ header:after {
     margin-bottom: 3rem;
 }
 
+/* Стиль для .comment-input успадковується з .form-textarea з main.css */
 .comment-input {
     width: 100%;
     padding: 1rem;
@@ -586,17 +496,30 @@ header:after {
     margin-bottom: 1rem;
     transition: all 0.3s;
 }
-
 .comment-input:focus {
     outline: none;
     border-color: rgba(153, 0, 0, 0.3);
     background-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1);
 }
+/* Стилі для помилки коментаря (якщо потрібно) */
+.comment-input.error {
+    border-color: #ff6b6b;
+}
+.comment-error-message {
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    margin-top: -0.8rem; /* Щоб було ближче до поля */
+    margin-bottom: 0.8rem;
+    display: block;
+}
+
 
 .comment-submit {
     display: flex;
     justify-content: flex-end;
 }
+/* Стиль .comment-submit .btn успадковується */
 
 .comments-list {
     display: flex;
@@ -606,25 +529,39 @@ header:after {
 
 .comment {
     display: flex;
+    gap: 1rem; /* Проміжок */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Розділювач */
+    padding-bottom: 1.5rem; /* Відступ під розділювачем */
+}
+.comment:last-child {
+    border-bottom: none; /* Прибираємо розділювач у останнього */
+    padding-bottom: 0;
 }
 
-.comment-avatar {
+.comment-avatar { /* Успадковується з main.css */
     width: 50px;
     height: 50px;
-    border-radius: 50%;
-    margin-right: 1rem;
-    background-size: cover;
-    background-position: center;
+    /* margin-right: 1rem; - Замінено на gap */
     flex-shrink: 0;
 }
 
 .comment-body {
     flex: 1;
+    min-width: 0; /* Для переносу */
 }
 
 .comment-author {
     font-weight: 600;
     margin-bottom: 0.2rem;
+    color: var(--text-color); /* Додано */
+}
+.comment-author a { /* Стиль посилання на автора коментаря */
+    color: inherit;
+    text-decoration: none;
+}
+.comment-author a:hover {
+    color: var(--accent-red);
+    text-decoration: underline;
 }
 
 .comment-date {
@@ -636,6 +573,8 @@ header:after {
 .comment-text {
     color: var(--secondary-text);
     margin-bottom: 1rem;
+    line-height: 1.7; /* Додано для читабельності */
+    word-wrap: break-word; /* Перенос */
 }
 
 .comment-actions {
@@ -644,17 +583,27 @@ header:after {
     font-size: 0.9rem;
 }
 
-.comment-actions a {
+.comment-actions a { /* Змінено на button, якщо це дії */
     color: var(--secondary-text);
     text-decoration: none;
     transition: all 0.3s;
     display: flex;
     align-items: center;
+    background: none; /* Для кнопки */
+    border: none; /* Для кнопки */
+    cursor: pointer; /* Для кнопки */
+    padding: 0.3rem 0; /* Збільшимо область кліку */
 }
 
 .comment-actions a:hover {
     color: var(--accent-red);
 }
+.comment-actions a:focus-visible {
+    outline: 1px dotted var(--accent-gold);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
 
 .comment-actions i {
     margin-right: 5px;
@@ -663,7 +612,11 @@ header:after {
 /* Sidebar */
 .story-sidebar {
     position: relative;
-    margin-top: 4rem;
+    /* margin-top: 4rem; - Прибрано, вирівнюється по грід */
+    grid-column: 2 / 3; /* Займає другу колонку */
+    align-self: start; /* Прилипає до верху */
+    position: sticky; /* Робимо сайдбар липким */
+    top: 20px; /* Відступ зверху при прилипанні */
 }
 
 .sidebar-widget {
@@ -679,6 +632,8 @@ header:after {
     font-size: 1.3rem;
     margin-bottom: 1.5rem;
     position: relative;
+    color: var(--text-color); /* Додано */
+    font-family: 'Cormorant Garamond', serif; /* Додано */
 }
 
 .widget-title:after {
@@ -701,14 +656,16 @@ header:after {
     height: 100px;
     border-radius: 50%;
     margin: 0 auto 1rem;
-    background-image: url('https://source.unsplash.com/random/200x200/?portrait');
+    /* background-image: url(...); - Встановлюється інлайново */
     background-size: cover;
     background-position: center;
+    border: 3px solid rgba(var(--accent-gold-rgb), 0.4); /* Додано рамку */
 }
 
 .author-name-large {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
+    color: var(--text-color); /* Додано */
 }
 
 .author-stats {
@@ -726,11 +683,13 @@ header:after {
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 0.2rem;
+    color: var(--accent-gold); /* Додано */
 }
 
 .stat-label {
     color: var(--secondary-text);
     font-size: 0.8rem;
+    text-transform: uppercase; /* Додано */
 }
 
 /* Підписка віджет */
@@ -749,6 +708,7 @@ header:after {
 .premium-title {
     font-size: 1.5rem;
     margin-bottom: 1rem;
+    color: var(--text-color); /* Додано */
 }
 
 .premium-description {
@@ -773,19 +733,26 @@ header:after {
 .premium-features {
     text-align: left;
     margin-bottom: 1.5rem;
+    padding-left: 1rem; /* Додано відступ */
 }
 
 .premium-feature {
     display: flex;
-    align-items: flex-start;
+    align-items: flex-start; /* Змінено */
     margin-bottom: 1rem;
+    gap: 0.7rem; /* Додано проміжок */
+    font-size: 0.9rem; /* Зменшено шрифт */
 }
 
 .premium-feature i {
     color: var(--accent-gold);
-    margin-right: 10px;
-    margin-top: 5px;
+    margin-top: 0.2em; /* Вирівнювання іконки */
+    flex-shrink: 0; /* Заборона стискання */
 }
+.premium-widget .btn-primary {
+    width: 100%; /* Кнопка на всю ширину */
+}
+
 
 /* Схожі історії віджет */
 .related-stories-list {
@@ -796,6 +763,8 @@ header:after {
 
 .related-story {
     display: flex;
+    gap: 1rem; /* Проміжок */
+    align-items: center; /* Вирівнювання */
     text-decoration: none;
     transition: all 0.3s;
 }
@@ -803,19 +772,30 @@ header:after {
 .related-story:hover {
     transform: translateX(5px);
 }
+.related-story:hover .related-story-title {
+    color: var(--accent-red); /* Зміна кольору заголовка при ховері */
+}
+.related-story:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+    border-radius: var(--border-radius); /* Додано */
+}
+
 
 .related-story-image {
     width: 80px;
     height: 80px;
     border-radius: var(--border-radius);
-    margin-right: 1rem;
+    /* margin-right: 1rem; - Замінено на gap */
     background-size: cover;
     background-position: center;
     flex-shrink: 0;
+    background-color: rgba(255, 255, 255, 0.05); /* Фон-заглушка */
 }
 
 .related-story-info {
     flex: 1;
+    min-width: 0; /* Для переносу */
 }
 
 .related-story-title {
@@ -823,23 +803,37 @@ header:after {
     font-size: 1rem;
     margin-bottom: 0.3rem;
     line-height: 1.4;
+    /* Обмеження тексту */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s; /* Плавна зміна кольору */
 }
 
 .related-story-meta {
     display: flex;
     color: var(--secondary-text);
     font-size: 0.8rem;
+    gap: 1rem; /* Проміжок */
 }
-
-.related-story-views {
-    margin-right: 1rem;
+.related-story-meta > div { /* Стиль для елементів мета */
+    display: flex;
+    align-items: center;
 }
+.related-story-meta i {
+    margin-right: 4px; /* Менший відступ іконки */
+}
+/* .related-story-views { margin-right: 1rem; } - Замінено на gap */
 
-/* Share виджет */
+/* Share віджет */
 .share-buttons {
     display: flex;
+    flex-wrap: wrap; /* Дозволяє перенос */
     gap: 0.8rem;
     margin-top: 1rem;
+    justify-content: center; /* Центруємо кнопки */
 }
 
 .share-button {
@@ -851,67 +845,55 @@ header:after {
     justify-content: center;
     text-decoration: none;
     transition: all 0.3s;
+    font-size: 1.1rem; /* Зменшено розмір іконки */
 }
 
 .share-button:hover {
     transform: translateY(-3px);
+    opacity: 0.9; /* Легка прозорість при наведенні */
 }
+/* Стилі фокусу успадковуються */
 
-.share-facebook {
-    background-color: #3b5998;
-    color: white;
-}
+.share-facebook { background-color: #3b5998; color: white; }
+.share-twitter { background-color: #1da1f2; color: white; }
+.share-telegram { background-color: #0088cc; color: white; }
+.share-whatsapp { background-color: #25D366; color: white; }
+.share-link { background-color: rgba(255, 255, 255, 0.1); color: var(--text-color); }
 
-.share-twitter {
-    background-color: #1da1f2;
-    color: white;
-}
-
-.share-telegram {
-    background-color: #0088cc;
-    color: white;
-}
-
-.share-whatsapp {
-    background-color: #25D366;
-    color: white;
-}
-
-.share-link {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-}
-
-/* Responsiveness */
+/* Адаптивність */
 @media (max-width: 992px) {
     .story-page {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr; /* Все в одну колонку */
+        gap: 2rem; /* Зменшуємо gap */
     }
 
     .story-sidebar {
-        margin-top: 0;
+        grid-column: 1 / -1; /* Займає всю ширину */
+        position: static; /* Прибираємо прилипання */
+        margin-top: 3rem; /* Додаємо відступ зверху */
     }
+    /* Сайдбар може бути в кілька колонок */
+    .story-sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+    .sidebar-widget { margin-bottom: 0; } /* Прибираємо відступ знизу */
 }
 
 @media (max-width: 768px) {
-    .nav-links {
-        display: none;
-    }
-
-    .story-title-main {
-        font-size: 2.2rem;
-    }
-
-    .story-meta-info {
-        flex-wrap: wrap;
-    }
-
-    .story-meta-info > div {
-        margin-bottom: 0.5rem;
-    }
-
-    .story-navigation {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
+    .story-title-main { font-size: 2.2rem; }
+    .story-meta-info > div { /*margin-bottom: 0.5rem;*/ } /* Прибираємо, бо є gap */
+    .story-author { flex-direction: column; align-items: flex-start; text-align: left; }
+    .follow-btn { margin-left: 0; margin-top: 1rem; align-self: flex-start; }
+    .story-featured-image { height: 300px; }
+    .story-actions { flex-direction: column; align-items: flex-start; }
+    .rating-score { font-size: 1.6rem; }
+    .rating-star { font-size: 1.2rem; }
+    .story-buttons { margin-top: 1rem; width: 100%; justify-content: space-around; }
+    .story-content { font-size: 1rem; }
+    .story-navigation { grid-template-columns: 1fr; gap: 1rem; }
+    .comments-title { font-size: 1.5rem; }
+    .comment { gap: 0.8rem; }
+    .comment-avatar { width: 40px; height: 40px; }
 }

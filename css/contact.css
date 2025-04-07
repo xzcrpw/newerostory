@@ -1,128 +1,141 @@
 /* css/contact.css */
+/* Залишаємо ТІЛЬКИ стилі, специфічні для сторінки контактів */
 
+/* --- Загальний контейнер сторінки --- */
 .contact-page-container {
-    margin-bottom: 4rem;
+    margin-bottom: 4rem; /* Відступ знизу сторінки */
 }
 
-.contact-header {
-    text-align: center;
+/* --- Заголовок сторінки --- */
+/* Стилі .contact-header, .contact-title, .contact-description видалено, */
+/* оскільки вони мають бути уніфіковані (напр. як .page-header в categories.css) */
+/* Якщо потрібні унікальні відступи для цієї сторінки, можна додати їх тут: */
+.page-header.contact-header { /* Додаємо клас для специфіки */
     margin: 3rem 0;
 }
+/* Стилі для .page-title, .page-description успадковуються з categories.css або main.css */
 
-.contact-title {
-    font-size: 2.8rem;
-    margin-bottom: 1rem;
-    position: relative;
-    display: inline-block;
-}
-
-.contact-title:after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 3px;
-    background: var(--accent-red);
-}
-
-.contact-description {
-    color: var(--secondary-text);
-    font-size: 1.1rem;
-    max-width: 700px;
-    margin: 0 auto;
-}
-
+/* --- Основний контент (сітка) --- */
 .contact-content {
     display: grid;
-    grid-template-columns: 1fr 1.5fr; /* Ліва колонка менша */
-    gap: 3rem;
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    background-image: var(--card-gradient);
+    grid-template-columns: 1fr 1.5fr; /* Ліва колонка менша (інфо), права більша (форма) */
+    gap: 3rem; /* Проміжок між колонками */
+    background-color: var(--card-color); /* Фон блоку */
+    border-radius: var(--border-radius); /* Закруглення кутів */
+    padding: 2.5rem; /* Внутрішні відступи (трохи збільшив) */
+    /* Використовуємо змінну для кольору рамки */
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
+    background-image: var(--card-gradient); /* Градієнтний фон */
+}
+
+/* --- Ліва колонка: Інформація --- */
+.contact-info {
+    /* Додаткові стилі для контейнера інформації, якщо потрібно */
 }
 
 .contact-subtitle {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    color: var(--accent-gold);
+    font-size: 1.8rem; /* Розмір підзаголовка */
+    margin-bottom: 1.5rem; /* Відступ під підзаголовком */
+    color: var(--accent-gold); /* Акцентний колір */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
 }
 
 .contact-info p {
-    color: var(--secondary-text);
-    margin-bottom: 1.5rem;
-    line-height: 1.7;
+    color: var(--secondary-text); /* Колір тексту */
+    margin-bottom: 1.5rem; /* Відступ між параграфами */
+    line-height: 1.7; /* Міжрядковий інтервал */
 }
 
 .contact-info a {
-    color: var(--accent-red);
-    text-decoration: none;
-    transition: color 0.3s;
+    /* Стилі посилань успадковуються з main.css */
+    /* color: var(--accent-red); */
+    /* text-decoration: none; */
+    /* transition: color 0.3s; */
 }
 
 .contact-info a:hover {
-    text-decoration: underline;
+    /* text-decoration: underline; */ /* Вже є в main.css */
 }
 
 .contact-details {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem; /* Відступ під блоком контактів */
+    display: flex; /* Використовуємо flex для кращого контролю */
+    flex-direction: column; /* Елементи розташовуються вертикально */
+    gap: 1.2rem; /* Проміжок між контактними елементами */
 }
 
 .contact-item {
     display: flex;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-    color: var(--secondary-text);
+    align-items: flex-start; /* Вирівнювання іконки та тексту по верху */
+    color: var(--secondary-text); /* Колір тексту */
+    gap: 1rem; /* Проміжок між іконкою та текстом */
 }
 
 .contact-item i {
-    font-size: 1.2rem;
-    color: var(--accent-red);
-    margin-right: 1rem;
-    margin-top: 0.2rem;
+    font-size: 1.2rem; /* Розмір іконки */
+    color: var(--accent-red); /* Колір іконки */
+    /* margin-right: 1rem; - Замінено на gap */
+    /* margin-top: 0.2rem; - Прибрано, використовуємо align-items */
     width: 20px; /* Фіксована ширина для вирівнювання */
-    text-align: center;
+    text-align: center; /* Центрування іконки */
+    flex-shrink: 0; /* Не стискати іконку */
+    padding-top: 0.1em; /* Невеликий відступ для кращого візуального вирівнювання */
+}
+
+.contact-item div { /* Контейнер для тексту */
+    flex-grow: 1; /* Займає доступний простір */
+    min-width: 0; /* Для правильного переносу довгих посилань */
 }
 
 .contact-item strong {
-    color: var(--text-color);
-    display: block;
-    margin-bottom: 0.2rem;
+    color: var(--text-color); /* Колір основного тексту */
+    display: block; /* Робить strong блочним */
+    margin-bottom: 0.2rem; /* Невеликий відступ під заголовком */
+    font-weight: 500; /* Напівжирний шрифт */
+}
+/* Стиль для посилань в деталях контактів */
+.contact-item a {
+    word-break: break-all; /* Дозволяє перенос довгих email/посилань */
 }
 
+/* --- Права колонка: Форма --- */
 .contact-form-container {
-    /* Стилі для контейнера форми */
+    /* Стилі для контейнера форми, якщо потрібно */
 }
 
 .contact-form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.5rem; /* Проміжок між групами полів */
 }
 
+/* Стилі для .form-group, .form-label, .form-input, .form-textarea, .btn */
+/* успадковуються з main.css */
 
-/* Адаптивність */
+
+/* --- Адаптивність --- */
 @media (max-width: 992px) {
     .contact-content {
-        grid-template-columns: 1fr; /* В одну колонку */
+        grid-template-columns: 1fr; /* В одну колонку на планшетах */
+        gap: 2.5rem; /* Змінюємо проміжок */
     }
 
     .contact-info {
-        margin-bottom: 2rem; /* Відступ знизу для інфо-блоку */
+        margin-bottom: 0; /* Прибираємо зайвий відступ, бо тепер gap між секціями */
     }
 }
 
 @media (max-width: 576px) {
-    .contact-header {
-        margin: 2rem 0;
+    .page-header.contact-header {
+        margin: 2rem 0; /* Зменшуємо відступи заголовка */
     }
-    .contact-title {
-        font-size: 2.2rem;
-    }
+    /* Стилі заголовка .page-title, .page-description мають адаптуватись з main.css */
+
     .contact-content {
-        padding: 1.5rem;
+        padding: 1.5rem; /* Зменшуємо внутрішні відступи */
+        gap: 2rem; /* Зменшуємо проміжок */
+    }
+    .contact-subtitle {
+        font-size: 1.6rem; /* Зменшуємо підзаголовок */
     }
 }

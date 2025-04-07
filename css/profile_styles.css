@@ -1,871 +1,394 @@
 /* css/profile_styles.css */
 
-/* Стилі для сторінки профілю */
-
-/* Загальна структура профілю */
-.profile-section {
+/* Загальний контейнер профілю */
+.profile-container {
     display: grid;
-    grid-template-columns: 350px 1fr;
-    gap: 2.5rem;
+    grid-template-columns: 300px 1fr; /* Ліва колонка (інфо) | Права колонка (активність) */
+    gap: 3rem;
+    margin-top: 2rem;
     margin-bottom: 4rem;
 }
 
-/* Сайдбар профілю */
+/* Ліва колонка: Інформація профілю */
 .profile-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.profile-card {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    overflow: hidden;
+    padding: 2rem;
     border: 1px solid rgba(153, 0, 0, 0.1);
     background-image: var(--card-gradient);
+    align-self: start; /* Щоб сайдбар не розтягувався по висоті */
+    position: sticky; /* Прилипання сайдбару */
+    top: 20px; /* Відступ зверху при прилипанні */
 }
 
 .profile-header {
-    position: relative;
-    padding: 2rem;
     text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .profile-avatar {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
-    margin: 0 auto 1rem;
+    margin: 0 auto 1.5rem;
     background-size: cover;
     background-position: center;
-    border: 3px solid rgba(153, 0, 0, 0.3);
+    border: 4px solid rgba(var(--accent-gold-rgb), 0.5); /* Використання RGB */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
-.profile-status {
+.premium-badge-profile {
     position: absolute;
-    top: 2rem;
-    right: 2rem;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 0.4rem 1rem;
-    font-size: 0.8rem;
+    bottom: 5px;
+    right: 5px;
+    background-color: var(--premium-gold);
+    color: #000;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
-    gap: 5px;
-}
-
-.profile-status.premium-status {
-    background-color: rgba(var(--accent-gold-rgb), 0.2);
-    border-color: var(--accent-gold);
-    color: var(--accent-gold);
-}
-
-.profile-status i {
+    justify-content: center;
     font-size: 0.9rem;
-}
-
-.profile-info {
-    padding: 0 2rem 1.5rem;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--card-color); /* Рамка для відділення */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 2;
 }
 
 .profile-name {
     font-size: 1.8rem;
     margin-bottom: 0.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано */
 }
 
 .profile-email {
     color: var(--secondary-text);
     font-size: 0.9rem;
-    margin-bottom: 1rem;
+    word-break: break-all; /* Перенос довгих email */
 }
 
 .profile-bio {
+    margin-top: 1.5rem;
     color: var(--secondary-text);
     font-size: 0.95rem;
-    line-height: 1.6;
+    line-height: 1.7;
+    margin-bottom: 2rem; /* Збільшив відступ */
+    text-align: left; /* Вирівнювання тексту біо */
+}
+.profile-bio-placeholder {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.4);
 }
 
 .profile-stats {
-    display: flex;
-    justify-content: space-around;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.profile-stat {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
     text-align: center;
+    margin-bottom: 2rem; /* Збільшив відступ */
 }
 
-.stat-value {
-    font-size: 1.5rem;
+.profile-stat .stat-value {
+    font-size: 1.5rem; /* Зменшив */
     font-weight: 600;
-    font-family: 'Cormorant Garamond', serif;
-    margin-bottom: 0.2rem;
     color: var(--accent-gold);
+    display: block; /* Зробив блочним */
+    margin-bottom: 0.2rem;
+    font-family: 'Montserrat', sans-serif; /* Цифри краще стандартним шрифтом */
 }
 
-.stat-label {
-    font-size: 0.85rem;
+.profile-stat .stat-label {
+    font-size: 0.8rem; /* Зменшив */
     color: var(--secondary-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .profile-actions {
-    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 1rem;
+    margin-top: 2rem; /* Додав відступ зверху */
+}
+/* Стилі для кнопок в sidebar успадковуються від .btn */
+.profile-actions .btn {
+    width: 100%; /* Займають всю ширину */
 }
 
-.btn-action {
-    width: 100%;
-    padding: 0.7rem;
-    background-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--border-radius);
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
+/* Права колонка: Активність користувача */
+.profile-activity {
+    min-width: 0; /* Для правильного переносу контенту */
+}
+
+.activity-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 2rem;
+    overflow-x: auto; /* Дозволяє прокрутку на мобільних */
+    /* Стилі скролбару (опціонально) */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-red) rgba(255, 255, 255, 0.1);
+}
+.activity-tabs::-webkit-scrollbar { height: 4px; }
+.activity-tabs::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+.activity-tabs::-webkit-scrollbar-thumb { background-color: var(--accent-red); border-radius: 10px; }
+
+.activity-tab {
+    padding: 1rem 1.5rem; /* Зменшив горизонтальний падінг */
+    cursor: pointer;
+    color: var(--secondary-text);
+    font-weight: 500;
+    position: relative;
+    transition: all 0.3s;
+    white-space: nowrap; /* Заборона переносу тексту */
     font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
+    flex-shrink: 0; /* Щоб таби не стискалися */
+    background: none; /* Скидання фону */
+    border: none; /* Скидання рамки */
+    font-family: inherit; /* Успадкування шрифту */
 }
-
-.btn-action i {
-    margin-right: 8px;
-}
-
-.btn-action:hover {
+/* Доступність фокусу */
+.activity-tab:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: -2px; /* Внутрішній outline */
     background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(153, 0, 0, 0.3);
+    border-radius: 4px 4px 0 0;
 }
 
-.premium-action {
-    background-color: rgba(var(--accent-gold-rgb), 0.1);
-    border-color: rgba(var(--accent-gold-rgb), 0.3);
-    color: var(--accent-gold);
-}
-
-.premium-action:hover {
-    background-color: rgba(var(--accent-gold-rgb), 0.15);
-    border-color: rgba(var(--accent-gold-rgb), 0.5);
-}
-
-.profile-menu {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    background-image: var(--card-gradient);
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    padding: 1.2rem 2rem;
-    background-color: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    width: 100%;
-    text-align: left;
+.activity-tab.active {
     color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s;
+    border-bottom: 2px solid var(--accent-red);
+    margin-bottom: -1px; /* Компенсація border-bottom контейнера */
 }
 
-.menu-item:last-child {
-    border-bottom: none;
+.activity-tab:hover:not(.active) {
+    color: var(--text-color);
+    background-color: rgba(255, 255, 255, 0.03); /* Легкий фон при ховері */
 }
 
-.menu-item i {
-    margin-right: 15px;
-    width: 18px;
-    text-align: center;
+.activity-content {
+    min-height: 300px; /* Щоб уникнути стрибків при завантаженні */
 }
 
-.menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.menu-item.active {
-    background-color: rgba(153, 0, 0, 0.1);
-    position: relative;
-}
-
-.menu-item.active:before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--primary-gradient);
-}
-
-/* Вміст профілю */
-.profile-content {
-    min-height: 600px;
-}
-
-.content-container {
-    margin-bottom: 2rem;
-}
-
-.content-title {
-    font-size: 2rem;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.content-title:after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 60px;
-    height: 3px;
-    background: var(--accent-red);
-}
-
-/* Форма редагування профілю */
-.profile-form-container {
-    margin-bottom: 2rem;
-}
-
-.form-card {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    background-image: var(--card-gradient);
-}
-
-.form-title {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.form-title:after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 50px;
-    height: 3px;
-    background: var(--accent-red);
-}
-
-.profile-form {
-    display: flex;
-    flex-direction: column;
+/* Стилі для списків у вкладках */
+.activity-list {
+    display: grid;
     gap: 1.5rem;
 }
 
+/* Стилі для карток історій у вкладках (зменшені) */
+.activity-story-card {
+    display: flex;
+    gap: 1rem;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    transition: border-color 0.3s;
+}
+.activity-story-card:hover {
+    border-color: rgba(153, 0, 0, 0.3);
+}
+.activity-story-card .story-info { flex-grow: 1; min-width: 0; }
+.activity-story-card .story-title { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text-color); }
+.activity-story-card .story-title a { color: inherit; text-decoration: none; }
+.activity-story-card .story-title a:hover { color: var(--accent-red); }
+.activity-story-card .story-meta-small { font-size: 0.85rem; color: var(--secondary-text); margin-bottom: 0.5rem; }
+.activity-story-card .story-date { font-size: 0.8rem; color: var(--secondary-text); font-style: italic; }
+.activity-story-card .story-actions-small { margin-left: auto; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
+.activity-story-card .btn-small-icon {
+    background: none; border: none; color: var(--secondary-text); padding: 0.3rem; font-size: 1rem; cursor: pointer; transition: color 0.3s;
+}
+.activity-story-card .btn-small-icon:hover { color: var(--accent-red); }
+.activity-story-card .btn-small-icon:focus-visible {
+    outline: 1px dotted var(--accent-gold);
+    outline-offset: 1px;
+    border-radius: 2px;
+}
 
-.form-actions {
+/* Стилі для коментарів у вкладках */
+.activity-comment-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+}
+.comment-text-preview { margin-bottom: 1rem; color: var(--secondary-text); }
+.comment-meta-info { font-size: 0.85rem; color: var(--secondary-text); }
+.comment-meta-info a { color: var(--accent-gold); }
+.comment-meta-info a:hover { color: var(--accent-red); text-decoration: underline; }
+
+/* Стилі для підписок на авторів */
+.activity-author-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+}
+.activity-author-card .author-avatar { width: 45px; height: 45px; }
+.activity-author-card .author-info { flex-grow: 1; min-width: 0; }
+.activity-author-card .author-name { font-size: 1.1rem; margin: 0; color: var(--text-color);}
+.activity-author-card .author-name a { color: inherit; text-decoration: none; }
+.activity-author-card .author-name a:hover { color: var(--accent-red); }
+.activity-author-card .btn-follow-small { margin-left: auto; padding: 0.4rem 1rem; font-size: 0.85rem; } /* Використовує базові стилі .btn */
+
+
+/* Стан "Немає даних" для вкладок */
+.empty-tab-message {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--secondary-text);
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: var(--border-radius);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    margin-top: 1rem; /* Додано відступ зверху */
+}
+
+/* Модальні вікна */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 10, 12, 0.85);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    max-width: 550px;
+    width: 100%;
+    border: 1px solid rgba(153, 0, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative; /* Для кнопки закриття */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    font-size: 1.8rem;
+    margin: 0;
+    color: var(--text-color); /* Додано */
+    font-family: 'Cormorant Garamond', serif; /* Додано */
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--secondary-text);
+    cursor: pointer;
+    padding: 0.5rem; /* Збільшив область кліку */
+    line-height: 1;
+    transition: color 0.3s;
+}
+.modal-close-btn:hover {
+    color: var(--text-color);
+}
+.modal-close-btn:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+
+.modal-body {
+    margin-bottom: 2rem;
+}
+
+.modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    margin-top: 1rem;
+    flex-wrap: wrap; /* Додано */
 }
+/* Стилі кнопок в футері модалки успадковуються від .btn */
 
-/* Налаштування підписки */
-.subscription-card {
-    padding: 2rem;
-}
-
-.subscription-details {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.subscription-status {
+/* Стилі для форми редагування аватара */
+.avatar-edit-container {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-}
-
-.subscription-status i {
-    font-size: 2.5rem;
-    color: var(--accent-gold);
-}
-
-.status-text h3 {
-    margin-bottom: 0.5rem;
-    color: var(--accent-gold);
-}
-
-.status-text p {
-    color: var(--secondary-text);
-    font-size: 0.95rem;
-}
-
-.subscription-info {
-    padding: 1.5rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.subscription-info p {
-    margin-bottom: 1rem;
-    color: var(--secondary-text);
-}
-
-.subscription-info p:last-child {
-    margin-bottom: 0;
-}
-
-.subscription-actions {
-    display: flex;
-    gap: 1rem;
-}
-
-.subscription-actions .btn {
-    flex: 1;
-}
-
-.btn-danger {
-    background-color: rgba(255, 50, 50, 0.2);
-    border: 1px solid rgba(255, 50, 50, 0.3);
-    color: #ff6b6b;
-    border-radius: var(--button-radius);
-    padding: 0.7rem 1.5rem;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.btn-danger:hover {
-    background-color: rgba(255, 50, 50, 0.3);
-    transform: translateY(-2px);
-}
-
-/* Збережені історії */
-.saved-item {
-    display: flex;
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
     margin-bottom: 1.5rem;
-    border: 1px solid rgba(153, 0, 0, 0.05);
-    background-image: var(--card-gradient);
-    transition: all 0.3s;
+    flex-wrap: wrap; /* Додано */
 }
-
-.saved-item:hover {
-    transform: translateY(-5px);
-    border-color: rgba(153, 0, 0, 0.2);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-}
-
-.saved-item-image {
-    width: 120px;
-    flex-shrink: 0;
-    background-size: cover;
-    background-position: center;
-}
-
-.saved-item-content {
-    flex: 1;
-    padding: 1.5rem;
-}
-
-.saved-item-category {
-    color: var(--accent-gold);
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-}
-
-.saved-item-title {
-    font-size: 1.3rem;
-    margin-bottom: 1rem;
-}
-
-.saved-item-title a {
-    color: var(--text-color);
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.saved-item-title a:hover {
-    color: var(--accent-red);
-}
-
-.saved-item-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.saved-item-author {
-    display: flex;
-    align-items: center;
-}
-
-.saved-item-author .author-avatar {
-    margin-right: 0.8rem;
-}
-
-.saved-item-author .author-name {
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-}
-
-.saved-item-date {
-    font-size: 0.85rem;
-    color: var(--secondary-text);
-}
-
-.saved-item-actions {
-    display: flex;
-    align-items: center;
-    padding: 0 1.5rem;
-}
-
-.action-btn {
-    width: 40px;
-    height: 40px;
+.avatar-preview {
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--secondary-text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.action-btn:hover {
-    background-color: rgba(255, 50, 50, 0.1);
-    border-color: rgba(255, 50, 50, 0.2);
-    color: #ff6b6b;
-}
-
-/* Історія переглядів */
-.history-section {
-    margin-bottom: 2.5rem;
-}
-
-.history-date {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 1.2rem;
-    color: var(--accent-gold);
-    display: flex;
-    align-items: center;
-}
-
-.history-date:after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: rgba(var(--accent-gold-rgb), 0.3);
-    margin-left: 1rem;
-}
-
-.history-item {
-    display: flex;
-    margin-bottom: 1.2rem;
-    padding-bottom: 1.2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.history-item:last-child {
-    border-bottom: none;
-}
-
-.history-time {
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-    width: 60px;
-    flex-shrink: 0;
-}
-
-.history-content {
-    flex: 1;
-}
-
-.history-title {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-}
-
-.history-title a {
-    color: var(--text-color);
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.history-title a:hover {
-    color: var(--accent-red);
-}
-
-.history-category {
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-}
-
-/* Вподобані історії */
-.likes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
-}
-
-.liked-item {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    border: 1px solid rgba(153, 0, 0, 0.05);
-    background-image: var(--card-gradient);
-    transition: all 0.3s;
-}
-
-.liked-item:hover {
-    transform: translateY(-5px);
-    border-color: rgba(153, 0, 0, 0.2);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-}
-
-.liked-item-image {
-    height: 180px;
     background-size: cover;
     background-position: center;
-}
-
-.liked-item-content {
-    padding: 1.5rem;
-}
-
-.liked-item-category {
-    color: var(--accent-gold);
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-}
-
-.liked-item-title {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-}
-
-.liked-item-title a {
-    color: var(--text-color);
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.liked-item-title a:hover {
-    color: var(--accent-red);
-}
-
-.liked-item-author {
-    display: flex;
-    align-items: center;
-}
-
-.liked-item-author .author-avatar {
-    margin-right: 0.8rem;
-}
-
-.liked-item-author .author-name {
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-}
-
-/* Коментарі */
-.comment-item {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(153, 0, 0, 0.05);
-    background-image: var(--card-gradient);
-    transition: all 0.3s;
-}
-
-.comment-item:hover {
-    border-color: rgba(153, 0, 0, 0.2);
-}
-
-.comment-story {
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-
-.comment-story a {
-    color: var(--text-color);
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.comment-story a:hover {
-    color: var(--accent-red);
-}
-
-.comment-text {
-    color: var(--secondary-text);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-    font-size: 0.95rem;
-}
-
-.comment-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    color: var(--secondary-text);
-}
-
-/* Підписки */
-.following-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.following-item {
-    display: flex;
-    align-items: flex-start;
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    border: 1px solid rgba(153, 0, 0, 0.05);
-    background-image: var(--card-gradient);
-    transition: all 0.3s;
-}
-
-.following-item:hover {
-    border-color: rgba(153, 0, 0, 0.2);
-}
-
-.following-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-right: 1.5rem;
-    background-size: cover;
-    background-position: center;
+    border: 3px solid rgba(var(--accent-gold-rgb), 0.4);
     flex-shrink: 0;
-    border: 3px solid rgba(153, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.05); /* Фон для плейсхолдера */
 }
-
-.following-info {
-    flex: 1;
-}
-
-.following-name {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
-}
-
-.following-stats {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 0.8rem;
-}
-
-.following-stat {
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-}
-
-.following-stat i {
-    color: var(--accent-gold);
-}
-
-.following-bio {
-    color: var(--secondary-text);
-    font-size: 0.95rem;
-    margin-bottom: 1rem;
-}
-
-.following-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    min-width: 150px;
-}
-
-/* Преміум-повідомлення */
-.premium-notification {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    max-width: 400px;
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(153, 0, 0, 0.2);
-    z-index: 100;
-    animation: slideIn 0.5s ease-out forwards;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.premium-notification-content {
-    display: flex;
-    align-items: center;
-    padding: 1.5rem;
-    position: relative;
-}
-
-.premium-icon {
-    font-size: 2rem;
-    color: var(--accent-gold);
-    margin-right: 1rem;
-    flex-shrink: 0;
-}
-
-.premium-message {
-    flex: 1;
-}
-
-.premium-message h3 {
-    color: var(--accent-gold);
-    margin-bottom: 0.5rem;
-    font-size: 1.2rem;
-}
-
-.premium-message p {
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-    margin-bottom: 0;
-}
-
-.btn-premium {
-    margin-left: 1rem;
-    padding: 0.6rem 1.2rem;
-    background: linear-gradient(135deg, var(--accent-gold) 0%, #a67c3f 100%);
-    color: #000;
-    font-weight: 600;
-    border-radius: 20px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap;
-}
-
-.btn-premium:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(166, 124, 63, 0.3);
-}
-
-.close-notification {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    color: var(--secondary-text);
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: color 0.3s;
-}
-
-.close-notification:hover {
-    color: var(--text-color);
-}
+.avatar-upload-options { flex-grow: 1; }
+.avatar-upload-options .btn { margin-right: 0.5rem; margin-bottom: 0.5rem; }
 
 /* Адаптивність */
 @media (max-width: 992px) {
-    .profile-section {
-        grid-template-columns: 1fr;
+    .profile-container {
+        grid-template-columns: 1fr; /* Все в одну колонку */
     }
-    
     .profile-sidebar {
-        margin-bottom: 2rem;
-    }
-    
-    .subscription-actions {
-        flex-direction: column;
-    }
-    
-    .premium-notification {
-        bottom: 0;
-        right: 0;
-        left: 0;
-        max-width: none;
-        border-radius: 0;
-    }
-    
-    .premium-notification-content {
-        flex-wrap: wrap;
-    }
-    
-    .premium-message {
-        margin-bottom: 1rem;
-        width: 100%;
-    }
-    
-    .btn-premium {
-        margin-left: 0;
+        position: static; /* Прибираємо прилипання */
     }
 }
 
 @media (max-width: 768px) {
-    .nav-links {
-        display: none;
-    }
-    
-    .saved-item {
+    .profile-sidebar { padding: 1.5rem; }
+    .profile-avatar { width: 120px; height: 120px; }
+    .profile-name { font-size: 1.5rem; }
+    .profile-stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; } /* Залишимо 3 колонки */
+    .profile-stat .stat-value { font-size: 1.3rem; }
+    .profile-stat .stat-label { font-size: 0.75rem; }
+    .activity-tabs { padding-bottom: 0.5rem; } /* Менший відступ під табами */
+    .activity-tab { padding: 0.8rem 1rem; font-size: 0.9rem; }
+
+    .activity-story-card, .activity-author-card {
         flex-direction: column;
-    }
-    
-    .saved-item-image {
-        width: 100%;
-        height: 150px;
-    }
-    
-    .saved-item-actions {
-        padding: 1rem;
-    }
-    
-    .likes-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .form-actions {
-        flex-direction: column;
+        align-items: flex-start; /* Вирівнюємо по лівому краю */
         gap: 0.8rem;
     }
-    
-    .form-actions .btn {
-        width: 100%;
+    .activity-story-card .story-actions-small,
+    .activity-author-card .btn-follow-small {
+        margin-left: 0; /* Прибираємо відступ */
+        margin-top: 0.5rem; /* Додаємо відступ зверху */
+        align-self: flex-start; /* Вирівнюємо по лівому краю */
     }
-    
-    .following-item {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    
-    .following-avatar {
-        margin-right: 0;
-        margin-bottom: 1rem;
-    }
-    
-    .following-actions {
-        width: 100%;
-        margin-top: 1rem;
-    }
+    .activity-story-card .story-actions-small { flex-direction: row; } /* Кнопки в ряд */
+
+    .modal-content { padding: 1.5rem; }
+    .modal-title { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+    .profile-avatar { width: 100px; height: 100px; }
+    .premium-badge-profile { width: 25px; height: 25px; font-size: 0.8rem; bottom: 2px; right: 2px; }
+    .profile-stats { grid-template-columns: 1fr; gap: 1rem; } /* Статистика в одну колонку */
+    .modal-footer { flex-direction: column; }
+    .modal-footer .btn { width: 100%; } /* Кнопки в модалці на всю ширину */
+    .avatar-edit-container { flex-direction: column; text-align: center; }
 }

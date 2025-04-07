@@ -24,9 +24,11 @@
     margin-bottom: 1rem;
     position: relative;
     display: inline-block; /* Щоб :after працював коректно */
+    font-family: 'Cormorant Garamond', serif; /* Додано */
+    color: var(--text-color); /* Додано */
 }
 
-/* Підкреслення для заголовка */
+/* Підкреслення для заголовка (TODO: Уніфікувати в main.css) */
 .terms-title::after {
     content: '';
     position: absolute;
@@ -57,34 +59,43 @@
 .terms-navigation {
     display: flex;
     flex-direction: column; /* Вертикальна навігація */
-    gap: 0.8rem;
+    gap: 0.5rem; /* Зменшено */
     margin-bottom: 3rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    /* Можна додати position: sticky для прилипання сайдбару, якщо сторінка буде двоколонковою */
+    /* Стилі для прилипання (якщо потрібно) */
+    /* position: sticky; top: 20px; align-self: start; */
 }
 
 .terms-navigation a {
     color: var(--secondary-text);
     text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: var(--button-radius);
+    padding: 0.6rem 1rem; /* Змінено падінг */
+    border-radius: var(--border-radius-round); /* Змінено */
     transition: all 0.3s ease;
     font-size: 0.95rem;
     position: relative; /* Для псевдоелементів */
     display: block; /* Щоб займали всю ширину */
+    border: 1px solid transparent; /* Додано для плавного ховеру */
 }
 
 .terms-navigation a:hover {
     background-color: rgba(255, 255, 255, 0.05);
     color: var(--text-color);
+    border-color: rgba(255, 255, 255, 0.1); /* Рамка при ховері */
 }
-
-/* Стилі для активного пункту (додаються через JS) */
+/* Стилі для активного пункту (додаються через JS/Alpine) */
 .terms-navigation a.active {
     color: var(--accent-red);
     font-weight: 600;
     background-color: rgba(153, 0, 0, 0.1);
+    border-color: rgba(153, 0, 0, 0.2); /* Рамка для активного */
+}
+/* Стиль фокусу */
+.terms-navigation a:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+    border-color: var(--accent-gold); /* Рамка при фокусі */
 }
 
 /* Вміст правил */
@@ -95,6 +106,7 @@
 
 .section {
     margin-bottom: 3rem;
+    scroll-margin-top: 80px; /* Додано відступ зверху для якірного скролу */
 }
 
 .section-title {
@@ -103,6 +115,7 @@
     padding-bottom: 0.5rem;
     border-bottom: 1px solid rgba(153, 0, 0, 0.2);
     color: var(--accent-gold); /* Акцентний колір для заголовків секцій */
+    font-family: 'Cormorant Garamond', serif; /* Додано шрифт */
 }
 
 .subsection {
@@ -115,8 +128,8 @@
     font-weight: 600;
     color: var(--text-color); /* Стандартний колір тексту */
     position: relative;
-    cursor: pointer; /* Для мобільної версії */
-    padding-right: 30px; /* Місце для іконки */
+    cursor: default; /* Стандартний курсор */
+    padding-right: 30px; /* Місце для іконки (на мобільних) */
 }
 
 .toggle-icon {
@@ -126,13 +139,11 @@
     transform: translateY(-50%);
     color: var(--secondary-text);
     transition: transform 0.3s ease;
+    display: none; /* Ховаємо на десктопі за замовчуванням */
 }
-
-/* Обертання іконки при розгортанні */
-.subsection-title:not(.collapsed) + div .toggle-icon {
-    /* Цей селектор не спрацює, бо іконка всередині заголовка.
-       Керування іконкою має бути через клас на батьківському елементі або заголовку.
-       В HTML файлі використовується :class на самій іконці, що коректно. */
+/* Обертання іконки */
+.subsection-title.expanded .toggle-icon {
+    transform: translateY(-50%) rotate(180deg); /* Змінено іконку */
 }
 
 .terms-content p {
@@ -146,15 +157,17 @@
     padding-left: 1.8rem; /* Відступ для маркерів/нумерації */
     color: var(--secondary-text);
 }
+.terms-content ul { list-style-type: disc; } /* Додано стиль для списків */
+.terms-content ol { list-style-type: decimal; } /* Додано стиль для списків */
 
 .terms-content li {
     margin-bottom: 0.6rem;
 }
 
-/* Блок попередження (з terms-page.html) */
+/* Блок попередження */
 .warning-box {
-    background-color: rgba(255, 193, 7, 0.1); /* Жовтуватий фон */
-    border: 1px solid rgba(255, 193, 7, 0.3); /* Жовтуватий бордер */
+    background-color: rgba(var(--accent-gold-rgb), 0.05); /* Використання RGB */
+    border: 1px solid rgba(var(--accent-gold-rgb), 0.2); /* Використання RGB */
     border-left: 4px solid var(--accent-gold); /* Акцентна лінія */
     border-radius: var(--border-radius);
     padding: 1.5rem;
@@ -185,6 +198,7 @@
     padding-top: 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+/* Стилі кнопок успадковуються */
 
 .terms-footer {
     text-align: center;
@@ -220,30 +234,29 @@
     .terms-title {
         font-size: 2rem;
     }
-    /* Можна зробити навігацію горизонтальною на мобільних */
+    /* Навігація стає горизонтальною */
     .terms-navigation {
         flex-direction: row;
-        overflow-x: auto; /* Дозволити прокрутку, якщо не вміщається */
+        overflow-x: auto;
         padding-bottom: 1rem;
         margin-bottom: 2rem;
-        /* Стилі для скролбару (опціонально) */
         scrollbar-width: thin;
         scrollbar-color: var(--accent-red) rgba(255, 255, 255, 0.1);
     }
-    .terms-navigation::-webkit-scrollbar {
-        height: 5px;
+    .terms-navigation::-webkit-scrollbar { height: 5px; }
+    .terms-navigation::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+    .terms-navigation::-webkit-scrollbar-thumb { background-color: var(--accent-red); border-radius: 10px; }
+    .terms-navigation a { white-space: nowrap; }
+    .terms-navigation a.active::after { display: none; } /* Ховаємо підкреслення на моб. */
+
+    /* Акордеон для секцій */
+    .subsection-title { cursor: pointer; }
+    .toggle-icon { display: inline-block; } /* Показуємо іконку */
+    .subsection > div[x-show] { /* Стилі для анімації */
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
     }
-    .terms-navigation::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-    }
-    .terms-navigation::-webkit-scrollbar-thumb {
-        background-color: var(--accent-red);
-        border-radius: 10px;
-    }
-    .terms-navigation a {
-        white-space: nowrap; /* Заборонити перенос тексту в кнопках */
-    }
+
     .terms-actions {
         flex-direction: column;
     }
@@ -252,21 +265,5 @@
         max-width: 300px; /* Обмеження максимальної ширини */
         margin-left: auto;
         margin-right: auto;
-    }
-}
-
-@media (min-width: 769px) {
-    /* Ховаємо іконку розгортання на десктопі */
-    .toggle-icon {
-        display: none;
-    }
-    /* Відкриваємо всі підсекції на десктопі */
-    .subsection > div[x-show] {
-        display: block !important; /* Перекриваємо дію x-show */
-        max-height: none !important;
-        opacity: 1 !important;
-    }
-    .subsection-title {
-        cursor: default; /* Забираємо курсор-палець */
     }
 }

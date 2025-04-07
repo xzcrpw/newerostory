@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<!-- Додано :lang -->
+<html lang="uk" x-data :lang="$store.i18n.selectedLang">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title використовує i18n -->
+    <title x-text="`${$store.i18n.t('general.profile')} — ${$store.i18n.t('general.copyright')}`"></title>
+
+    <!-- Мета-теги (для профілю зазвичай noindex, nofollow) -->
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Шрифти -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- API Config & Utils -->
+    <script src="js/api-config.js" defer></script>
+    <script src="js/api-utils.js" defer></script>
+
+    <!-- Internationalization -->
+    <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/profile_styles.css">
+
+    <style>
+        /* Додаткові стилі для завантаження та помилок */
+        .loading-indicator-small {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: var(--secondary-text);
+            min-height: 100px; /* Мінімальна висота для індикатора */
+        }
+        .loading-spinner-small {
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-left-color: var(--accent-red);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-message-small {
+            color: #ff6b6b;
+            background-color: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+        }
+        .error-message-small i { margin-right: 0.7rem; }
+        .error-message-small button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+
+        /* Анімація для форм */
+        .profile-form-container[x-show] { display: block !important; } /* Потрібно для transition */
+        .profile-form-container { transition: opacity 0.3s ease-out, max-height 0.4s ease-out; opacity: 1; max-height: 1000px; overflow: hidden;}
+        /* Стилі для закритого стану анімації */
+        .profile-form-container[x-transition\:leave],
+        .profile-form-container[x-transition\:leave-start],
+        .profile-form-container[x-transition\:leave-end] {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            overflow: hidden;
+        }
+        /* Стилі для відкритого стану анімації */
+        .profile-form-container[x-transition\:enter-start] { max-height: 0; opacity: 0; }
+        .profile-form-container[x-transition\:enter-end] { max-height: 1000px; opacity: 1; }
+
+        /* Додавання підтримки prefers-reduced-motion для доступності */
+        @media (prefers-reduced-motion: reduce) {
+            .loading-spinner-small {
+                animation: none;
+            }
+            .loading-spinner-small::after {
+                content: "...";
+            }
+            @keyframes spin { to { transform: none; } }
+
+            /* Зменшуємо всі анімації */
+            .profile-form-container { transition-duration: 0.1s; }
+            .notification { transition-duration: 0.1s; }
+        }
+
+        /* Стилі для кнопки видалення/відписки */
+        .action-btn.removing, button.removing {
+            opacity: 0.7;
+            pointer-events: none; /* Заборонити повторне натискання */
+        }
+        .action-btn.removing i:not(.fa-spinner), button.removing i:not(.fa-spinner) { display: none; } /* Ховаємо стару іконку */
+        .action-btn.removing::after, button.removing::after, button:disabled.processing::after {
+            content: '\f110'; /* Іконка спіннера */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            margin-left: 5px;
+        }
+        /* Специфічно для кнопки відписки */
+        .following-actions button.removing::after { margin-left: 0; margin-right: 5px; }
+
+        /* Сповіщення */
+        .notification {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            background-color: var(--card-color); color: var(--text-color);
+            padding: 1rem 1.5rem; border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
+            opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
+            min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
+        }
+        .notification.show { opacity: 1; bottom: 20px; }
+        /* Класи для success/error сповіщень */
+        .notification.success { border-left: 4px solid #4cd964; }
+        .notification.error { border-left: 4px solid #ff6b6b; }
+
+        /* Порожній стан для вкладок */
+        .empty-tab-message {
+            color: var(--secondary-text);
+            text-align: center;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+        /* Стиль для превью аватара */
+        .avatar-upload-preview {
+            width: 120px; height: 120px; border-radius: 50%;
+            margin: 0 auto 1rem; background-size: cover; background-position: center;
+            border: 3px solid rgba(153, 0, 0, 0.3); position: relative;
+        }
+        .avatar-upload-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; background-color: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s; cursor: pointer;
+        }
+        .avatar-upload-preview:hover .avatar-upload-overlay { opacity: 1; }
+        .avatar-upload-overlay i { color: white; font-size: 1.5rem; }
+        .avatar-remove-button {
+            background: none; border: none; color: #ff6b6b;
+            cursor: pointer; font-size: 0.9rem; margin-top: 0.5rem;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            /* display: flex; align-items: center; gap: 0.3rem; margin-left: auto; margin-right: auto; */ /* Варіант для центрування */
+        }
+        .avatar-remove-button:hover { text-decoration: underline; }
+
+        /* Стиль для помилкового поля та повідомлення */
+        .form-input.has-error {
+            border-color: #ff6b6b;
+        }
+
+        .input-error {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
+    </style>
+</head>
+<body x-data="{
+    // --- Стани UI ---
+    activeTab: 'saved',
+    showEditProfile: false,
+    showChangePassword: false,
+    showSubscriptionSettings: false,
+    isLoadingProfile: true,
+    isLoadingActivity: false,
+    isSavingProfile: false,
+    isChangingPassword: false,
+    isCancellingSubscription: false,
+    profileError: null,
+    activityError: null,
+    editFormError: null,
+    passwordFormError: null,
+    subscriptionError: null,
+    notificationVisible: false,
+    notificationMessage: '',
+    notificationTimeout: null,
+    hasUnsavedChanges: false, // Прапорець незбережених змін
+
+    // --- Дані користувача ---
+    userId: null, userName: '', userEmail: '', userBio: '', userAvatar: 'https://source.unsplash.com/random/200x200/?profile-placeholder',
+    isPremiumUser: false, subscriptionEndDate: null, paymentMethodInfo: null,
+    savedStoriesCount: 0, readStoriesCount: 0, commentsCount: 0, followingCount: 0,
+
+    // --- Дані активності ---
+    savedStories: [], readingHistory: [], likedStories: [], userComments: [], followedAuthors: [],
+
+    // --- Дані форм ---
+    editUserName: '', editUserBio: '', editUserAvatarFile: null, avatarPreviewUrl: '',
+    currentPassword: '', newPassword: '', confirmPassword: '',
+
+    // --- Допоміжні функції ---
+    validatePasswordStrength(password) {
+        if (!password) return false;
+
+        // Розширені вимоги: 8+ символів, хоча б 1 цифра, 1 літера верхнього і нижнього регістру
+        const hasMinLength = password.length >= 8;
+        const hasDigit = /\d/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasUpperCase = /[A-Z]/.test(password);
+
+        // Базова перевірка: мінімальна довжина + хоча б одна цифра і одна буква
+        const basicRequirements = hasMinLength && hasDigit && (hasLowerCase || hasUpperCase);
+
+        // Визначення сили пароля (для майбутнього використання)
+        let strength = 0;
+        if (hasMinLength) strength++;
+        if (hasDigit) strength++;
+        if (hasLowerCase) strength++;
+        if (hasUpperCase) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++; // Спеціальні символи
+
+        // Зберігаємо силу пароля для використання
+        this.passwordStrength = strength;
+
+        return basicRequirements;
+    },
+    clearMessages() { this.editFormError = null; this.passwordFormError = null; this.subscriptionError = null; this.activityError = null; },
+    showNotification(message, isSuccess = true) {
+        this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
+
+        const el = document.getElementById('global-notification');
+        if(el) {
+            el.classList.toggle('success', isSuccess);
+            el.classList.toggle('error', !isSuccess);
+            el.classList.add('show'); // Додавання класу show для анімації
+        }
+
+        this.notificationVisible = true;
+
+        if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+
+        this.notificationTimeout = setTimeout(() => {
+            this.notificationVisible = false;
+            // Перевіряємо елемент перед видаленням класу
+            const notification = document.getElementById('global-notification');
+            if(notification) {
+                notification.classList.remove('show');
+            }
+        }, 4000);
+    },
+    // Функція для безпечного отримання перекладу
+    safeT(key, fallback) {
+        try {
+            const translation = $store.i18n?.t(key);
+            return (translation && translation !== key) ? translation : fallback;
+        } catch (e) {
+            console.warn(`Translation key error: ${key}`, e);
+            return fallback;
+        }
+    },
+
+    // --- Завантаження даних профілю (з i18n) ---
+    async fetchProfileData() {
+        this.isLoadingProfile = true;
+        this.profileError = null;
+
+        try {
+            console.log('Simulating API call: getCurrentUser');
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Перевірка автентифікації перед запитом
+            if (!api.utils.isAuthenticated()) {
+                throw new Error(this.safeT('auth.notLoggedIn', 'Будь ласка, увійдіть до системи'));
+            }
+
+            // Симуляція відповіді
+            const userData = {
+                _id: 'user123abc',
+                name: 'Тестовий Користувач',
+                email: 'test@e.world',
+                bio: 'Люблю читати та писати захопливі історії. Приєднуйтесь до мого світу фантазій!',
+                avatarUrl: 'https://source.unsplash.com/random/200x200/?profile,user',
+                isPremium: Math.random() < 0.3,
+                subscriptionEndDate: Math.random() < 0.3 ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() : null,
+                paymentMethodLast4: Math.random() < 0.3 ? '4242' : null,
+                stats: { savedCount: 15, readCount: 48, commentsCount: 7, followingCount: 3 }
+            };
+
+            this.userId = userData._id;
+            this.userName = userData.name;
+            this.userEmail = userData.email;
+            this.userBio = userData.bio || '';
+            this.userAvatar = userData.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.isPremiumUser = userData.isPremium || false;
+
+            // Форматування дати згідно з локаллю
+            this.subscriptionEndDate = userData.subscriptionEndDate ?
+                new Date(userData.subscriptionEndDate).toLocaleDateString(
+                    $store.i18n?.selectedLang || 'uk-UA',
+                    { year: 'numeric', month: 'long', day: 'numeric' }
+                ) : null;
+
+            this.paymentMethodInfo = userData.paymentMethodLast4 ?
+                `**** ${userData.paymentMethodLast4}` :
+                this.safeT('profile.paymentMethodNotSet', 'Не вказано');
+
+            this.savedStoriesCount = userData.stats?.savedCount || 0;
+            this.readStoriesCount = userData.stats?.readCount || 0;
+            this.commentsCount = userData.stats?.commentsCount || 0;
+            this.followingCount = userData.stats?.followingCount || 0;
+
+            // Ініціалізуємо дані форм
+            this.editUserName = this.userName;
+            this.editUserBio = this.userBio;
+            this.avatarPreviewUrl = this.userAvatar;
+
+            // Оновлення statuses в api.utils при необхідності
+            if (api.utils.isPremium() !== userData.isPremium) {
+                api.utils.setPremiumStatus(userData.isPremium);
+            }
+
+        } catch (error) {
+            this.profileError = error.message || this.safeT('profile.errorLoadingProfile', 'Помилка завантаження профілю');
+            console.error('Profile fetch error:', error);
+
+            // Якщо помилка авторизації, перенаправляємо на логін
+            if (error.message.includes('автентифікація') ||
+                error.message.toLowerCase().includes('unauthorized') ||
+                error.message.includes('401') ||
+                error.message.includes('login') ||
+                !api.utils.isAuthenticated()) {
+
+                this.showNotification(
+                    this.safeT('auth.sessionExpired', 'Сесія застаріла. Будь ласка, увійдіть знову.'),
+                    false
+                );
+
+                setTimeout(() => {
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                }, 1500);
+            }
+        } finally {
+            this.isLoadingProfile = false;
+        }
+    },
+
+    // --- Завантаження даних активності (з i18n) ---
+    async fetchActivityData(tab) {
+        if (!this.userId || this.isLoadingActivity) return;
+        this.isLoadingActivity = true; this.activityError = null;
+        console.log(`Fetching data for tab: ${tab}`);
+        // Очищаємо відповідні масиви перед завантаженням
+        this.savedStories = tab === 'saved' ? [] : this.savedStories;
+        this.readingHistory = tab === 'history' ? [] : this.readingHistory;
+        this.likedStories = tab === 'likes' ? [] : this.likedStories;
+        this.userComments = tab === 'comments' ? [] : this.userComments;
+        this.followedAuthors = tab === 'following' ? [] : this.followedAuthors;
+
+        try {
+             console.log(`Simulating API call for tab: ${tab}`);
+             await new Promise(resolve => setTimeout(resolve, 650));
+            // --- Симуляція відповіді API ---
+            switch(tab) {
+                case 'saved':
+                    // await api.users.getBookmarks({ limit: 20 }); // Реальний виклик
+                    this.savedStories = [
+                         { _id: 's1', title: 'Ніч у потязі', category: { name: $store.i18n.t('createStory.categoryRomance') }, author: { name: 'Олександра', avatarUrl: '...' } },
+                         { _id: 's2', title: 'Гра на межі', category: { name: $store.i18n.t('createStory.categoryBDSM') }, author: { name: 'Максим', avatarUrl: '...' } }
+                    ];
+                    break;
+                case 'history':
+                    // await api.users.getReadingHistory({ limit: 30 }); // Реальний виклик
+                     this.readingHistory = [
+                         { _id: 's3', title: 'Перший досвід: Несподіванка', category: { name: $store.i18n.t('createStory.categoryFirstTime') }, viewedAt: new Date(Date.now() - 3600000).toISOString() },
+                         { _id: 's1', title: 'Ніч у потязі', category: { name: $store.i18n.t('createStory.categoryRomance') }, viewedAt: new Date(Date.now() - 2 * 3600000).toISOString() }
+                    ];
+                    break;
+                case 'likes':
+                     // await api.users.getLikedStories({ limit: 20 }); // Реальний виклик
+                     this.likedStories = [
+                         { _id: 's4', title: 'Офісний роман під прикриттям', category: { name: $store.i18n.t('createStory.categoryOffice') }, authorName: 'Анна К.', authorAvatar: '...' },
+                         { _id: 's1', title: 'Ніч у потязі', category: { name: $store.i18n.t('createStory.categoryRomance') }, authorName: 'Олександра', authorAvatar: '...' }
+                     ];
+                    break;
+                case 'comments':
+                    // await api.users.getMyComments({ limit: 20 }); // Реальний виклик
+                     this.userComments = [
+                         { _id: 'c1', text: 'Дуже сподобалось!', storyTitle: 'Ніч у потязі', storyId: 's1', createdAt: new Date(Date.now() - 86400000).toISOString(), likes: 3 },
+                         { _id: 'c2', text: 'Чекаю продовження!', storyTitle: 'Гра на межі', storyId: 's2', createdAt: new Date(Date.now() - 2 * 86400000).toISOString(), likes: 1 }
+                    ];
+                    break;
+                case 'following':
+                    // await api.users.getFollowing({ limit: 20 }); // Реальний виклик
+                    this.followedAuthors = [
+                         { _id: 'author1', name: 'Олександра', bio: 'Пишу романтичні історії.', avatarUrl: '...', stats: { storyCount: 5, averageRating: 4.8, followersCount: 120 } },
+                         { _id: 'author2', name: 'Максим', bio: 'Люблю гострі відчуття.', avatarUrl: '...', stats: { storyCount: 10, averageRating: 4.5, followersCount: 85 } }
+                    ];
+                    break;
+            }
+        } catch (error) {
+            this.activityError = error.message || $store.i18n.t('profile.errorLoadingActivityTab', { tab: $store.i18n.t(`profile.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`) }); // i18n
+            console.error(`Activity fetch error (${tab}):`, error);
+        } finally { this.isLoadingActivity = false; }
+    },
+
+    // --- Зміна вкладки ---
+    setTab(tab) {
+        if (this.activeTab !== tab) {
+            this.activeTab = tab;
+            // Закриваємо форми редагування при зміні вкладки
+            this.showEditProfile = false;
+            this.showChangePassword = false;
+            this.showSubscriptionSettings = false;
+            this.clearMessages(); // Очищаємо повідомлення
+            this.fetchActivityData(tab); // Завантажуємо дані для нової вкладки
+        }
+    },
+
+    // --- Керування формами ---
+    toggleEditProfile() {
+        this.showEditProfile = !this.showEditProfile;
+        this.showChangePassword = false; // Закриваємо інші форми
+        this.showSubscriptionSettings = false;
+        this.clearMessages();
+        // Скидаємо дані форми редагування до поточних значень, якщо закриваємо
+         if (!this.showEditProfile) {
+             this.editUserName = this.userName;
+             this.editUserBio = this.userBio;
+             this.avatarPreviewUrl = this.userAvatar;
+             this.editUserAvatarFile = null;
+             if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
+             this.hasUnsavedChanges = false; // Скидаємо прапорець при закритті
+             this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
+         }
+    },
+    toggleChangePassword() {
+        this.showChangePassword = !this.showChangePassword;
+        this.showEditProfile = false; // Закриваємо інші форми
+        this.showSubscriptionSettings = false;
+        this.clearMessages();
+        // Скидаємо поля паролів, якщо закриваємо
+         if (!this.showChangePassword) {
+             this.currentPassword = '';
+             this.newPassword = '';
+             this.confirmPassword = '';
+             this.hasUnsavedChanges = false; // Скидаємо прапорець при закритті
+             this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
+         }
+    },
+    toggleSubscriptionSettings() {
+        this.showSubscriptionSettings = !this.showSubscriptionSettings;
+        this.showEditProfile = false; // Закриваємо інші форми
+        this.showChangePassword = false;
+        this.clearMessages();
+    },
+
+    // --- Обробка завантаження аватара (з i18n) ---
+    handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) { this.editFormError = null; return; } // Очищаємо помилку, якщо файл не вибрано
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const maxSize = 2 * 1024 * 1024; // 2MB
+
+        if (!allowedTypes.includes(file.type)) {
+            this.editFormError = $store.i18n.t('profile.errorAvatarType'); // i18n
+            event.target.value = null; // Скидаємо input file
+            return;
+        }
+        if (file.size > maxSize) {
+            this.editFormError = $store.i18n.t('profile.errorAvatarSize', { size: '2MB' }); // i18n
+            event.target.value = null; // Скидаємо input file
+            return;
+        }
+        this.editFormError = null;
+        this.editUserAvatarFile = file;
+        this.storyImageUrl = null; // Скидаємо URL існуючого, якщо він був
+        // Превью
+        const reader = new FileReader();
+        reader.onload = (e) => { this.avatarPreviewUrl = e.target.result; };
+        reader.readAsDataURL(file);
+        this.setUnsavedChanges(); // Позначаємо зміни
+    },
+    // Виправлена функція видалення аватару
+    removeAvatarPreview() {
+        try {
+            // Встановлюємо базовий аватар для превью
+            this.avatarPreviewUrl = 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.editUserAvatarFile = null;
+
+            // Очищаємо input file
+            if (this.$refs.avatarUploadInput) {
+                this.$refs.avatarUploadInput.value = '';
+            }
+
+            // Позначаємо, що аватар був видалений
+            this.avatarRemoved = true;
+            this.setUnsavedChanges();
+        } catch (error) {
+            console.error('Error removing avatar:', error);
+            this.editFormError = this.safeT('profile.errorRemovingAvatar', 'Помилка при видаленні зображення');
+        }
+    },
+    // Покращений метод контролю змін
+    setUnsavedChanges() {
+        if (this.showEditProfile || this.showChangePassword) {
+            this.hasUnsavedChanges = true;
+
+            // Встановлюємо повідомлення для beforeunload при зміні даних
+            window.onbeforeunload = (event) => {
+                const message = this.safeT('profile.unsavedChanges', 'У вас є незбережені зміни. Ви впевнені, що хочете залишити сторінку?');
+                event.returnValue = message;
+                return message;
+            };
+        }
+    },
+
+    // Додаємо функцію скидання стану незбережених змін
+    resetUnsavedChanges() {
+        this.hasUnsavedChanges = false;
+        window.onbeforeunload = null;
+    },
+
+    // --- Збереження профілю (з i18n) ---
+    async saveProfile() {
+        this.editFormError = null;
+        if (!this.editUserName.trim()) { this.editFormError = $store.i18n.t('profile.errorNameRequired'); return; }
+        this.isSavingProfile = true;
+        try {
+            let profileData; const useFormData = !!this.editUserAvatarFile;
+            if (useFormData) {
+                profileData = new FormData();
+                profileData.append('name', this.editUserName.trim());
+                profileData.append('bio', this.editUserBio);
+                profileData.append('avatar', this.editUserAvatarFile);
+            } else {
+                profileData = { name: this.editUserName.trim(), bio: this.editUserBio };
+                // Перевіряємо, чи користувач видалив існуючий аватар
+                // Виправлення: перевіряємо зміну URL для визначення видалення аватару
+                if (this.avatarPreviewUrl !== this.userAvatar &&
+                    this.avatarPreviewUrl === 'https://source.unsplash.com/random/200x200/?profile-placeholder') {
+                    profileData.removeAvatar = true;
+                }
+            }
+            console.log('Simulating API call: updateUser', useFormData ? 'with FormData' : profileData);
+            await new Promise(resolve => setTimeout(resolve, 1100));
+
+            // Симуляція відповіді API з коректною обробкою аватара
+            const updatedUser = {
+                name: this.editUserName.trim(),
+                bio: this.editUserBio,
+                avatarUrl: this.editUserAvatarFile ?
+                    URL.createObjectURL(this.editUserAvatarFile) :
+                    (profileData.removeAvatar ? 'https://source.unsplash.com/random/200x200/?profile-placeholder' : this.userAvatar)
+            };
+
+            // Оновлюємо дані на сторінці
+            this.userName = updatedUser.name;
+            this.userBio = updatedUser.bio || '';
+            this.userAvatar = updatedUser.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile-placeholder';
+            this.editUserAvatarFile = null;
+            if (this.$refs.avatarUploadInput) this.$refs.avatarUploadInput.value = '';
+
+            this.showNotification($store.i18n.t('notifications.profileUpdated'), true);
+            this.showEditProfile = false;
+            this.hasUnsavedChanges = false;
+            this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
+        } catch (error) {
+            this.editFormError = error.message || $store.i18n.t('profile.errorSavingProfile');
+            console.error('Save profile error:', error);
+        } finally {
+            this.isSavingProfile = false;
+        }
+    },
+
+    // --- Зміна пароля (з i18n) ---
+    async changePassword() {
+        this.passwordFormError = null;
+        if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
+            this.passwordFormError = $store.i18n.t('profile.errorPasswordFieldsRequired'); return; // i18n
+        }
+        if (!this.validatePasswordStrength(this.newPassword)) {
+            this.passwordFormError = $store.i18n.t('auth.passwordInvalid'); return; // i18n
+        }
+        if (this.newPassword !== this.confirmPassword) {
+            this.passwordFormError = $store.i18n.t('auth.passwordsDontMatch'); return; // i18n
+        }
+        if (this.currentPassword === this.newPassword) {
+            this.passwordFormError = $store.i18n.t('profile.errorNewPasswordSameAsOld'); return; // i18n
+        }
+        this.isChangingPassword = true;
+        try {
+             console.log('Simulating API call: changePassword');
+             await new Promise(resolve => setTimeout(resolve, 900));
+            // await api.users.changePassword(this.currentPassword, this.newPassword); // Реальний виклик
+            this.showNotification($store.i18n.t('notifications.passwordChanged'), true); // i18n
+            this.showChangePassword = false; this.currentPassword = ''; this.newPassword = ''; this.confirmPassword = '';
+            this.hasUnsavedChanges = false; // Скидаємо прапорець
+            this.resetUnsavedChanges(); // Скидаємо стан незбережених змін
+        } catch (error) {
+            this.passwordFormError = error.message || $store.i18n.t('profile.errorChangingPassword'); // i18n
+            console.error('Change password error:', error);
+        } finally { this.isChangingPassword = false; }
+    },
+
+    // --- Керування підпискою (з i18n) ---
+    upgradeAccount() { window.location.href = 'premium.html'; },
+    async cancelSubscription() {
+        try {
+            const confirmMessage = this.safeT('profile.confirmCancelSubscription', 'Ви впевнені, що хочете скасувати преміум-підписку?');
+            if (!confirm(confirmMessage)) return;
+
+            this.isCancellingSubscription = true;
+            this.subscriptionError = null;
+
+            console.log('Simulating API call: cancelSubscription');
+            await new Promise(resolve => setTimeout(resolve, 700));
+
+            // Оновлюємо статус преміум після скасування
+            this.isPremiumUser = false;
+
+            // Безпечне оновлення статусу через API
+            try {
+                api.utils.setPremiumStatus(false);
+            } catch (storageError) {
+                console.warn('Error updating premium status in storage:', storageError);
+                // Продовжуємо виконання, навіть якщо сталася помилка
+            }
+
+            this.subscriptionEndDate = null;
+            this.paymentMethodInfo = this.safeT('profile.paymentMethodNotSet', 'Не вказано');
+
+            this.showNotification(this.safeT('notifications.subscriptionCancelled', 'Підписку успішно скасовано'), true);
+            this.showSubscriptionSettings = false;
+        } catch (error) {
+            this.subscriptionError = error.message || this.safeT('notifications.errorCancelSubscription', 'Помилка при скасуванні підписки');
+            console.error('Cancel subscription error:', error);
+        } finally {
+            this.isCancellingSubscription = false;
+        }
+    },
+
+    // --- Видалення зі збережених (з i18n) ---
+    async removeFromSaved(storyId, event) {
+        if (!storyId || !this.userId) return;
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        try {
+             console.log(`Simulating API call: toggleBookmark(${storyId})`);
+             await new Promise(resolve => setTimeout(resolve, 400));
+            // await api.users.toggleBookmark(storyId); // Реальний виклик
+            this.savedStories = this.savedStories.filter(story => (story._id || story.id) !== storyId);
+            this.savedStoriesCount = Math.max(0, this.savedStoriesCount - 1);
+            this.showNotification($store.i18n.t('notifications.removedFromBookmarks'), true); // i18n
+        } catch (error) {
+            // Показуємо помилку в активній вкладці
+            this.activityError = error.message || $store.i18n.t('profile.errorRemovingSaved'); // i18n
+            console.error('Remove from saved error:', error);
+            if (button) button.classList.remove('removing'); // Знімаємо спінер при помилці
+        }
+        // Спінер знімається автоматично при успіху, бо елемент видаляється з DOM
+    },
+
+    // --- Відписка від автора (з i18n) ---
+    async unfollowAuthor(authorId, event) {
+        if (!authorId || !this.userId) return;
+        const button = event?.currentTarget; if (button) button.classList.add('removing');
+        try {
+             console.log(`Simulating API call: toggleFollow(${authorId})`);
+             await new Promise(resolve => setTimeout(resolve, 400));
+            // await api.users.toggleFollow(authorId); // Реальний виклик
+            this.followedAuthors = this.followedAuthors.filter(author => author._id !== authorId);
+            this.followingCount = Math.max(0, this.followingCount - 1);
+            this.showNotification($store.i18n.t('notifications.unfollowingAuthor'), true); // i18n
+        } catch (error) {
+            this.activityError = error.message || $store.i18n.t('profile.errorUnfollowing'); // i18n
+            console.error('Unfollow error:', error);
+            if (button) button.classList.remove('removing'); // Знімаємо спінер при помилці
+        }
+        // Спінер знімається автоматично при успіху
+    }
+
+}" x-init="
+    try {
+        // Спроба відновити останню активну вкладку
+        const savedTab = localStorage.getItem('profileActiveTab');
+        if (savedTab && ['saved', 'history', 'likes', 'comments', 'following'].includes(savedTab)) {
+            activeTab = savedTab;
+        }
+
+        isLoggedIn = api.utils.isAuthenticated();
+        if (!isLoggedIn) {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+        } else {
+            fetchProfileData().then(() => {
+                if (!profileError) { fetchActivityData(activeTab); }
+            });
+        }
+    } catch (error) {
+        console.error('Authentication check error:', error);
+        // При помилці перевірки перенаправляємо на логін
+        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
+    }
+
+    // Додаємо слухач для попередження про незбережені зміни
+    window.addEventListener('beforeunload', (event) => {
+        if (hasUnsavedChanges) {
+            const message = $store.i18n?.t('createStory.beforeUnloadWarning') || 'У вас є незбережені зміни. Ви впевнені, що хочете залишити сторінку?';
+            event.preventDefault();
+            event.returnValue = message;
+            return message;
+        }
+    });
+
+    // Відслідковування змін у формах
+    $watch('editUserName', () => { if(showEditProfile) setUnsavedChanges() });
+    $watch('editUserBio', () => { if(showEditProfile) setUnsavedChanges() });
+    $watch('currentPassword', () => { if(showChangePassword) setUnsavedChanges() });
+    $watch('newPassword', () => { if(showChangePassword) setUnsavedChanges() });
+    $watch('confirmPassword', () => { if(showChangePassword) setUnsavedChanges() });
+
+    // Зберігаємо активну вкладку при зміні
+    $watch('activeTab', (value) => {
+        try {
+            localStorage.setItem('profileActiveTab', value);
+        } catch (error) {
+            console.warn('Error saving active tab to localStorage:', error);
+        }
+    });
+">
+
+<!-- Хедер -->
+<header>
+    <div class="container">
+        <nav class="navbar">
+            <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+            <!-- Навігація з i18n -->
+            <ul class="nav-links">
+                <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+                <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+                <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+                <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+                <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+            </ul>
+            <div class="auth-buttons">
+                <!-- Мовний перемикач -->
+                <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+                    <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+                        <!-- Безпечний доступ до selectedLang -->
+                        <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+                        <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
+                    </div>
+                    <!-- Перевіряємо наявність $store.i18n -->
+                    <template x-if="$store?.i18n">
+                        <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+                            <!-- Безпечний доступ до available та ітерація -->
+                            <template x-for="lang in $store.i18n.available || []" :key="lang.code">
+                                <div class="lang-dropdown-item"
+                                     :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                                     @click="
+                 const newLang = lang.code;
+                 open = false;
+                 try {
+                     // Виклик setLanguage всередині try...catch
+                     $store.i18n.setLanguage(newLang);
+                     console.log('Language set to:', newLang);
+                 } catch(e) {
+                     console.error('Error setting language:', e);
+                     // Можна додати сповіщення для користувача тут
+                 }
+              "
+                                     role="menuitemradio"
+                                     :aria-checked="lang.code === $store.i18n.selectedLang"
+                                     tabindex="0"
+                                     @keydown.enter.space.prevent="
+                 const newLang = lang.code;
+                 open = false;
+                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
+              ">
+                                    <span x-text="lang.name"></span>
+                                    <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <!-- Кнопки авторизації -->
+                <template x-if="!isLoggedIn">
+                    <div>
+                        <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span> </a>
+                        <a href="register-page.html" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span> </a>
+                    </div>
+                </template>
+                <template x-if="isLoggedIn">
+                    <div>
+                        <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
+                        <!-- Виправлений обробник виходу з обробкою помилок -->
+                        <a href="#" @click.prevent="
+                            try {
+                                api.auth.logout();
+                                window.location.href = 'index.html';
+                            } catch (error) {
+                                console.error('Logout error:', error);
+                                showNotification($store.i18n?.t('auth.logoutError') || 'Помилка при виході з системи', false);
+                                setTimeout(() => window.location.reload(), 1500);
+                            }
+                        " class="btn btn-primary">
+                            <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+                        </a>
+                    </div>
+                </template>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<!-- Індикатор завантаження профілю -->
+<div x-show="isLoadingProfile" class="loading-indicator-small container" style="margin-top: 2rem;">
+    <div class="loading-spinner-small"></div> <span x-text="$store.i18n.t('profile.loadingProfile')"></span>
+</div>
+<!-- Повідомлення про помилку завантаження профілю -->
+<div x-show="profileError && !isLoadingProfile" class="error-message-small container" style="margin-top: 1rem;">
+    <i class="fas fa-exclamation-circle"></i> <span x-text="profileError"></span>
+    <button @click="fetchProfileData()" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+</div>
+
+
+<!-- Основний контент -->
+<main class="container" x-show="!isLoadingProfile && !profileError">
+    <!-- Хлібні крихти -->
+    <div class="breadcrumbs">
+        <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+        <span class="separator">/</span>
+        <span class="current" x-text="$store.i18n.t('general.profile')"></span>
+    </div>
+
+    <!-- Секція профілю -->
+    <div class="profile-section">
+        <!-- Сайдбар профілю -->
+        <aside class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="profile-avatar" :style="{ backgroundImage: `url(${userAvatar})` }"></div>
+                    <div class="profile-status" :class="{ 'premium-status': isPremiumUser }">
+                        <i :class="isPremiumUser ? 'fas fa-crown' : 'fas fa-user'"></i>
+                        <span x-text="isPremiumUser ? $store.i18n.t('profile.premiumStatus') : $store.i18n.t('profile.basicStatus')"></span>
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name" x-text="userName || $store.i18n.t('general.anonymous')"></h1>
+                    <div class="profile-email" x-text="userEmail || $store.i18n.t('general.notSpecified')"></div>
+                    <div class="profile-bio" x-text="userBio || $store.i18n.t('profile.addInfoPlaceholder')"></div>
+                </div>
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="savedStoriesCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.saved')"></div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="readStoriesCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.read')"></div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="commentsCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.commentsCount')"></div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="stat-value" x-text="followingCount"></div>
+                        <div class="stat-label" x-text="$store.i18n.t('profile.following')"></div>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button @click="toggleEditProfile()" class="btn-action"> <i class="fas fa-edit"></i> <span x-text="$store.i18n.t('profile.editProfile')"></span> </button>
+                    <button @click="toggleChangePassword()" class="btn-action"> <i class="fas fa-key"></i> <span x-text="$store.i18n.t('profile.changePassword')"></span> </button>
+                    <template x-if="!isPremiumUser">
+                        <button @click="upgradeAccount()" class="btn-action premium-action"> <i class="fas fa-crown"></i> <span x-text="$store.i18n.t('profile.upgradeAccount')"></span> </button>
+                    </template>
+                    <template x-if="isPremiumUser">
+                        <button @click="toggleSubscriptionSettings()" class="btn-action premium-action"> <i class="fas fa-cog"></i> <span x-text="$store.i18n.t('profile.subscriptionSettings')"></span> </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Виправлення атрибутів доступності для кнопок навігації -->
+            <div class="profile-menu" role="tablist" aria-label="Вкладки профілю">
+                <button @click="setTab('saved')" :class="{ 'active': activeTab === 'saved' }" class="menu-item" role="tab" :aria-selected="activeTab === 'saved'" id="tab-saved" aria-controls="panel-saved">
+                    <i class="fas fa-bookmark" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.savedStories')"></span>
+                </button>
+                <button @click="setTab('history')" :class="{ 'active': activeTab === 'history' }" class="menu-item" role="tab" :aria-selected="activeTab === 'history'" id="tab-history" aria-controls="panel-history">
+                    <i class="fas fa-history" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.readingHistory')"></span>
+                </button>
+                <button @click="setTab('likes')" :class="{ 'active': activeTab === 'likes' }" class="menu-item" role="tab" :aria-selected="activeTab === 'likes'" id="tab-likes" aria-controls="panel-likes">
+                    <i class="fas fa-heart" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.likedStories')"></span>
+                </button>
+                <button @click="setTab('comments')" :class="{ 'active': activeTab === 'comments' }" class="menu-item" role="tab" :aria-selected="activeTab === 'comments'" id="tab-comments" aria-controls="panel-comments">
+                    <i class="fas fa-comments" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.myComments')"></span>
+                </button>
+                <button @click="setTab('following')" :class="{ 'active': activeTab === 'following' }" class="menu-item" role="tab" :aria-selected="activeTab === 'following'" id="tab-following" aria-controls="panel-following">
+                    <i class="fas fa-users" aria-hidden="true"></i> <span x-text="$store.i18n.t('profile.myFollowing')"></span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Вміст профілю -->
+        <div class="profile-content">
+            <!-- Форма редагування профілю -->
+            <div x-show="showEditProfile" class="profile-form-container" x-collapse>
+                <div class="form-card">
+                    <h2 class="form-title" x-text="$store.i18n.t('profile.editFormTitle')"></h2>
+                    <div x-show="editFormError" class="error-message-small" style="margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-circle"></i> <span x-text="editFormError"></span>
+                    </div>
+                    <form @submit.prevent="saveProfile()" class="profile-form">
+                        <div class="form-group">
+                            <label class="form-label" x-text="$store.i18n.t('profile.editAvatarLabel')"></label>
+                            <div class="avatar-upload-preview"
+                                 :style="{ backgroundImage: avatarPreviewUrl ? `url(${avatarPreviewUrl})` : `url(${userAvatar || 'https://source.unsplash.com/random/200x200/?profile-placeholder'})` }">
+                                <label for="avatar-upload-input" class="avatar-upload-overlay">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                            </div>
+                            <input type="file" id="avatar-upload-input" @change="handleAvatarUpload($event)" accept="image/jpeg, image/png, image/gif, image/webp" style="display: none;" x-ref="avatarUploadInput">
+                            <div style="text-align: center;">
+                                <button type="button" class="avatar-remove-button" x-show="avatarPreviewUrl !== userAvatar || editUserAvatarFile" @click="removeAvatarPreview()">
+                                    <i class="fas fa-times"></i> <span x-text="$store.i18n.t('general.cancel')"></span>
+                                </button>
+                            </div>
+                            <div class="form-help" x-text="$store.i18n.t('profile.editAvatarHelp')"></div>
+                        </div>
+                        <!-- Виправлене повідомлення про помилку для імені користувача -->
+                        <div class="form-group">
+                            <label for="editUserName" class="form-label" x-text="$store.i18n.t('profile.editNameLabel')"></label>
+                            <input
+                                type="text"
+                                id="editUserName"
+                                class="form-input"
+                                x-model="editUserName"
+                                required
+                                :class="{'has-error': nameError}"
+                                @input="nameError = ''"
+                            >
+                            <div x-show="nameError" class="input-error" x-text="nameError" role="alert"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserEmail" class="form-label" x-text="$store.i18n.t('profile.editEmailLabel')"></label>
+                            <input type="email" id="editUserEmail" class="form-input" :value="userEmail" disabled readonly :title="$store.i18n.t('profile.emailNotEditable')">
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserBio" class="form-label" x-text="$store.i18n.t('profile.editBioLabel')"></label>
+                            <textarea id="editUserBio" class="form-textarea" x-model="editUserBio" rows="4"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" @click="toggleEditProfile()" class="btn btn-outline" x-text="$store.i18n.t('general.cancel')"></button>
+                            <!-- Виправлений клас для анімації обробки зі збереженням стану -->
+                            <button type="submit" class="btn btn-primary" :class="{ 'processing': isSavingProfile }" :disabled="isSavingProfile">
+                                <span x-show="!isSavingProfile" x-text="$store.i18n.t('profile.saveChangesButton')"></span>
+                                <span x-show="isSavingProfile"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('profile.saving')"></span></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Форма зміни пароля -->
+            <div x-show="showChangePassword" class="profile-form-container" x-collapse>
+                <div class="form-card">
+                    <h2 class="form-title" x-text="$store.i18n.t('profile.changePasswordFormTitle')"></h2>
+                    <div x-show="passwordFormError" class="error-message-small" style="margin-bottom: 1рем;">
+                        <i class="fas fa-exclamation-circle"></i> <span x-text="passwordFormError"></span>
+                    </div>
+                    <form @submit.prevent="changePassword()" class="profile-form">
+                        <div class="form-group">
+                            <label for="currentPassword" class="form-label" x-text="$store.i18n.t('profile.currentPasswordLabel')"></label>
+                            <input type="password" id="currentPassword" class="form-input" x-model="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword" class="form-label" x-text="$store.i18n.t('profile.newPasswordLabel')"></label>
+                            <input type="password" id="newPassword" class="form-input" x-model="newPassword" required minlength="8">
+                            <div class="form-help" x-text="$store.i18n.t('profile.passwordMinHelp')"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword" class="form-label" x-text="$store.i18n.t('profile.confirmNewPasswordLabel')"></label>
+                            <input type="password" id="confirmPassword" class="form-input" x-model="confirmPassword" required minlength="8">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" @click="toggleChangePassword()" class="btn btn-outline" x-text="$store.i18n.t('general.cancel')"></button>
+                            <!-- Виправлений клас для анімації обробки зміни пароля -->
+                            <button type="submit" class="btn btn-primary" :class="{ 'processing': isChangingPassword }" :disabled="isChangingPassword">
+                                <span x-show="!isChangingPassword" x-text="$store.i18n.t('profile.changePasswordButton')"></span>
+                                <span x-show="isChangingPassword"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('profile.changingPassword')"></span></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Налаштування підписки -->
+            <div x-show="showSubscriptionSettings" class="profile-form-container" x-collapse>
+                <div class="form-card subscription-card">
+                    <h2 class="form-title" x-text="$store.i18n.t('profile.subscriptionSettingsTitle')"></h2>
+                    <div x-show="subscriptionError" class="error-message-small" style="margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-circle"></i> <span x-text="subscriptionError"></span>
+                    </div>
+                    <div class="subscription-details" x-show="isPremiumUser">
+                        <div class="subscription-status">
+                            <i class="fas fa-crown"></i>
+                            <div class="status-text">
+                                <h3 x-text="$store.i18n.t('profile.premiumPlan')"></h3>
+                                <p><span x-text="$store.i18n.t('profile.activeUntil')"></span> <span x-text="subscriptionEndDate || $store.i18n.t('profile.notSpecified')"></span></p>
+                            </div>
+                        </div>
+                        <div class="subscription-info">
+                            <p x-show="subscriptionEndDate" x-text="$store.i18n.t('profile.subscriptionWillRenew')"></p>
+                            <p><span x-text="$store.i18n.t('profile.paymentMethod')"></span> <span x-text="paymentMethodInfo || $store.i18n.t('profile.notSpecified')"></span></p>
+                        </div>
+                        <div class="subscription-actions">
+                            <button type="button" class="btn btn-outline" @click="toggleSubscriptionSettings()" x-text="$store.i18n.t('profile.closeButton')"></button>
+                            <button type="button" class="btn btn-primary" @click="upgradeAccount()" x-text="$store.i18n.t('profile.changePlanButton')"></button>
+                            <!-- Виправлена кнопка скасування підписки без постійного класу processing -->
+                            <button type="button" class="btn btn-danger"
+                                    :class="{ 'processing': isCancellingSubscription }"
+                                    @click="cancelSubscription()"
+                                    :disabled="isCancellingSubscription">
+                                <span x-show="!isCancellingSubscription" x-text="$store.i18n.t('profile.cancelSubscriptionButton')"></span>
+                                <span x-show="isCancellingSubscription">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span x-text="$store.i18n.t('profile.cancelling')"></span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="subscription-details" x-show="!isPremiumUser">
+                        <p x-text="$store.i18n.t('profile.noActiveSubscription')"></p>
+                        <div class="subscription-actions">
+                            <button type="button" class="btn btn-outline" @click="toggleSubscriptionSettings()" x-text="$store.i18n.t('profile.closeButton')"></button>
+                            <button type="button" class="btn btn-primary" @click="upgradeAccount()" x-text="$store.i18n.t('profile.getPremium')"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Індикатор завантаження активності -->
+            <div x-show="isLoadingActivity" class="loading-indicator-small">
+                <div class="loading-spinner-small"></div> <span x-text="$store.i18n.t('profile.loadingActivity')"></span>
+            </div>
+            <!-- Помилка завантаження активності -->
+            <div x-show="activityError && !isLoadingActivity" class="error-message-small">
+                <i class="fas fa-exclamation-circle"></i> <span x-text="activityError"></span>
+                <button @click="fetchActivityData(activeTab)" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+            </div>
+
+            <!-- Вкладки активності -->
+            <div x-show="!isLoadingActivity && !activityError && !showEditProfile && !showChangePassword && !showSubscriptionSettings">
+
+                <!-- Збережені історії -->
+                <div x-show="activeTab === 'saved'" class="content-container" role="tabpanel" id="panel-saved" aria-labelledby="tab-saved">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.savedStories')"></h2>
+                    <div x-show="savedStories.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noSavedStories')"></div>
+                    <template x-for="story in savedStories" :key="story._id || story.id">
+                        <div :id="'saved-item-' + (story._id || story.id)" class="saved-item">
+                            <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;">
+                                <div class="saved-item-image" :style="{ backgroundImage: `url(${story.imageUrl || 'https://source.unsplash.com/random/300x200/?placeholder'})` }"></div>
+                            </a>
+                            <div class="saved-item-content">
+                                <div class="saved-item-category" x-text="story.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+                                <h3 class="saved-item-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
+                                <div class="saved-item-meta">
+                                    <div class="saved-item-author">
+                                        <a :href="story.author?._id ? `author-profile.html?id=${story.author._id}` : '#'" style="display: contents;">
+                                            <div class="author-avatar" :style="{ backgroundImage: `url(${story.author?.avatarUrl || 'https://source.unsplash.com/random/50x50/?profile'})` }"></div>
+                                            <div class="author-name" x-text="story.author?.name || $store.i18n.t('general.anonymous')"></div>
+                                        </a>
+                                    </div>
+                                    <!-- Дата збереження (якщо є) -->
+                                    <!-- <div class="saved-item-date" x-text="story.savedAt ? `${$store.i18n.t('profile.savedOn')}: ${new Date(story.savedAt).toLocaleDateString()}` : ''"></div> -->
+                                </div>
+                            </div>
+                            <div class="saved-item-actions">
+                                <button type="button" class="action-btn" :title="$store.i18n.t('profile.removeFromSavedAction')" @click="removeFromSaved(story._id || story.id, $event)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Історія переглядів -->
+                <div x-show="activeTab === 'history'" class="content-container history-section"> <!-- Додав клас -->
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.readingHistory')"></h2>
+                    <div x-show="readingHistory.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noHistory')"></div>
+                    <template x-for="(item, index) in readingHistory" :key="item._id || item.id">
+                        <!-- Групування за датою, якщо потрібно (приклад логіки) -->
+                        <!-- <template x-if="index === 0 || new Date(item.viewedAt).toLocaleDateString() !== new Date(readingHistory[index-1].viewedAt).toLocaleDateString()">
+                             <h3 class="history-date" x-text="new Date(item.viewedAt).toLocaleDateString($store.i18n.selectedLang || 'uk-UA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></h3>
+                        </template> -->
+                        <div class="history-item">
+                            <div class="history-time" x-text="new Date(item.viewedAt).toLocaleTimeString($store.i18n.selectedLang || 'uk-UA', { hour: '2-digit', minute: '2-digit' })"></div>
+                            <div class="history-content">
+                                <div class="history-title"><a :href="`story-detailed.html?id=${item._id || item.id}`" x-text="item.title"></a></div>
+                                <div class="history-category" x-text="item.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Вподобані історії -->
+                <div x-show="activeTab === 'likes'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.likedStories')"></h2>
+                    <div x-show="likedStories.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noLikedStories')"></div>
+                    <div class="likes-grid">
+                        <template x-for="story in likedStories" :key="story._id || story.id">
+                            <div class="liked-item">
+                                <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;">
+                                    <div class="liked-item-image" :style="{ backgroundImage: `url(${story.imageUrl || 'https://source.unsplash.com/random/300x200/?love'})` }"></div>
+                                </a>
+                                <div class="liked-item-content">
+                                    <div class="liked-item-category" x-text="story.category?.name || $store.i18n.t('general.defaultCategory')"></div>
+                                    <h3 class="liked-item-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
+                                    <div class="liked-item-author">
+                                        <a :href="story.authorId ? `author-profile.html?id=${story.authorId}` : '#'" style="display: contents;">
+                                            <div class="author-avatar" :style="{ backgroundImage: `url(${story.authorAvatar || 'https://source.unsplash.com/random/50x50/?profile'})` }"></div>
+                                            <div class="author-name" x-text="story.authorName || $store.i18n.t('general.anonymous')"></div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Мої коментарі -->
+                <div x-show="activeTab === 'comments'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.myComments')"></h2>
+                    <div x-show="userComments.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noComments')"></div>
+                    <div class="comments-list"> <!-- Використовуємо клас зі story.css -->
+                        <template x-for="comment in userComments" :key="comment._id || comment.id">
+                            <div class="comment-item"> <!-- Додав клас для стилізації -->
+                                <div class="comment-story">
+                                    <span x-text="$store.i18n.t('profile.commentToStory')"></span>:
+                                    <a :href="`story-detailed.html?id=${comment.storyId}`" x-text="comment.storyTitle || '...' "></a>
+                                </div>
+                                <div class="comment-text" x-text="comment.text"></div>
+                                <div class="comment-meta">
+                                    <div class="comment-date" x-text="new Date(comment.createdAt).toLocaleString($store.i18n.selectedLang || 'uk-UA', { dateStyle: 'medium', timeStyle: 'short' })"></div>
+                                    <div class="comment-likes"><span x-text="comment.likes || 0"></span> <span x-text="$store.i18n.t('general.likesSuffix')"></span></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Мої підписки -->
+                <div x-show="activeTab === 'following'" class="content-container">
+                    <h2 class="content-title" x-text="$store.i18n.t('profile.myFollowing')"></h2>
+                    <div x-show="followedAuthors.length === 0" class="empty-tab-message" x-text="$store.i18n.t('profile.noFollowing')"></div>
+                    <div class="following-list">
+                        <template x-for="author in followedAuthors" :key="author._id">
+                            <div class="following-item">
+                                <a :href="`author-profile.html?id=${author._id}`" style="display:contents;">
+                                    <div class="following-avatar" :style="{ backgroundImage: `url(${author.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile'})` }"></div>
+                                </a>
+                                <div class="following-info">
+                                    <div class="following-name"><a :href="`author-profile.html?id=${author._id}`" style="color: inherit; text-decoration:none;" x-text="author.name"></a></div>
+                                    <div class="following-stats">
+                                        <div class="following-stat"><span x-text="author.stats?.storyCount || 0"></span> <span x-text="$store.i18n.t('profile.storiesWrittenShort') || 'іст.'"></span></div>
+                                        <div class="following-stat"><span x-text="(author.stats?.averageRating || 0).toFixed(1)"></span> <i class="fas fa-star"></i></div>
+                                        <div class="following-stat" x-show="author.stats?.followersCount"><span x-text="author.stats.followersCount"></span> <span x-text="$store.i18n.t('profile.followersShort') || 'підп.'"></span></div>
+                                    </div>
+                                    <div class="following-біо" x-text="author.bio || $store.i18n.t('authorsPage.bioMissing')"></div>
+                                </div>
+                                <div class="following-actions">
+                                    <button type="button" class="btn btn-outline" @click="unfollowAuthor(author._id, $event)" x-text="$store.i18n.t('profile.unfollowAction')"></button>
+                                    <a :href="`author-profile.html?id=${author._id}`" class="btn btn-primary" x-text="$store.i18n.t('profile.viewProfileAction')"></a>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div> <!-- Кінець вкладок активності -->
+        </div> <!-- Кінець profile-content -->
+    </div> <!-- Кінець profile-section -->
+</main>
+
+<!-- Виправлена перевірка умов відображення преміум-сповіщення -->
+<template x-if="!isPremiumUser && !isLoadingProfile && activeTab !== 'following'">
+    <div class="premium-notification" x-show="!showEditProfile && !showChangePassword && !showSubscriptionSettings" x-transition>
+        <div class="premium-notification-content">
+            <div class="premium-icon"><i class="fas fa-crown"></i></div>
+            <div class="premium-message">
+                <h3 x-text="$store.i18n.t('profile.premiumBannerTitle')"></h3>
+                <p x-text="$store.i18n.t('profile.premiumBannerText')"></p>
+            </div>
+            <a href="premium.html" class="btn-premium" x-text="$store.i18n.t('profile.premiumBannerButton')"></a>
+        </div>
+    </div>
+</template>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <!-- Код футера з i18n, як в index.html -->
+        <div class="footer-content">
+            <div class="footer-section footer-about">
+                <h4 x-text="$store.i18n.t('general.about')"></h4>
+                <p x-text="$store.i18n.t('general.aboutText')"></p>
+                <div class="social-links">
+                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+                    <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+                <ul>
+                    <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
+                    <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
+                    <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
+                    <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
+                    <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4 x-text="$store.i18n.t('general.support')"></h4>
+                <ul>
+                    <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
+                    <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
+                    <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
+                    <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4 x-text="$store.i18n.t('general.join')"></h4>
+                <ul>
+                    <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
+                    <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
+                    <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
+                    <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
+            <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+        </div>
+    </div>
+</footer>
+
+<!-- Виправлений елемент сповіщення з класами, що контролюють стан -->
+<div x-show="notificationVisible"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 translate-y-2"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-300"
+     x-transition:leave-start="opacity-100 translate-y-0"
+     x-transition:leave-end="opacity-0 -translate-y-full"
+     class="notification"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
+     style="display: none;"
+     id="global-notification">
+    <span x-text="notificationMessage"></span>
+</div>
+
+</body>
+</html>

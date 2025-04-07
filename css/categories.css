@@ -1,372 +1,120 @@
 /* css/categories.css */
+/* Залишаємо ТІЛЬКИ стилі, специфічні для сторінки категорій */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Montserrat', sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    min-height: 100vh;
-    background-image: radial-gradient(circle at 10% 20%, rgba(153, 0, 0, 0.1) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(153, 0, 0, 0.08) 0%, transparent 20%);
-    background-attachment: fixed;
-}
-
-h1, h2, h3, h4, h5 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    letter-spacing: 0.3px;
-}
-
-.container {
-    width: 100%;
-    max-width: var(--container-width);
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-/* Хедер і навігація */
-header {
-    padding: 1.2rem 0;
-    position: relative;
-    z-index: 100;
-}
-
-header:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--accent-red), transparent);
-}
-
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo {
-    font-size: 1.9rem;
-    font-weight: 700;
-    font-family: 'Cormorant Garamond', serif;
-    color: var(--text-color);
-    text-decoration: none;
-    position: relative;
-    display: inline-block;
-}
-
-.logo span {
-    color: var(--accent-red);
-}
-
-.logo:after {
-    content: '18+';
-    position: absolute;
-    top: -5px;
-    right: -25px;
-    font-size: 0.6rem;
-    background: var(--accent-red);
-    color: white;
-    padding: 2px 5px;
-    border-radius: 4px;
-    font-family: 'Montserrat', sans-serif;
-}
-
-.nav-links {
-    display: flex;
-    list-style: none;
-}
-
-.nav-links li {
-    margin-right: 2.5rem;
-    position: relative;
-}
-
-.nav-links a {
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.3s;
-    padding: 8px 0;
-}
-
-.nav-links a:hover {
-    color: var(--accent-red);
-}
-
-.nav-links a:after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: 0;
-    left: 0;
-    background-color: var(--accent-red);
-    transition: width 0.3s;
-}
-
-.nav-links a:hover:after {
-    width: 100%;
-}
-
-.auth-buttons {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.lang-dropdown {
-    margin-right: 1rem;
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.lang-dropdown i {
-    margin-left: 8px;
-    font-size: 0.8rem;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.7rem 1.8rem;
-    border-radius: var(--button-radius);
-    font-weight: 500;
-    text-decoration: none;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    font-size: 0.9rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn i {
-    margin-right: 8px;
-}
-
-.btn:after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transition: all 0.4s;
-    transform: skewX(-15deg);
-}
-
-.btn:hover:after {
-    left: 100%;
-}
-
-.btn-outline {
-    background-color: transparent;
-    color: var(--text-color);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-outline:hover {
-    border-color: var(--accent-red);
-}
-
-.btn-primary {
-    background: var(--button-gradient);
-    color: white;
-    box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(153, 0, 0, 0.4);
-}
-
-/* Хлібні крихти */
-.breadcrumbs {
-    display: flex;
-    margin: 1.5rem 0;
-    font-size: 0.9rem;
-}
-
-.breadcrumbs a {
-    color: var(--secondary-text);
-    text-decoration: none;
-    transition: all 0.3s;
-}
-
-.breadcrumbs a:hover {
-    color: var(--accent-red);
-}
-
-.breadcrumbs .separator {
-    margin: 0 10px;
-    color: var(--secondary-text);
-}
-
-.breadcrumbs .current {
-    color: var(--accent-gold);
-}
-
-/* Стилі для сторінки категорій */
+/* --- Стилі для сторінки категорій --- */
 .page-header {
-    margin: 3rem 0;
-    text-align: center;
+    margin: 3rem 0; /* Відступи зверху/знизу */
+    text-align: center; /* Центрування заголовка */
 }
 
 .page-title {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    position: relative;
-    display: inline-block;
+    font-size: 3rem; /* Розмір заголовка */
+    margin-bottom: 1rem; /* Відступ під заголовком */
+    position: relative; /* Для позиціонування псевдоелемента */
+    display: inline-block; /* Щоб :after працював коректно */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
+    color: var(--text-color); /* Додано основний колір */
 }
 
+/* TODO: Уніфікувати стиль :after для заголовків у main.css */
 .page-title:after {
     content: '';
     position: absolute;
-    bottom: -15px;
+    bottom: -15px; /* Позиція лінії під заголовком */
     left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 3px;
-    background: var(--accent-red);
+    transform: translateX(-50%); /* Центрування лінії */
+    width: 100px; /* Ширина лінії */
+    height: 3px; /* Товщина лінії */
+    background: var(--accent-red); /* Колір лінії */
 }
 
 .page-description {
-    color: var(--secondary-text);
-    font-size: 1.1rem;
-    max-width: 800px;
-    margin: 0 auto;
+    color: var(--secondary-text); /* Колір тексту опису */
+    font-size: 1.1rem; /* Розмір шрифту опису */
+    max-width: 800px; /* Максимальна ширина опису */
+    margin: 0 auto; /* Центрування опису */
+    line-height: 1.7; /* Додано для кращої читабельності */
 }
 
-/* Пошук категорій */
+/* --- Пошук категорій --- */
 .category-search {
-    margin-bottom: 3rem;
+    margin-bottom: 3rem; /* Відступ під блоком пошуку */
 }
 
-.search-container {
-    background: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    background-image: var(--card-gradient);
+/* Використовуємо .search-container з main.css, але можна додати специфічні стилі */
+/* .search-container { ... } */
+
+/* Використовуємо .search-form з main.css, але можна додати специфічні стилі */
+/* .search-form { ... } */
+
+/* Стилі для поля вводу та кнопки можуть успадковуватись з main.css */
+/* Якщо потрібні унікальні стилі, додаємо їх тут */
+.category-search .search-input {
+    /* Можна перевизначити padding або інші властивості */
+    /* padding: 1rem 1rem 1rem 3rem; */
 }
 
-.search-form {
-    display: flex;
-    gap: 1rem;
+.category-search .search-button {
+    /* Можна перевизначити padding або min-width */
+    /* padding: 1rem 2rem; */
+    /* min-width: 150px; */
 }
 
-.search-input-container {
-    flex: 1;
-    position: relative;
-}
-
-.search-input {
-    width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-
-.search-input:focus {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(153, 0, 0, 0.3);
-}
-
-.search-input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
-}
-
-.search-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.search-button {
-    padding: 1rem 2rem;
-    border-radius: var(--border-radius);
-    background: var(--button-gradient);
-    color: white;
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-    min-width: 150px;
-}
-
-.search-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
-}
-
-/* Категорії */
+/* --- Сітка Категорій --- */
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-bottom: 4rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Адаптивні колонки */
+    gap: 2rem; /* Проміжок між картками */
+    margin-bottom: 4rem; /* Відступ знизу сітки */
 }
 
 .category-card {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    overflow: hidden;
-    transition: all 0.3s;
-    border: 1px solid rgba(153, 0, 0, 0.05);
+    overflow: hidden; /* Обрізаємо все, що виходить за межі */
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; /* Плавні переходи */
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.05)); /* Використовуємо змінну */
     background-image: var(--card-gradient);
-    position: relative;
+    position: relative; /* Для позиціонування .category-count */
+    display: flex; /* Для гнучкості внутрішніх елементів */
+    flex-direction: column; /* Вміст розташовується вертикально */
 }
 
 .category-card:hover {
+    transform: translateY(-5px); /* Ефект підняття */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Тінь */
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2)); /* Зміна кольору рамки */
+}
+/* Доступність: стиль фокусу */
+.category-card:focus-within,
+.category-card a:focus-visible { /* Додаємо фокус для посилань всередині */
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    border-color: rgba(153, 0, 0, 0.2);
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2));
+    outline: 2px solid var(--accent-gold); /* Уніфіковано */
+    outline-offset: 2px;
+}
+/* Скидання outline для посилання, коли фокус на картці */
+.category-card:focus-within a:focus {
+    outline: none;
 }
 
+
 .category-card-image {
-    height: 180px;
-    position: relative;
-    overflow: hidden;
+    height: 180px; /* Висота зображення */
+    position: relative; /* Для псевдоелемента */
+    overflow: hidden; /* Обрізаємо зображення, що виходить за межі */
 }
 
 .category-card-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: all 0.5s;
+    object-fit: cover; /* Масштабування зображення */
+    transition: transform 0.5s ease; /* Плавний зум */
 }
 
 .category-card:hover .category-card-image img {
-    transform: scale(1.05);
+    transform: scale(1.05); /* Зум при наведенні */
 }
 
 .category-card-image:before {
@@ -376,191 +124,246 @@ header:after {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent, rgba(0, 0, 0, 0.6));
-    z-index: 1;
+    /* Затемнення знизу та зверху для кращої читабельності тексту */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 40%, transparent 60%, rgba(0, 0, 0, 0.6));
+    z-index: 1; /* Перекриває зображення */
+    opacity: 0.8; /* Трохи зменшимо прозорість */
+    transition: opacity 0.3s;
+}
+.category-card:hover .category-card-image:before {
+    opacity: 1; /* Посилення ефекту при наведенні */
 }
 
 .category-card-content {
-    padding: 1.5rem;
+    padding: 1.5rem; /* Внутрішні відступи контенту */
+    flex-grow: 1; /* Дозволяє блоку зайняти доступний простір */
+    display: flex; /* Для притискання мета-даних донизу */
+    flex-direction: column;
 }
 
 .category-name {
-    font-size: 1.4rem;
+    font-size: 1.4rem; /* Розмір назви */
     font-weight: 700;
     margin-bottom: 0.5rem;
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
 }
 
 .category-name a {
-    color: var(--text-color);
+    color: var(--text-color); /* Колір посилання */
     text-decoration: none;
     transition: color 0.3s;
 }
 
 .category-name a:hover {
-    color: var(--accent-red);
+    color: var(--accent-red); /* Колір при наведенні */
+    text-decoration: none; /* Прибираємо підкреслення */
 }
 
 .category-description {
-    color: var(--secondary-text);
-    margin-bottom: 1.5rem;
-    font-size: 0.95rem;
-    line-height: 1.7;
+    color: var(--secondary-text); /* Колір опису */
+    margin-bottom: 1.5rem; /* Відступ під описом */
+    font-size: 0.95rem; /* Розмір шрифту опису */
+    line-height: 1.7; /* Міжрядковий інтервал */
+    flex-grow: 1; /* Займає доступний простір, щоб притиснути мета-дані */
+    /* Обмеження тексту опису (опціонально) */
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Максимум 3 рядки */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: calc(1.7em * 3); /* Мінімальна висота для 3 рядків */
 }
 
 .category-meta {
     display: flex;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    justify-content: space-between; /* Розміщення елементів по краях */
+    align-items: center; /* Вирівнювання по вертикалі */
+    padding-top: 1rem; /* Відступ зверху */
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Лінія розділювач */
+    margin-top: auto; /* Притискає до низу картки */
+    flex-wrap: wrap; /* Дозволяє перенос на малих екранах */
+    gap: 0.5rem 1rem; /* Проміжки між елементами */
 }
 
 .category-meta-item {
     display: flex;
-    align-items: center;
-    color: var(--secondary-text);
-    font-size: 0.85rem;
+    align-items: center; /* Вирівнювання іконки та тексту */
+    color: var(--secondary-text); /* Колір тексту */
+    font-size: 0.85rem; /* Розмір шрифту */
 }
 
 .category-meta-item i {
-    margin-right: 5px;
+    margin-right: 5px; /* Відступ від іконки */
+    width: 1em; /* Фіксована ширина іконки */
+    text-align: center; /* Центрування іконки */
+    color: var(--accent-gold); /* Колір іконки */
 }
 
 .category-count {
-    position: absolute;
+    position: absolute; /* Позиціонування відносно .category-card */
     top: 1rem;
     right: 1rem;
-    background-color: rgba(153, 0, 0, 0.8);
-    color: white;
-    padding: 0.3rem 0.8rem;
-    border-radius: 30px;
-    font-size: 0.8rem;
-    z-index: 1;
+    background-color: rgba(153, 0, 0, 0.8); /* Фон лічильника */
+    color: white; /* Колір тексту лічильника */
+    padding: 0.3rem 0.8rem; /* Внутрішні відступи */
+    border-radius: 30px; /* Закруглення */
+    font-size: 0.8rem; /* Розмір шрифту */
+    z-index: 2; /* Перекриває градієнт зображення */
+    font-weight: 500; /* Напівжирний шрифт */
 }
 
-/* Популярні теги */
+/* --- Популярні теги --- */
 .tags-section {
-    margin-bottom: 4rem;
+    margin-bottom: 4rem; /* Відступ знизу секції */
 }
 
+/* Стиль заголовка секції успадковується з main.css */
 .section-title {
-    font-size: 2rem;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.section-title:after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 60px;
-    height: 3px;
-    background: var(--accent-red);
+    color: var(--text-color); /* Додано основний колір */
+    /* Додаткові стилі, якщо потрібні */
 }
 
 .tags-cloud {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
+    flex-wrap: wrap; /* Дозволяє переносити теги */
+    gap: 1rem; /* Проміжок між тегами */
 }
 
 .tag-item {
     display: inline-block;
     padding: 0.7rem 1.5rem;
     background-color: var(--card-color);
-    border: 1px solid rgba(153, 0, 0, 0.2);
-    border-radius: 30px;
-    color: var(--text-color);
+    border: 1px solid rgba(153, 0, 0, 0.2); /* Рамка тегу */
+    border-radius: 30px; /* Закруглення */
+    color: var(--text-color); /* Колір тексту */
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.3s;
-    position: relative;
+    font-size: 0.9rem; /* Розмір шрифту */
+    transition: transform 0.3s, box-shadow 0.3s, color 0.3s, border-color 0.3s; /* Плавні переходи */
+    position: relative; /* Для :focus-visible */
 }
 
 .tag-item:hover {
+    transform: translateY(-3px); /* Ефект підняття */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Тінь */
+    color: var(--accent-red); /* Зміна кольору тексту */
+    border-color: rgba(153, 0, 0, 0.4); /* Зміна кольору рамки */
+    text-decoration: none; /* Прибираємо підкреслення */
+}
+/* Доступність: стиль фокусу */
+.tag-item:focus-visible {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     color: var(--accent-red);
     border-color: rgba(153, 0, 0, 0.4);
+    outline: 2px solid var(--accent-gold); /* Уніфіковано */
+    outline-offset: 2px;
+    text-decoration: none;
 }
+
 
 .tag-count {
-    font-size: 0.8rem;
-    color: var(--secondary-text);
-    margin-left: 5px;
+    font-size: 0.8rem; /* Розмір лічильника */
+    color: var(--secondary-text); /* Колір лічильника */
+    margin-left: 5px; /* Відступ від назви тегу */
 }
 
-/* Підписка на новини */
+/* --- Підписка на новини --- */
+
 .newsletter-section {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    padding: 3rem;
-    margin-bottom: 4rem;
-    text-align: center;
+    padding: 3rem; /* Внутрішні відступи */
+    margin-bottom: 4rem; /* Відступ знизу */
+    text-align: center; /* Центрування вмісту */
+    /* Градієнтний фон */
     background-image: linear-gradient(135deg, rgba(153, 0, 0, 0.3) 0%, rgba(25, 17, 20, 0.3) 100%);
-    border: 1px solid rgba(153, 0, 0, 0.2);
+    border: 1px solid var(--border-color-medium, rgba(153, 0, 0, 0.2)); /* Рамка */
 }
 
 .newsletter-title {
-    font-size: 2rem;
+    font-size: 2rem; /* Розмір заголовка */
     margin-bottom: 1rem;
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
+    color: var(--text-color); /* Додано основний колір */
 }
 
 .newsletter-description {
-    color: var(--secondary-text);
-    margin-bottom: 2rem;
-    max-width: 600px;
+    color: var(--secondary-text); /* Колір опису */
+    margin-bottom: 2rem; /* Відступ під описом */
+    max-width: 600px; /* Максимальна ширина */
     margin-left: auto;
-    margin-right: auto;
+    margin-right: auto; /* Центрування */
+    line-height: 1.7; /* Додано */
 }
 
 .newsletter-form {
     display: flex;
-    max-width: 600px;
-    margin: 0 auto;
-    gap: 1rem;
+    max-width: 600px; /* Максимальна ширина форми */
+    margin: 0 auto; /* Центрування форми */
+    gap: 1rem; /* Проміжок між полем та кнопкою */
 }
 
 .newsletter-input {
-    flex: 1;
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-    font-size: 1rem;
+    /* Стилі успадковуються від .form-input з main.css */
+    flex: 1; /* Займає доступний простір */
+    /* Можна додати специфічні стилі, якщо потрібно */
+    /* padding: 1rem; */
 }
 
-.newsletter-input:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
+/* Стилі для кнопки успадковуються від .btn та .btn-primary */
+.newsletter-form .btn-primary {
+    flex-shrink: 0; /* Не стискати кнопку */
 }
 
-/* Відповідність для мобільних пристроїв */
+/* --- Адаптивність --- */
 @media (max-width: 992px) {
     .page-title {
-        font-size: 2.5rem;
+        font-size: 2.5rem; /* Зменшуємо заголовок сторінки */
     }
 
     .newsletter-form {
-        flex-direction: column;
+        flex-direction: column; /* Форма розсилки стає вертикальною */
     }
 
     .newsletter-form .btn {
-        width: 100%;
+        width: 100%; /* Кнопка розсилки на всю ширину */
+        max-width: 350px; /* Обмеження ширини */
+        margin: 0 auto; /* Центрування кнопки */
     }
 }
 
 @media (max-width: 768px) {
-    .nav-links {
-        display: none;
+    /* Стилі для .nav-links вже є в main.css */
+
+    .page-title {
+        font-size: 2.2rem; /* Ще зменшуємо заголовок */
+    }
+    .page-description {
+        font-size: 1rem; /* Зменшуємо опис */
     }
 
-    .search-form {
-        flex-direction: column;
+    .category-search .search-form {
+        /* Стилі адаптивності для пошуку вже мають бути в main.css */
+        /* flex-direction: column; */
     }
 
-    .search-button {
-        width: 100%;
+    .category-search .search-button {
+        /* width: 100%; */ /* Вже має бути в main.css */
+    }
+
+    .categories-grid {
+        grid-template-columns: 1fr; /* Одна категорія на рядок */
+        gap: 1.5rem; /* Зменшуємо проміжок */
+    }
+
+    .tags-cloud {
+        justify-content: center; /* Центруємо теги */
+    }
+
+    .newsletter-section {
+        padding: 2rem; /* Зменшуємо відступи */
+    }
+    .newsletter-title {
+        font-size: 1.8rem; /* Зменшуємо заголовок */
     }
 }

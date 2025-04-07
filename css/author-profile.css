@@ -1,146 +1,196 @@
 /* css/author-profile.css */
 
-/* Секція профілю автора */
+/* --- Секція профілю автора --- */
 .author-profile-section {
-    margin-bottom: 3rem;
+    margin-bottom: 3rem; /* Відступ знизу секції */
 }
 
 .author-profile-card {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     overflow: hidden;
-    border: 1px solid rgba(153, 0, 0, 0.1);
+    /* Використовуємо змінну для кольору рамки, якщо вона визначена в main.css */
+    /* Якщо ні, можна залишити rgba(153, 0, 0, 0.1) або додати нову змінну */
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
     background-image: var(--card-gradient);
     display: grid;
-    grid-template-columns: auto 1fr; /* Аватар + Інфо/Статистика/Кнопки */
-    gap: 2rem;
-    padding: 2rem;
-    align-items: start; /* Вирівнюємо по верху */
+    grid-template-columns: auto 1fr; /* Колонка для аватара + Колонка для інфо/статистики/кнопок */
+    gap: 2rem; /* Проміжок між колонками */
+    padding: 2rem; /* Внутрішній відступ картки */
+    align-items: start; /* Вирівнювання елементів по верхньому краю */
 }
 
 .author-profile-header {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    text-align: center;
+    grid-column: 1 / 2; /* Займає першу колонку */
+    grid-row: 1 / 2;    /* Займає перший рядок */
+    text-align: center; /* Центрування вмісту (аватара) */
 }
 
 .author-profile-avatar {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    margin: 0 auto;
-    background-size: cover;
-    background-position: center;
-    border: 4px solid rgba(153, 0, 0, 0.3);
+    width: 150px; /* Фіксована ширина аватара */
+    height: 150px; /* Фіксована висота аватара */
+    border-radius: 50%; /* Робить аватар круглим */
+    margin: 0 auto; /* Центрування аватара по горизонталі */
+    background-size: cover; /* Масштабування зображення */
+    background-position: center; /* Позиціонування зображення */
+    /* Використовуємо змінну для кольору рамки аватара */
+    border: 4px solid var(--border-color-medium, rgba(153, 0, 0, 0.3));
+    /* TODO: Додати box-shadow для глибини, якщо потрібно */
+    /* box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); */
 }
 
 .author-profile-info {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
+    grid-column: 2 / 3; /* Займає другу колонку */
+    grid-row: 1 / 2;    /* Займає перший рядок */
 }
 
 .author-profile-name {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+    font-size: 2.5rem; /* Розмір імені автора */
+    margin-bottom: 1rem; /* Відступ під іменем */
+    font-family: 'Cormorant Garamond', serif; /* Використовуємо шрифт для заголовків */
+    color: var(--text-color); /* Додано основний колір тексту */
 }
 
 .author-profile-bio {
-    color: var(--secondary-text);
-    font-size: 1rem;
-    line-height: 1.7;
-    margin-bottom: 1rem;
+    color: var(--secondary-text); /* Колір для біографії */
+    font-size: 1rem; /* Розмір шрифту біографії */
+    line-height: 1.7; /* Міжрядковий інтервал */
+    margin-bottom: 1rem; /* Відступ під біографією */
 }
 
 .author-profile-joined {
-    font-size: 0.9rem;
-    color: var(--secondary-text);
-    font-style: italic;
+    font-size: 0.9rem; /* Розмір шрифту дати приєднання */
+    color: var(--secondary-text); /* Колір тексту */
+    font-style: italic; /* Курсивний стиль */
 }
 
 .author-profile-stats {
     grid-column: 1 / 2; /* Розміщуємо під аватаром */
-    grid-row: 2 / 3;
+    grid-row: 2 / 3;    /* Займає другий рядок */
     display: flex;
-    flex-direction: column; /* Статистика стовпчиком */
-    gap: 1rem;
-    padding-top: 1rem;
+    flex-direction: column; /* Статистика розташовується стовпчиком */
+    gap: 1rem; /* Проміжок між елементами статистики */
+    padding-top: 1rem; /* Відступ зверху */
 }
 
-/* Використовуємо стилі .profile-stat з profile_styles.css */
+/* Стилі для статистики, що використовуються з profile_styles.css, але з локальними корекціями */
 .profile-stat {
     text-align: left; /* Вирівнюємо текст статистики ліворуч */
 }
 .profile-stat .stat-value {
     font-size: 1.8rem; /* Збільшуємо значення */
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Montserrat', sans-serif; /* Стандартний шрифт для цифр */
+    font-weight: 600; /* Додаємо жирність */
+    color: var(--accent-gold); /* Акцентний колір */
+    display: block; /* Для відступу знизу */
+    margin-bottom: 0.2rem;
 }
 .profile-stat .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.9rem; /* Розмір підпису */
+    color: var(--secondary-text); /* Колір підпису */
+    text-transform: uppercase; /* Великі літери */
+    letter-spacing: 0.5px; /* Міжлітерний інтервал */
 }
 
 .author-profile-actions {
-    grid-column: 2 / 3; /* Розміщуємо під інфо */
-    grid-row: 2 / 3;
-    align-self: end; /* Вирівнюємо по низу */
+    grid-column: 2 / 3; /* Розміщуємо під основною інформацією */
+    grid-row: 2 / 3;    /* Займає другий рядок */
+    align-self: end; /* Вирівнюємо блок кнопок по нижньому краю */
+    /* TODO: Додати стилі для кнопок всередині, якщо вони потрібні (напр., відступи) */
+    /* display: flex; gap: 1rem; */
+    /* Додаємо відступ зверху для кращого вигляду */
+    margin-top: 1.5rem;
+}
+/* Стилі для кнопок всередині блоку */
+.author-profile-actions .btn {
+    width: 100%; /* Кнопка на всю доступну ширину контейнера */
+    max-width: 250px; /* Обмежуємо максимальну ширину */
 }
 
-/* Секція історій автора */
+/* --- Секція історій автора --- */
 .author-stories-section {
-    margin-bottom: 3rem;
+    margin-bottom: 3rem; /* Відступ знизу секції */
 }
 
 .author-section-title {
-    font-size: 2rem;
-    margin-bottom: 2rem;
-    position: relative;
-    border-left: 4px solid var(--accent-red);
-    padding-left: 1rem;
+    font-size: 2rem; /* Розмір заголовка секції */
+    margin-bottom: 2rem; /* Відступ під заголовком */
+    position: relative; /* Для псевдоелемента */
+    border-left: 4px solid var(--accent-red); /* Ліва межа */
+    padding-left: 1rem; /* Відступ від лівої межі */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
+    color: var(--text-color); /* Додано основний колір тексту */
 }
 
-/* Використовуємо .stories-grid та .story-card з main.css */
-/* Додаємо лише необхідні перекриття або доповнення */
-
+/* Використовуємо стилі .stories-grid та .story-card з main.css */
+/* Додаємо лише необхідні перекриття або доповнення, якщо вони потрібні */
+/* Наприклад, якщо потрібен інший відступ знизу для сітки на цій сторінці */
 .stories-grid {
     margin-bottom: 2rem; /* Відступ після сітки перед пагінацією */
 }
 
 
-/* Адаптивність */
+/* --- Адаптивність --- */
 @media (max-width: 768px) {
     .author-profile-card {
-        grid-template-columns: 1fr; /* Все в одну колонку */
-        gap: 1.5rem;
-        text-align: center; /* Центруємо контент */
+        grid-template-columns: 1fr; /* Все в одну колонку на мобільних */
+        gap: 1.5rem; /* Зменшуємо проміжок */
+        padding: 1.5rem; /* Зменшуємо внутрішній відступ */
+        text-align: center; /* Центруємо весь контент картки */
     }
 
+    /* Скидаємо розташування по сітці для всіх дочірніх елементів */
     .author-profile-header,
     .author-profile-info,
     .author-profile-stats,
     .author-profile-actions {
         grid-column: 1 / -1; /* Займаємо всю ширину */
-        grid-row: auto; /* Автоматичний порядок */
-        align-self: auto; /* Скидаємо вирівнювання */
+        grid-row: auto; /* Автоматичний порядок елементів */
+        align-self: auto; /* Скидаємо вертикальне вирівнювання */
+    }
+
+    .author-profile-avatar {
+        width: 120px; /* Зменшуємо аватар */
+        height: 120px;
+    }
+
+    .author-profile-name {
+        font-size: 2rem; /* Зменшуємо ім'я */
     }
 
     .author-profile-stats {
-        flex-direction: row; /* Статистика в рядок на мобільних */
-        justify-content: space-around;
-        padding-top: 0;
-        margin-top: 1rem;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 1rem;
+        flex-direction: row; /* Статистика в рядок */
+        justify-content: space-around; /* Рівномірний розподіл */
+        padding-top: 1rem; /* Змінено з 0, додано відступ */
+        margin-top: 1.5rem; /* Збільшено відступ зверху */
+        border-top: 1px solid rgba(255, 255, 255, 0.1); /* Додаємо розділювач */
     }
+    /* Центруємо текст статистики на мобільних */
     .profile-stat {
         text-align: center;
     }
+    .profile-stat .stat-value {
+        font-size: 1.6rem; /* Трохи зменшуємо */
+    }
+    .profile-stat .stat-label {
+        font-size: 0.8rem; /* Трохи зменшуємо */
+    }
+
+    .author-profile-actions {
+        margin-top: 1.5rem; /* Додаємо відступ зверху */
+        /* Центруємо блок кнопок */
+        display: flex;
+        justify-content: center;
+    }
 
     .author-profile-actions button {
-        width: 100%;
-        max-width: 300px; /* Обмежуємо ширину кнопки */
-        margin: 0 auto;
+        width: 100%; /* Кнопка на всю ширину */
+        max-width: 300px; /* Обмежуємо максимальну ширину */
+        margin-left: 0; /* Скидаємо авто-відступи */
+        margin-right: 0;
     }
 
     .author-section-title {
-        font-size: 1.8rem;
+        font-size: 1.8rem; /* Зменшуємо заголовок секції */
     }
 }

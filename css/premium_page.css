@@ -1,31 +1,91 @@
 /* css/premium_page.css */
 /* Стилі для сторінки преміум-підписки */
+/* ЗАЛИШЕНО ТІЛЬКИ СПЕЦИФІЧНІ СТИЛІ */
 
-/* Hero секція */
+/* --- Стилі, перенесені з <style> тегу premium.html --- */
+/* Деякі з цих стилів можна уніфікувати */
+.loading-overlay { /* Для блокування під час оплати */
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(15, 10, 12, 0.8); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 9999;
+    backdrop-filter: blur(5px); color: var(--text-color);
+}
+.loading-spinner { /* Змінено на spinner */
+    border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: var(--accent-red);
+    border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Стилі для inline помилок у формі (використовується .input-error-message з main.css) */
+
+/* Стилі для сповіщень купона (можна уніфікувати з .notification в main.css) */
+.form-notification {
+    padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius);
+    font-size: 0.9rem; display: flex; align-items: center;
+}
+.form-notification.success { background-color: rgba(50, 200, 50, 0.1); border: 1px solid rgba(50, 200, 50, 0.3); color: #4cd964; }
+.form-notification.error { background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3); color: #ff6b6b; }
+.form-notification i { margin-right: 0.7rem; }
+
+/* Стилі для індикатора завантаження планів/статусу (можна уніфікувати) */
+.loading-indicator-small {
+    display: flex; justify-content: center; align-items: center;
+    padding: 1rem 0; color: var(--secondary-text); font-size: 0.9rem;
+}
+.loading-spinner-small {
+    border: 2px solid rgba(255, 255, 255, 0.2); border-left-color: var(--accent-red);
+    border-radius: 50%; width: 20px; height: 20px;
+    animation: spin 1s linear infinite; margin-right: 8px;
+}
+/* Стилі для повідомлення про помилку планів/статусу (можна уніфікувати) */
+.error-message-small {
+    color: #ff6b6b; background-color: rgba(255, 50, 50, 0.1);
+    border: 1px solid rgba(255, 50, 50, 0.3); padding: 0.8rem 1rem;
+    border-radius: var(--border-radius); margin: 1rem auto;
+    display: flex; align-items: center; max-width: 90%;
+}
+.error-message-small i { margin-right: 0.7rem; }
+.error-message-small button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+
+/* Стиль для кнопки під час обробки (використовується .processing::before з main.css) */
+@keyframes processing-pulse {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 0%; }
+}
+.pay-btn.processing { /* Залишаємо специфічні стилі анімації, якщо потрібні */
+    background-size: 200% 100%;
+    background-image: linear-gradient(to right, var(--accent-red), var(--accent-dark), var(--accent-red));
+    animation: processing-pulse 1.5s infinite linear;
+    opacity: 0.9;
+    pointer-events: none; /* Блокуємо кліки */
+}
+/* --- Кінець стилів з <style> --- */
+
+
+/* --- Hero секція --- */
 .premium-hero {
     background-color: var(--card-color);
+    /* TODO: Замінити на власне зображення */
     background-image: linear-gradient(135deg, rgba(153, 0, 0, 0.2) 0%, rgba(25, 17, 20, 0.5) 100%),
-                      url('https://source.unsplash.com/random/1600x800/?luxury,gold');
+    url('https://unsplash.com/photos/brown-and-black-abstract-painting-Ax6ggq8cSxw');
     background-size: cover;
     background-position: center;
     padding: 7rem 0;
     text-align: center;
     position: relative;
+    color: white; /* Встановлюємо колір тексту для всієї секції */
 }
 
 .premium-hero:before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(to bottom, rgba(15, 10, 12, 0.8) 0%, rgba(15, 10, 12, 0.6) 100%);
 }
 
 .premium-hero-content {
     position: relative;
-    z-index: 10;
+    z-index: 1; /* Змінено з 10 */
     max-width: 800px;
     margin: 0 auto;
 }
@@ -39,31 +99,35 @@
 .premium-title {
     font-size: 3.5rem;
     margin-bottom: 1.5rem;
-    color: white;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано */
 }
 
 .premium-subtitle {
     font-size: 1.5rem;
     margin-bottom: 3rem;
     color: rgba(255, 255, 255, 0.9);
+    font-weight: 300; /* Зробимо тоншим */
 }
 
 .hero-features {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 2rem;
+    gap: 1rem; /* Зменшено */
     max-width: 700px;
     margin: 0 auto;
 }
 
 .hero-feature {
     background-color: rgba(15, 10, 12, 0.6);
-    border: 1px solid rgba(217, 164, 91, 0.3);
-    padding: 1rem 1.5rem;
-    border-radius: 30px;
+    border: 1px solid rgba(var(--premium-gold-rgb), 0.3); /* Використано змінну */
+    padding: 0.7rem 1.1rem; /* Зменшено */
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     color: white;
-    font-size: 1.1rem;
+    font-size: 0.95rem; /* Зменшено */
+    display: inline-flex; /* Для вирівнювання іконки */
+    align-items: center;
 }
 
 .hero-feature i {
@@ -71,22 +135,24 @@
     margin-right: 8px;
 }
 
-/* Інструкція зі статусною панеллю */
+/* --- Інструкція зі статусною панеллю --- */
 .steps-section {
-    margin: 2rem auto 4rem;
+    margin: 4rem auto; /* Збільшено відступи */
 }
 
 .steps-container {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     max-width: 900px;
     margin: 0 auto;
+    gap: 1rem;
 }
 
 .step {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     flex: 1;
+    min-width: 0;
 }
 
 .step-indicator {
@@ -102,6 +168,7 @@
     color: var(--secondary-text);
     margin-right: 1rem;
     flex-shrink: 0;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 .step.active .step-indicator {
@@ -118,12 +185,16 @@
 
 .step-details {
     flex: 1;
+    padding-top: 0.2rem; /* Відступ зверху */
+    min-width: 0; /* Для правильного переносу тексту */
 }
 
 .step-title {
     font-size: 1.1rem;
     margin-bottom: 0.3rem;
     color: var(--secondary-text);
+    transition: color 0.3s;
+    font-weight: 500; /* Додано */
 }
 
 .step.active .step-title {
@@ -139,35 +210,20 @@
     height: 2px;
     background-color: rgba(255, 255, 255, 0.1);
     flex: 0.5;
-    margin: 0 1rem;
+    margin: 19px 1rem 0;
+    transition: background-color 0.3s;
 }
 
 .step-connector.active {
     background-color: var(--accent-red);
 }
 
-/* Плани підписки */
+/* --- Плани підписки --- */
 .plans-section {
     padding: 3rem 0 5rem;
 }
 
-.section-title {
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 3rem;
-    position: relative;
-}
-
-.section-title:after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 3px;
-    background: var(--accent-red);
-}
+/* Стиль .section-title успадковується з main.css */
 
 .billing-toggle {
     display: flex;
@@ -198,6 +254,13 @@
     position: relative;
     cursor: pointer;
     transition: all 0.3s;
+    flex-shrink: 0;
+}
+/* Доступність: стиль фокусу */
+.toggle-switch:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.3);
 }
 
 .toggle-slider {
@@ -208,28 +271,26 @@
     height: 24px;
     border-radius: 50%;
     background-color: var(--accent-red);
-    transition: all 0.3s;
+    transition: left 0.3s; /* Змінено анімацію */
 }
 
-.toggle-slider.yearly {
+.toggle-switch[aria-checked="true"] .toggle-slider { /* Використовуємо aria-checked */
     left: calc(100% - 27px);
 }
 
 .discount-badge {
-    position: absolute;
-    top: -15px;
-    right: 80px;
     background-color: var(--accent-red);
     color: white;
     padding: 0.3rem 0.8rem;
-    border-radius: 20px;
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     font-size: 0.8rem;
     font-weight: 500;
+    margin-left: 1rem;
 }
 
 .plans-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     margin-bottom: 3rem;
 }
@@ -237,46 +298,54 @@
 .plan-card {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color-soft, rgba(255, 255, 255, 0.1));
     overflow: hidden;
-    transition: all 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
     position: relative;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+/* Доступність: стиль фокусу */
+.plan-card:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.3);
 }
 
 .plan-card:hover {
     transform: translateY(-10px);
-    border-color: rgba(153, 0, 0, 0.3);
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.3));
 }
 
 .plan-card.selected {
     border-color: var(--accent-red);
-    box-shadow: 0 15px 30px rgba(153, 0, 0, 0.3);
+    box-shadow: 0 10px 25px rgba(153, 0, 0, 0.25); /* Змінено тінь */
 }
 
 .plan-card.popular {
     border-color: var(--premium-gold);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-    transform: scale(1.05);
+    box-shadow: 0 15px 30px rgba(var(--premium-gold-rgb), 0.2); /* Використовуємо RGB */
+    transform: scale(1.03); /* Трохи зменшено scale */
+    z-index: 1;
 }
 
 .plan-card.popular:hover {
-    transform: scale(1.05) translateY(-10px);
+    transform: translateY(-5px) scale(1.03); /* Комбінований ефект */
 }
 
 .popular-badge {
     position: absolute;
     top: 0;
-    right: 0;
+    right: 0; /* Змінено */
     background-color: var(--premium-gold);
     color: #000;
-    padding: 0.5rem 1.5rem;
+    padding: 0.4rem 1rem;
     font-size: 0.8rem;
     font-weight: 600;
-    transform: translateX(30%) translateY(-30%) rotate(45deg);
-    transform-origin: top left;
-    white-space: nowrap;
-    padding-right: 3rem;
+    z-index: 2;
+    border-radius: 0 0 0 var(--border-radius); /* Закруглення */
+    box-shadow: -2px 2px 5px rgba(0,0,0,0.2); /* Додано тінь */
 }
 
 .plan-header {
@@ -288,6 +357,8 @@
 .plan-name {
     font-size: 1.8rem;
     margin-bottom: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано */
 }
 
 .plan-price {
@@ -303,6 +374,7 @@
 .currency {
     font-size: 1.5rem;
     margin-right: 0.3rem;
+    font-weight: 500; /* Змінено */
 }
 
 .period {
@@ -315,16 +387,19 @@
 .price-detail {
     font-size: 0.9rem;
     color: var(--secondary-text);
+    min-height: 1.2em;
 }
 
 .plan-features {
     padding: 2rem;
+    flex-grow: 1;
 }
 
 .plan-feature {
     display: flex;
     align-items: flex-start;
     margin-bottom: 1.2rem;
+    line-height: 1.5; /* Додано */
 }
 
 .plan-feature:last-child {
@@ -333,11 +408,17 @@
 
 .plan-feature i {
     margin-right: 10px;
-    margin-top: 4px;
+    margin-top: 0.25em; /* Скориговано для line-height */
+    width: 1em;
+    text-align: center;
 }
 
 .plan-feature.inactive {
     color: var(--secondary-text);
+    opacity: 0.6; /* Зробимо неактивні фічі напівпрозорими */
+}
+.plan-feature.inactive i.fa-times {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .plan-feature i.fa-check {
@@ -347,7 +428,9 @@
 .plan-action {
     padding: 0 2rem 2rem;
     text-align: center;
+    margin-top: auto;
 }
+/* Стилі для кнопки вибору плану (.btn, .btn-outline, .btn-primary) успадковуються з main.css */
 
 .selected-plan-info {
     background-color: var(--card-color);
@@ -357,20 +440,34 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
-    border: 1px solid rgba(153, 0, 0, 0.2);
+    border: 1px solid var(--border-color-medium, rgba(153, 0, 0, 0.2));
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
+.selected-plan-details {
+    flex-grow: 1;
+    min-width: 0; /* Для переносу */
+}
+.selected-plan-details h3 { font-size: 1.2rem; margin-bottom: 0.3rem; }
+.selected-plan-details p { margin: 0; color: var(--secondary-text); font-size: 0.95rem; }
+.selected-plan-details strong { color: var(--text-color); font-weight: 500; }
+
 .continue-btn {
+    /* Стилі успадковуються від .btn, .btn-primary */
     min-width: 180px;
+    flex-shrink: 0;
 }
 
 .discount-info {
-    background-color: rgba(153, 0, 0, 0.1);
-    border-radius: 20px;
+    background-color: rgba(var(--accent-gold-rgb), 0.1); /* Змінено фон */
+    border-radius: var(--border-radius-round); /* Змінено */
     padding: 0.3rem 0.8rem;
     font-size: 0.9rem;
     margin-left: 0.8rem;
-    color: var(--accent-red);
+    color: var(--accent-gold); /* Змінено колір */
+    display: inline-block;
+    font-weight: 500; /* Додано */
 }
 
 .plan-guarantee {
@@ -390,9 +487,11 @@
 
 .plan-guarantee p {
     max-width: 500px;
+    margin: 0; /* Прибираємо зайвий відступ */
+    font-size: 0.9rem; /* Зменшено */
 }
 
-/* Форма оплати */
+/* --- Форма оплати --- */
 .payment-section {
     padding: 3rem 0 5rem;
 }
@@ -401,7 +500,7 @@
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     margin-bottom: 2rem;
-    border: 1px solid rgba(153, 0, 0, 0.1);
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
 }
 
 .summary-details {
@@ -410,21 +509,31 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
+.summary-plan {
+    min-width: 0; /* Для переносу */
+}
 .summary-plan h4 {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано */
 }
 
 .summary-plan p {
     color: var(--secondary-text);
+    margin: 0; /* Прибираємо відступ */
 }
 
 .summary-price {
     font-size: 2rem;
     font-weight: 700;
     color: var(--premium-gold);
+    white-space: nowrap;
+    flex-shrink: 0; /* Забороняємо стискання ціни */
 }
 
 .coupon-section {
@@ -435,32 +544,39 @@
     display: flex;
     gap: 1rem;
     max-width: 500px;
+    margin-bottom: 1rem;
 }
 
 .coupon-input {
+    /* Стилі успадковуються від .form-input */
     flex: 1;
-    padding: 0.8rem 1rem;
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
+    padding: 0.8rem 1rem; /* Зменшено падінг */
 }
-
-.coupon-input:focus {
-    outline: none;
-    border-color: rgba(153, 0, 0, 0.3);
+.coupon-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .coupon-btn {
+    /* Стилі успадковуються від .btn, .btn-outline */
     white-space: nowrap;
+    padding: 0.8rem 1.2rem; /* Зменшено падінг */
+}
+.coupon-btn:disabled { /* Стиль для заблокованої кнопки */
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.coupon-btn span { /* Щоб контент кнопки не стрибав при зміні тексту */
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
 }
 
 .payment-form {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     padding: 2rem;
-    border: 1px solid rgba(153, 0, 0, 0.1);
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
 }
 
 .form-tabs {
@@ -469,10 +585,14 @@
     margin-bottom: 2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 1rem;
+    overflow-x: auto; /* Додано скрол */
+    scrollbar-width: none; /* Ховаємо скролбар */
 }
+.form-tabs::-webkit-scrollbar { display: none; } /* Ховаємо скролбар для Webkit */
 
 .form-tab {
-    padding: 1rem 1.5rem;
+    /* Базові стилі кнопки */
+    padding: 0.8rem 1.5rem; /* Змінено падінг */
     background-color: transparent;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
@@ -480,21 +600,31 @@
     font-family: 'Montserrat', sans-serif;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s;
-    flex: 1;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    flex: 1; /* Займає рівний простір */
     text-align: center;
+    white-space: nowrap; /* Не переносити текст */
+    min-width: 150px; /* Мінімальна ширина */
 }
 
 .form-tab.active {
     background-color: rgba(153, 0, 0, 0.1);
     border-color: rgba(153, 0, 0, 0.3);
     color: var(--text-color);
+    font-weight: 500; /* Додано */
 }
 
 .form-tab:hover:not(.active) {
     background-color: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.2);
 }
+/* Доступність: стиль фокусу */
+.form-tab:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.3);
+}
+
 
 .form-tab i {
     margin-right: 8px;
@@ -506,9 +636,12 @@
     gap: 1.5rem;
 }
 
-
 .card-input-group {
     position: relative;
+}
+/* Стилі для .form-input успадковуються */
+.card-input-group input {
+    padding-right: 4.5rem; /* Місце для іконок */
 }
 
 .card-icons {
@@ -518,21 +651,18 @@
     transform: translateY(-50%);
     display: flex;
     gap: 0.5rem;
+    pointer-events: none;
 }
 
 .card-icons i {
     font-size: 1.5rem;
     color: var(--secondary-text);
+    opacity: 0.5; /* Зробимо іконки напівпрозорими */
 }
 
-.form-row {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.form-row .form-group {
-    flex: 1;
-}
+/* Стилі для .form-row успадковуються з main.css або визначені тут */
+.form-row { display: flex; gap: 1.5rem; }
+.form-row .form-group { flex: 1; margin-bottom: 0; min-width: 0; }
 
 
 .form-action {
@@ -540,10 +670,12 @@
 }
 
 .pay-btn {
+    /* Стилі успадковуються від .btn, .btn-primary */
     width: 100%;
     padding: 1.2rem;
     font-size: 1.1rem;
 }
+/* Стилі для стану :disabled та .processing вже є */
 
 .form-security {
     display: flex;
@@ -552,6 +684,7 @@
     margin-top: 1.5rem;
     color: var(--secondary-text);
     font-size: 0.9rem;
+    flex-wrap: wrap; /* Додано */
 }
 
 .security-item {
@@ -564,7 +697,7 @@
     color: var(--accent-gold);
 }
 
-/* Криптовалютна оплата */
+/* --- Криптовалютна оплата --- */
 .crypto-payment {
     padding: 1rem 0;
 }
@@ -573,25 +706,61 @@
     display: flex;
     gap: 1.5rem;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
 }
 
 .crypto-option {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-
-.crypto-option label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     cursor: pointer;
 }
+
+.crypto-option input[type="radio"] {
+    appearance: none;
+    width: 1.2em;
+    height: 1.2em;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    margin-right: 0.3em;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.3s, background-color 0.3s; /* Додано */
+}
+.crypto-option input[type="radio"]:checked {
+    border-color: var(--accent-red);
+    background-color: rgba(var(--accent-red-rgb, 204, 0, 51), 0.1); /* Легкий фон */
+}
+.crypto-option input[type="radio"]:checked::before {
+    content: '';
+    display: block;
+    width: 0.6em;
+    height: 0.6em;
+    background-color: var(--accent-red);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+}
+/* Доступність: стиль фокусу */
+.crypto-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.3);
+}
+
 
 .crypto-option i {
     font-size: 1.5rem;
     color: var(--secondary-text);
+    margin-left: 0.2em;
+    width: 1.2em; /* Фіксована ширина для вирівнювання */
+    text-align: center;
 }
+/* Кольори іконок (приклад) */
+.crypto-option i.fa-bitcoin { color: #f7931a; }
+.crypto-option i.fa-ethereum { color: #627eea; }
+.crypto-option i.fa-dollar-sign { color: #26a17b; } /* Для USDT */
 
 .crypto-info {
     display: flex;
@@ -600,6 +769,8 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
     padding: 2rem;
+    flex-wrap: wrap;
+    background-color: rgba(255, 255, 255, 0.02); /* Легкий фон */
 }
 
 .qr-code {
@@ -609,38 +780,28 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: white; /* Білий фон для QR */
+    padding: 10px; /* Відступи навколо QR */
+    border-radius: var(--border-radius);
 }
 
-.qr-placeholder {
+.qr-placeholder { /* Стиль для плейсхолдера, якщо QR не завантажено */
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.1); /* Темніший фон */
     border-radius: var(--border-radius);
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-
-.qr-placeholder:before, .qr-placeholder:after {
-    content: '';
-    position: absolute;
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.qr-placeholder:before {
-    top: 25%;
-    bottom: 25%;
-    left: 45%;
-    right: 45%;
-}
-
-.qr-placeholder:after {
-    left: 25%;
-    right: 25%;
-    top: 45%;
-    bottom: 45%;
+.qr-placeholder i {
+    font-size: 5rem; /* Зменшено */
+    color: rgba(255,255,255,0.3);
 }
 
 .wallet-address {
     flex: 1;
+    min-width: 0; /* Для переносу */
 }
 
 .wallet-address p {
@@ -650,6 +811,7 @@
 
 .wallet-address strong {
     color: var(--text-color);
+    font-weight: 500; /* Додано */
 }
 
 .address-box {
@@ -659,20 +821,23 @@
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
-    padding: 1rem;
+    padding: 0.8rem 1rem; /* Зменшено падінг */
     margin-bottom: 1.5rem;
 }
 
 .address-box code {
-    font-size: 1.1rem;
+    font-size: 0.95rem; /* Зменшено */
     font-family: monospace;
     word-break: break-all;
+    flex-grow: 1;
+    color: var(--text-color); /* Зробимо яскравішим */
+    min-width: 0; /* Для переносу */
 }
 
 .copy-btn {
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
+    width: 36px; /* Зменшено */
+    height: 36px;
     border-radius: 50%;
     background-color: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -681,31 +846,27 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .copy-btn:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.08);
     color: var(--text-color);
 }
-
-.copy-btn.copied {
-    background-color: rgba(0, 200, 0, 0.1);
-    border-color: rgba(0, 200, 0, 0.3);
-    color: #4cd964;
+/* Доступність: стиль фокусу */
+.copy-btn:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.3);
 }
 
 .crypto-note {
     font-size: 0.9rem;
     font-style: italic;
+    color: var(--secondary-text); /* Зробимо текст нотатки стандартним */
 }
 
-.crypto-confirm-btn {
-    width: 100%;
-    margin-top: 1.5rem;
-}
-
-/* Підтвердження оплати */
+/* --- Підтвердження оплати --- */
 .confirmation-section {
     padding: 5rem 0;
 }
@@ -726,11 +887,9 @@
 .confirmation-card:before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 5px;
-    background: var(--primary-gradient);
+    background: var(--premium-gradient); /* Використовуємо преміум градієнт */
 }
 
 .confirmation-icon {
@@ -742,6 +901,8 @@
 .confirmation-title {
     font-size: 2.5rem;
     margin-bottom: 1.5rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано */
 }
 
 .confirmation-message {
@@ -751,19 +912,25 @@
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
+    line-height: 1.7; /* Додано */
 }
 
 .confirmation-details {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.03); /* Змінено фон */
     border-radius: var(--border-radius);
-    padding: 2rem;
+    padding: 1.5rem 2rem; /* Змінено падінг */
     margin-bottom: 2.5rem;
     text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Додано легку рамку */
 }
 
+/* Використовуємо dl, dt, dd для семантики */
+.confirmation-details dl { margin: 0; } /* Скидаємо стандартний відступ */
 .confirmation-detail {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     padding: 1rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -772,12 +939,18 @@
     border-bottom: none;
 }
 
-.detail-label {
+.detail-label { /* dt */
     color: var(--secondary-text);
+    flex-basis: 40%;
+    flex-shrink: 0;
 }
 
-.detail-value {
+.detail-value { /* dd */
     font-weight: 500;
+    flex-basis: 55%;
+    text-align: right;
+    word-break: break-word; /* Додано для довгих значень */
+    margin-left: auto; /* Щоб точно було справа */
 }
 
 .detail-value.success {
@@ -789,11 +962,14 @@
     gap: 1.5rem;
     justify-content: center;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
 }
+/* Стилі кнопок успадковуються */
 
 .confirmation-help p {
     color: var(--secondary-text);
     font-size: 0.95rem;
+    margin: 0; /* Прибираємо зайвий відступ */
 }
 
 .confirmation-help a {
@@ -804,9 +980,10 @@
 
 .confirmation-help a:hover {
     color: var(--premium-gold);
+    text-decoration: underline;
 }
 
-/* Переваги преміум-підписки */
+/* --- Переваги преміум-підписки --- */
 .benefits-section {
     padding: 5rem 0;
     background-color: rgba(15, 10, 12, 0.5);
@@ -814,7 +991,7 @@
 
 .benefits-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2rem;
 }
 
@@ -823,13 +1000,16 @@
     border-radius: var(--border-radius);
     padding: 2rem;
     text-align: center;
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    transition: all 0.3s;
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    display: flex; /* Для вирівнювання */
+    flex-direction: column;
+    align-items: center; /* Центруємо вміст */
 }
 
 .benefit-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(153, 0, 0, 0.3);
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.3));
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -849,22 +1029,25 @@
 .benefit-title {
     font-size: 1.5rem;
     margin-bottom: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано */
 }
 
 .benefit-description {
     color: var(--secondary-text);
     font-size: 0.95rem;
     line-height: 1.6;
+    flex-grow: 1; /* Дозволяє опису зайняти місце */
 }
 
-/* Відгуки користувачів */
+/* --- Відгуки користувачів --- */
 .testimonials-section {
     padding: 5rem 0;
 }
 
 .testimonials-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
 }
 
@@ -872,46 +1055,69 @@
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     padding: 2rem;
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    transition: all 0.3s;
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
 }
 
 .testimonial-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(153, 0, 0, 0.2);
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2));
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }
 
 .testimonial-rating {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem; /* Зменшено */
     color: var(--premium-gold);
+    font-size: 1.1rem; /* Додано розмір */
+    order: 2; /* Рейтинг після тексту */
 }
 
-.testimonial-text {
+.testimonial-text { /* blockquote */
     font-size: 1.1rem;
     font-style: italic;
     line-height: 1.6;
     margin-bottom: 1.5rem;
-    min-height: 100px;
+    flex-grow: 1;
+    order: 1; /* Текст спочатку */
+    position: relative; /* Для лапок */
+    padding-left: 2rem; /* Відступ для лапок */
+    color: var(--text-color); /* Основний колір */
+}
+.testimonial-text::before { /* Додаємо лапки */
+    content: '\f10d'; /* Font Awesome quote-left */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    top: -0.2em;
+    font-size: 1.5em;
+    color: var(--accent-red);
+    opacity: 0.3;
 }
 
-.testimonial-author {
+
+.testimonial-author { /* figcaption */
     display: flex;
     align-items: center;
+    margin-top: auto;
+    order: 3; /* Автор в кінці */
+    padding-top: 1rem; /* Відступ зверху */
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Розділювач */
 }
 
-.author-avatar {
+/* Стиль .author-avatar успадковується */
+.testimonial-author .author-avatar {
     width: 50px;
     height: 50px;
-    border-radius: 50%;
     margin-right: 1rem;
-    background-size: cover;
-    background-position: center;
 }
 
-.author-name {
+.testimonial-author .author-name { /* Змінено */
     font-weight: 600;
     margin-bottom: 0.2rem;
+    color: var(--text-color); /* Явно вказуємо колір */
 }
 
 .subscription-type {
@@ -919,7 +1125,7 @@
     font-size: 0.9rem;
 }
 
-/* FAQ розділ */
+/* --- FAQ розділ --- */
 .faq-section {
     padding: 5rem 0;
     background-color: rgba(15, 10, 12, 0.5);
@@ -935,29 +1141,48 @@
     border-radius: var(--border-radius);
     margin-bottom: 1.5rem;
     overflow: hidden;
-    border: 1px solid rgba(153, 0, 0, 0.1);
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1));
+    transition: border-color 0.3s; /* Плавна зміна рамки */
 }
 
-.faq-item.active {
-    border-color: rgba(153, 0, 0, 0.3);
+.faq-item[x-data*="open: true"] {
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.3));
 }
 
-.faq-question {
+.faq-question { /* Зроблено кнопкою */
     padding: 1.5rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.3s;
+    width: 100%;
+    background: none;
+    border: none;
+    color: inherit;
+    text-align: left;
+    font-family: inherit;
 }
 
 .faq-question:hover {
     background-color: rgba(255, 255, 255, 0.02);
 }
+/* Доступність: стиль фокусу */
+.faq-question:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено */
+    outline-offset: -2px; /* Внутрішній контур */
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
 
 .faq-question h3 {
     font-size: 1.2rem;
     margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    flex-grow: 1; /* Дозволяє тексту зайняти місце */
+    padding-right: 1rem; /* Відступ від іконки */
+    color: var(--text-color); /* Додано */
 }
 
 .faq-toggle {
@@ -969,39 +1194,44 @@
     align-items: center;
     justify-content: center;
     color: var(--secondary-text);
-    transition: all 0.3s;
+    transition: transform 0.3s, background-color 0.3s, color 0.3s;
+    flex-shrink: 0;
+    /* margin-left: 1rem; - Прибрано, використовуємо flex-grow для h3 */
 }
 
-.faq-item.active .faq-toggle {
+.faq-item[x-data*="open: true"] .faq-toggle {
     background-color: var(--accent-red);
     color: white;
+    transform: rotate(45deg); /* Змінено на хрестик */
 }
+/* Іконка змінюється автоматично через :class в HTML */
 
 .faq-answer {
-    padding: 0 2rem 1.5rem;
+    padding: 0 2rem 1.5rem; /* Відступи */
     color: var(--secondary-text);
-    line-height: 1.6;
+    line-height: 1.7; /* Збільшено */
+    /* Анімація через x-collapse */
 }
+.faq-answer p:last-child { margin-bottom: 0; }
 
-/* Заклик до дії */
+/* --- Заклик до дії (CTA) --- */
 .cta-section {
     padding: 5rem 0;
+    /* TODO: Замінити */
     background-image: linear-gradient(135deg, rgba(153, 0, 0, 0.3) 0%, rgba(25, 17, 20, 0.3) 100%),
-                      url('https://source.unsplash.com/random/1600x800/?luxury,dark');
+    url('https://unsplash.com/photos/a-close-up-of-a-red-fabric-TlcuPY6IqxU');
     background-size: cover;
     background-position: center;
     position: relative;
     text-align: center;
+    color: white; /* Колір тексту */
 }
 
 .cta-section:before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(15, 10, 12, 0.7);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(15, 10, 12, 0.7); /* Затемнення */
 }
 
 .cta-content {
@@ -1014,125 +1244,83 @@
 .cta-title {
     font-size: 2.5rem;
     margin-bottom: 1.5rem;
-    color: white;
+    color: white; /* Явно вказуємо колір */
+    font-family: 'Cormorant Garamond', serif;
 }
 
 .cta-description {
     font-size: 1.2rem;
     margin-bottom: 2.5rem;
     color: rgba(255, 255, 255, 0.9);
+    font-weight: 300; /* Тонший шрифт */
 }
 
 .cta-button {
+    /* Стилі успадковуються від .btn, .btn-primary */
     padding: 1rem 2.5rem;
     font-size: 1.1rem;
 }
 
-/* Адаптивність */
+/* --- Адаптивність --- */
 @media (max-width: 992px) {
-    .premium-title {
-        font-size: 2.8rem;
-    }
-    
-    .steps-container {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-    
-    .step {
-        width: 100%;
-    }
-    
-    .step-connector {
-        width: 2px;
-        height: 20px;
-        margin: 0;
-    }
-    
-    .plans-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
-    
-    .plan-card.popular {
-        transform: scale(1);
-    }
-    
-    .plan-card.popular:hover {
-        transform: translateY(-10px);
-    }
-    
-    .selected-plan-info {
-        flex-direction: column;
-        gap: 1.5rem;
-        text-align: center;
-    }
-    
-    .form-row {
-        flex-direction: column;
-    }
-    
-    .crypto-info {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    
-    .wallet-address {
-        width: 100%;
-    }
-    
-    .confirmation-actions {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .benefits-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .testimonials-grid {
-        grid-template-columns: 1fr;
-    }
+    .premium-title { font-size: 2.8rem; }
+    .premium-subtitle { font-size: 1.3rem; } /* Зменшено */
+
+    .steps-container { flex-direction: column; align-items: center; gap: 1.5rem; }
+    .step { width: 100%; max-width: 400px; flex-direction: column; align-items: center; text-align: center; }
+    .step-indicator { margin-right: 0; margin-bottom: 1rem; }
+    .step-connector { width: 2px; height: 30px; margin: 0; flex: unset; }
+
+    .plan-card.popular { transform: scale(1); }
+    .plan-card.popular:hover { transform: translateY(-10px); }
+
+    .selected-plan-info { flex-direction: column; gap: 1.5rem; text-align: center; }
+
+    .form-row { flex-direction: column; gap: 1.5rem; }
+    .form-row .form-group { margin-bottom: 0; } /* Забираємо відступ у групи, бо gap вже є */
+
+    .crypto-info { flex-direction: column; align-items: center; text-align: center; }
+    .wallet-address { width: 100%; }
+    .address-box code { font-size: 0.9rem; }
+
+    .confirmation-actions { flex-direction: column; gap: 1rem; }
+    .confirmation-detail { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+    .detail-value { text-align: left; flex-basis: auto; }
 }
 
 @media (max-width: 768px) {
-    .nav-links {
-        display: none;
-    }
-    
-    .premium-icon {
-        font-size: 3rem;
-    }
-    
-    .premium-title {
-        font-size: 2.2rem;
-    }
-    
-    .premium-subtitle {
-        font-size: 1.2rem;
-    }
-    
-    .hero-features {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .hero-feature {
-        width: 100%;
-    }
-    
-    .summary-details {
-        flex-direction: column;
-        gap: 1.5rem;
-        text-align: center;
-    }
-    
-    .coupon-form {
-        flex-direction: column;
-    }
-    
-    .form-tabs {
-        flex-direction: column;
-    }
+    .premium-hero { padding: 5rem 0; } /* Зменшено падінг */
+    .premium-icon { font-size: 3rem; }
+    .premium-title { font-size: 2.2rem; }
+    .premium-subtitle { font-size: 1.2rem; }
+    .hero-features { gap: 0.8rem; } /* Зменшено */
+    .hero-feature { padding: 0.6rem 1rem; font-size: 0.9rem; } /* Зменшено */
+
+    .billing-toggle { flex-wrap: wrap; justify-content: center; }
+    .discount-badge { margin-left: 0; margin-top: 0.5rem; }
+
+    .plans-grid { grid-template-columns: 1fr; } /* Один план на рядок */
+
+    .summary-details { flex-direction: column; gap: 1rem; text-align: center; } /* Змінено gap */
+    .summary-price { font-size: 1.8rem; }
+
+    .coupon-form { flex-direction: column; }
+    .coupon-btn { width: 100%; max-width: 300px; margin: 0 auto; } /* Центруємо кнопку */
+
+    .form-tabs { /* Залишаємо горизонтальним */ }
+    .form-tab { padding: 0.8rem 1rem; min-width: 120px; } /* Зменшуємо */
+
+    .payment-form, .payment-summary, .confirmation-card { padding: 1.5rem; }
+    .confirmation-details { padding: 1rem 1.5rem; }
+
+    /* Зменшення розмірів шрифтів та відступів */
+    .section-title { font-size: 2rem; margin-bottom: 2rem; }
+    .plan-name { font-size: 1.5rem; }
+    .plan-price { font-size: 2rem; }
+    .plan-features { padding: 1.5rem; }
+    .benefit-title { font-size: 1.3rem; }
+    .testimonial-text { font-size: 1rem; }
+    .faq-question h3 { font-size: 1.1rem; }
+    .cta-title { font-size: 2rem; }
+    .cta-description { font-size: 1.1rem; }
 }
