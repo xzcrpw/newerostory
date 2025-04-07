@@ -1,264 +1,228 @@
 <!DOCTYPE html>
-<html lang="uk" xmlns:x-on="http://www.w3.org/1999/xhtml" x-data :lang="$store.i18n.selectedLang"> <!-- Додано :lang -->
+<html lang="uk" x-data="{
+    // --- Стани UI ---
+    showAgeVerification: true,
+    searchQuery: '',
+    isLoggedIn: false,
+    categories: [],
+    popularStories: [],
+    isLoadingCategories: true,
+    isLoadingStories: true,
+    categoriesError: null,
+    storiesError: null,
+
+    // --- Безпечний доступ до i18n ---
+    safeT(key, params = {}, fallback = '') {
+        try {
+            if (typeof $store !== 'undefined' && $store.i18n?.initialized) {
+                const translation = $store.i18n.t(key, params);
+                return (translation && translation !== key && translation.trim() !== '') ? translation : fallback;
+            }
+            if (Object.keys(params).length > 0 && typeof fallback === 'string') {
+                return Object.keys(params).reduce((str, pKey) => str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), params[pKey]), fallback);
+            }
+            return fallback;
+        } catch (error) { console.warn(`safeT error for key: ${key}`, error); return fallback; }
+    },
+
+    // --- Верифікація віку ---
+    verifyAge() {
+        this.showAgeVerification = false;
+        try {
+            localStorage.setItem('ageVerified', 'true');
+            const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+            document.cookie = `ageVerified=true; path=/; expires=${expires}; SameSite=Lax; Secure`;
+            this.loadInitialData(); // Запускаємо завантаження даних
+        } catch (error) { console.error('Error saving age verification:', error); }
+    },
+
+    // --- Пошук ---
+    submitSearch() {
+        if (!this.searchQuery || this.searchQuery.trim() === '') return;
+        window.location.href = `categories.html?search=${encodeURIComponent(this.searchQuery.trim())}`;
+    },
+
+    // --- Перевірка логіну ---
+    checkLoginStatus() {
+        try { this.isLoggedIn = api.utils.isAuthenticated(); }
+        catch (error) { console.error('Error checking login status:', error); this.isLoggedIn = false; }
+    },
+
+    // --- Завантаження даних ---
+    async loadCategories() {
+        this.isLoadingCategories = true; this.categoriesError = null;
+        try {
+            if (!(localStorage.getItem('ageVerified') === 'true' || this.getCookie('ageVerified') === 'true')) {
+                console.log('Age not verified, skipping category load'); this.isLoadingCategories = false; return;
+            }
+            const response = await api.categories.getCategories({
+                 limit: 6,
+                 lang: $store.i18n.selectedLang || 'uk',
+                 sort: '-stats.storyCount'
+            });
+            this.categories = response.data || [];
+        } catch (e) {
+            console.error('Failed to load categories', e);
+            this.categoriesError = this.safeT('categoriesPage.errorLoadingCategories', {}, 'Не вдалося завантажити категорії.');
+            this.categories = [];
+        } finally { this.isLoadingCategories = false; }
+    },
+    async loadPopularStories() {
+        this.isLoadingStories = true; this.storiesError = null;
+        try {
+            if (!(localStorage.getItem('ageVerified') === 'true' || this.getCookie('ageVerified') === 'true')) {
+                console.log('Age not verified, skipping stories load'); this.isLoadingStories = false; return;
+            }
+            const response = await api.stories.getStories({
+                 sort: '-views',
+                 limit: 3,
+                 lang: $store.i18n.selectedLang || 'uk'
+            });
+             this.popularStories = (response.data || []).map(story => ({
+                 ...story,
+                 categoryName: story.category?.name || this.safeT('general.defaultCategory'),
+                 categorySlug: story.category?.slug || 'other',
+                 excerpt: (story.excerpt || '').substring(0, 150),
+                 authorName: story.author?.name || this.safeT('general.anonymous'),
+                 authorAvatar: story.author?.avatarUrl || 'https://source.unsplash.com/random/50x50/?profile,placeholder',
+                 imageUrlSafe: story.imageUrl || `https://source.unsplash.com/random/600x400/?story,${story._id || story.id}`
+             }));
+        } catch (e) {
+            console.error('Failed to load popular stories', e);
+            this.storiesError = this.safeT('storyLists.errorLoadingStories', {}, 'Не вдалося завантажити популярні історії.');
+            this.popularStories = [];
+        } finally { this.isLoadingStories = false; }
+    },
+    // --- Функція завантаження початкових даних ---
+    async loadInitialData() {
+        this.isLoadingCategories = true;
+        this.isLoadingStories = true;
+        await Promise.all([
+             this.loadCategories(),
+             this.loadPopularStories()
+        ]);
+    },
+    // --- Допоміжні функції ---
+    getCookie(name) {
+        try {
+            const value = `; ${document.cookie}`; const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift(); return null;
+        } catch (error) { console.warn('Error reading cookie:', error); return null; }
+    },
+    formatStars(rating) {
+      if (!rating || isNaN(rating)) return '';
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5;
+      const empty = 5 - full - (half ? 1 : 0);
+      // Create sanitized HTML string
+      const safeHtml = DOMPurify.sanitize(
+          '<i class=\'fas fa-star\'></i>'.repeat(full) +
+          (half ? '<i class=\'fas fa-star-half-alt\'></i>' : '') +
+          '<i class=\'far fa-star\'></i>.repeat(empty)
+      );
+      return safeHtml;
+    },
+    async logoutUser() {
+        try {
+            console.log('Attempting logout...');
+            if (typeof api !== 'undefined' && api.auth && typeof api.auth.logout === 'function') {
+                api.auth.logout();
+                this.isLoggedIn = false;
+                // Не перезавантажуємо, Alpine оновить UI
+            } else { throw new Error('API logout function is not available.'); }
+        } catch (error) {
+            console.error('Logout error:', error);
+            // TODO: Використовувати глобальну систему сповіщень
+            alert(this.safeT('general.logoutError', {}, 'Помилка при виході з системи.'));
+        }
+    }
+}" x-init="
+    // Ініціалізація після завантаження DOM та Alpine
+    $nextTick(async () => {
+        let waitCount = 0;
+        const self = $el.parentElement.__x.$data;
+        // Чекаємо на api та i18n
+        while ((typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) && waitCount < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100)); waitCount++;
+        }
+        if (typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) {
+            console.error('API or i18n failed to initialize on index page!');
+            self.isLoadingCategories = false;
+            self.isLoadingStories = false;
+        } else {
+            try {
+                self.isLoggedIn = api.utils.isAuthenticated();
+                self.showAgeVerification = !(localStorage.getItem('ageVerified') === 'true' || self.getCookie('ageVerified') === 'true');
+                if (!self.showAgeVerification) {
+                    self.loadInitialData();
+                } else {
+                    self.isLoadingCategories = false;
+                    self.isLoadingStories = false;
+                }
+            } catch (error) { console.error('Error during initialization:', error); self.showAgeVerification = true; self.isLoggedIn = false; self.isLoadingCategories = false; self.isLoadingStories = false; }
+        }
+        // Відслідковуємо зміни мови
+        $watch('$store.i18n.selectedLang', (newLang, oldLang) => {
+           if (newLang !== oldLang && !self.showAgeVerification) {
+               console.log(`Language changed to ${newLang} on index page. Reloading data.`);
+               self.loadInitialData();
+           }
+       });
+    });
+" :lang="$store.i18n.selectedLang">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Title використовує i18n -->
-  <title x-text="`${$store.i18n.t('general.home')} — ${$store.i18n.t('general.copyright')}`"></title>
-  <!-- Meta description використовує i18n -->
-  <meta name="description" :content="$store.i18n.t('home.metaDescription')">
+  <title x-text="`${safeT('general.home', 'Головна')} — ${safeT('general.copyright', 'Таємний Світ')}`"></title>
+  <meta name="description" :content="safeT('home.metaDescription', 'Платформа для читання та публікації еротичних історій.')">
 
   <!-- Стилі, Шрифти, API, i18n, FontAwesome, Alpine.js -->
   <link rel="stylesheet" href="css/main.css">
   <script src="js/api-config.js" defer></script>
   <script src="js/api-utils.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
   <script type="module" src="js/i18n.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <!-- Додав OG теги, які можна буде оновити на бекенді -->
-  <meta property="og:title" :content="`${$store.i18n.t('general.home')} — ${$store.i18n.t('general.copyright')}`">
-  <meta property="og:description" :content="$store.i18n.t('home.metaDescription')">
-  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?sensual,dark"> <!-- Приклад OG Image -->
+
+  <meta property="og:title" :content="`${safeT('general.home', 'Головна')} — ${safeT('general.copyright', 'Таємний Світ')}`">
+  <meta property="og:description" :content="safeT('home.metaDescription', 'Платформа для читання та публікації еротичних історій.')">
+  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?sensual,dark">
   <meta property="og:type" content="website">
 
-</head>
-<body x-data="{
-    showAgeVerification: true,
-    searchQuery: '',
-    isLoggedIn: false,
-    categories: [],
-    popularStories: [],
-    isLoadingCategories: true, // Додав індикатор завантаження
-    isLoadingStories: true,  // Додав індикатор завантаження
-
-    verifyAge() {
-        this.showAgeVerification = false;
-        
-        try {
-            // Зберігаємо у localStorage
-            localStorage.setItem('ageVerified', 'true');
-            
-            // Встановлюємо кукі на 30 днів з захищеними параметрами
-            const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
-            document.cookie = `ageVerified=true; path=/; expires=${expires}; SameSite=Lax`;
-            
-            // Запускаємо завантаження контенту, якщо до цього було заблоковано
-            if (this.isLoadingCategories === false && this.categories.length === 0) {
-                this.loadCategories();
-            }
-            if (this.isLoadingStories === false && this.popularStories.length === 0) {
-                this.loadPopularStories();
-            }
-        } catch (error) {
-            console.error('Error saving age verification:', error);
-            // Все одно приховуємо перевірку віку, навіть якщо сталася помилка збереження
-        }
-    },
-
-    submitSearch() {
-        if (!this.searchQuery || this.searchQuery.trim() === '') return;
-        // Перенаправляємо на сторінку категорій з параметром пошуку
-        window.location.href = `categories.html?search=${encodeURIComponent(this.searchQuery)}`;
-    },
-
-    // --- Перевірка статусу логіну з обробкою помилки ---
-    checkLoginStatus() {
-        try {
-            this.isLoggedIn = api.utils.isAuthenticated();
-        } catch (error) {
-            console.error('Error checking login status:', error);
-            this.isLoggedIn = false;
-        }
-    },
-
-    async loadCategories() {
-        this.isLoadingCategories = true;
-        try {
-            // Перевіряємо, чи була підтверджена вікова перевірка
-            if (!(localStorage.getItem('ageVerified') === 'true' || this.getCookie('ageVerified') === 'true')) {
-                console.log('Age not verified, skipping category load');
-                this.isLoadingCategories = false;
-                return;
-            }
-
-            // Симуляція API
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            // Створюємо масив для категорій з обробкою невизначених ключів i18n
-            const safeTKeys = (key, fallback) => {
-                try {
-                    const translation = $store.i18n?.t(key);
-                    return (translation && translation !== key) ? translation : fallback;
-                } catch (e) {
-                    return fallback;
-                }
-            };
-            
-            this.categories = [
-                { name: safeTKeys('createStory.categoryRomance', 'Романтика'), slug: 'romance', count: 125 },
-                { name: safeTKeys('createStory.categoryFantasy', 'Фантазії'), slug: 'fantasy', count: 98 },
-                { name: safeTKeys('createStory.categoryBDSM', 'БДСМ'), slug: 'bdsm', count: 76 },
-                { name: safeTKeys('createStory.categoryFirstTime', 'Перший досвід'), slug: 'first-time', count: 84 },
-                { name: safeTKeys('createStory.categoryVacation', 'Курортний роман'), slug: 'vacation', count: 42 },
-                { name: safeTKeys('createStory.categoryChanceEncounters', 'Випадкові зустрічі'), slug: 'chance-encounters', count: 63 }
-            ];
-            // TODO: Замінити на реальний API-запит:
-            // this.categories = await api.categories.getCategories({ limit: 6 }); // Обмежуємо кількість на головній
-        } catch (e) {
-            console.error('Failed to load categories', e);
-            // Встановлюємо порожній масив щоб уникнути помилок у шаблоні
-            this.categories = [];
-        } finally {
-            this.isLoadingCategories = false;
-        }
-    },
-
-    // --- Покращена функція завантаження популярних історій ---
-    async loadPopularStories() {
-        this.isLoadingStories = true;
-        try {
-            // Перевіряємо, чи була підтверджена вікова перевірка
-            if (!(localStorage.getItem('ageVerified') === 'true' || this.getCookie('ageVerified') === 'true')) {
-                console.log('Age not verified, skipping stories load');
-                this.isLoadingStories = false;
-                return;
-            }
-
-            // Симуляція API
-            await new Promise(resolve => setTimeout(resolve, 400));
-            
-            // Безпечна функція для отримання перекладів
-            const safeTKeys = (key, fallback) => {
-                try {
-                    const translation = $store.i18n?.t(key);
-                    return (translation && translation !== key) ? translation : fallback;
-                } catch (e) {
-                    return fallback;
-                }
-            };
-            
-            this.popularStories = [
-                { 
-                    _id: '1', 
-                    title: safeTKeys('home.simStory1Title', 'Випадкова зустріч'), 
-                    excerpt: safeTKeys('home.simStory1Excerpt', 'Це мала бути звичайна ділова поїздка, але один погляд змінив усе'),
-                    readingTime: '6', 
-                    views: 2456, 
-                    averageRating: 4.8, 
-                    category: { 
-                        name: safeTKeys('createStory.categoryRomance', 'Романтика'), 
-                        slug: 'romance' 
-                    }
-                },
-                { 
-                    _id: '2', 
-                    title: safeTKeys('home.simStory2Title', 'Спогади минулого літа'), 
-                    excerpt: safeTKeys('home.simStory2Excerpt', 'Вона з\'явилася в його житті на один сезон, але залишила слід назавжди'),
-                    readingTime: '8', 
-                    views: 1892, 
-                    averageRating: 4.6, 
-                    category: { 
-                        name: safeTKeys('createStory.categoryVacation', 'Курортний роман'), 
-                        slug: 'vacation' 
-                    } 
-                },
-                { 
-                    _id: '3', 
-                    title: safeTKeys('home.simStory3Title', 'Таємниця готельного номера'), 
-                    excerpt: safeTKeys('home.simStory3Excerpt', 'Коли двері зачинилися, реальність перестала існувати'),
-                    readingTime: '5', 
-                    views: 3150, 
-                    averageRating: 4.9, 
-                    category: { 
-                        name: safeTKeys('createStory.categoryChanceEncounters', 'Випадкові зустрічі'), 
-                        slug: 'chance-encounters' 
-                    }, 
-                    isPremium: true // Додав преміум для прикладу
-                }
-            ];
-            // TODO: Замінити на реальний API-запит:
-            // const response = await api.stories.getStories({ sort: '-views', limit: 3, populate: 'category' }); // Запитуємо категорію
-            // this.popularStories = response.data || [];
-        } catch (e) {
-            console.error('Failed to load popular stories', e);
-            // Встановлюємо порожній масив щоб уникнути помилок у шаблоні
-            this.popularStories = [];
-        } finally {
-            this.isLoadingStories = false;
-        }
-    },
-    getCookie(name) {
-        try {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) {
-                return parts.pop().split(';').shift();
-            }
-            return null;
-        } catch (error) {
-            console.warn('Error reading cookie:', error);
-            return null;
-        }
-    },
-    // --- Додана функція для відображення зірок ---
-    formatStars(rating) {
-        if (!rating || isNaN(rating)) return '';
-        
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating - fullStars >= 0.5;
-        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
-        let stars = '';
-        
-        // Додаємо заповнені зірки
-        for (let i = 0; i < fullStars; i++) {
-            stars += '<i class=\'fas fa-star\'></i>';
-        }
-        
-        // Додаємо напівзірку, якщо потрібно
-        if (hasHalfStar) {
-            stars += '<i class=\'fas fa-star-half-alt\'></i>';
-        }
-        
-        // Додаємо порожні зірки
-        for (let i = 0; i < emptyStars; i++) {
-            stars += '<i class=\'far fa-star\'></i>';
-        }
-        
-        return stars;
-    },
-}" x-init="
-    try {
-        showAgeVerification = !(localStorage.getItem('ageVerified') === 'true' || getCookie('ageVerified') === 'true');
-        checkLoginStatus();
-        
-        // Завантажуємо дані лише якщо вік підтверджено
-        if (!showAgeVerification) {
-            loadCategories();
-            loadPopularStories();
-        }
-    } catch (error) {
-        console.error('Error during initialization:', error);
-        // Встановлюємо базові значення для продовження роботи сторінки
-        showAgeVerification = true;
-        isLoggedIn = false;
+  <style>
+    .loading-indicator-small { display: flex; justify-content: flex-start; align-items: center; padding: 1rem 0; color: var(--secondary-text); font-size: 0.9rem; }
+    .loading-spinner-small { border: 2px solid rgba(255, 255, 255, 0.2); border-left-color: var(--accent-red); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin-right: 8px; }
+    .loading-indicator { text-align: center; padding: 2rem; color: var(--secondary-text); }
+    .error-message {
+      background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3);
+      border-radius: var(--border-radius); padding: 1rem; margin: 1rem 0;
+      color: #ff6b6b; font-size: 0.9rem; display: flex; align-items: center;
+      grid-column: 1 / -1;
     }
-">
+    .error-message i { margin-right: 8px; }
+    .error-message button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+    .empty-tab-message { color: var(--secondary-text); text-align: center; padding: 2rem; background-color: rgba(255,255,255,0.03); border-radius: var(--border-radius); margin-top: 1rem; grid-column: 1 / -1;}
+    @keyframes spin { to { transform: rotate(360deg); } }
+    [x-cloak] { display: none !important; }
+  </style>
+
+</head>
+<body x-cloak> <!-- Додано x-cloak -->
 
 <!-- Віковий контроль -->
-<div class="age-verification" x-show="showAgeVerification" x-transition.opacity>
+<!-- Fix 2: Add proper transitions to important UI elements -->
+<div class="age-verification" x-show="showAgeVerification" x-transition:enter="transition-opacity-enter" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity-leave" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
   <div class="age-verification-content">
-    <div class="age-verification-icon">
-      <i class="fas fa-exclamation-circle"></i>
-    </div>
-    <h2 x-text="$store.i18n.t('auth.ageVerificationTitle')"></h2>
-    <p x-text="$store.i18n.t('auth.ageVerificationText')"></p>
+    <div class="age-verification-icon"> <i class="fas fa-exclamation-triangle"></i> </div>
+    <h2 x-text="safeT('auth.ageVerificationTitle', 'Підтвердження віку')"></h2>
+    <p x-text="safeT('auth.ageVerificationText', 'Цей сайт містить контент для дорослих. Підтвердіть, що вам є 18 років.')"></p>
     <div class="age-buttons">
-      <a href="https://google.com" class="btn btn-outline" x-text="$store.i18n.t('general.under18')"></a>
-      <button class="btn btn-primary" @click="verifyAge()" x-text="$store.i18n.t('general.ageConfirmation')"></button>
+      <a href="https://google.com" class="btn btn-outline" x-text="safeT('general.under18', 'Мені менше 18')"></a>
+      <button class="btn btn-primary" @click="verifyAge()" x-text="safeT('general.ageConfirmation', 'Мені є 18')"></button>
     </div>
   </div>
 </div>
@@ -267,49 +231,31 @@
 <header>
   <div class="container">
     <nav class="navbar">
-      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
+      <a href="index.html" class="logo" aria-label="На головну">
+        <span x-text="safeT('general.siteNamePart1', 'Таємний')"></span><span style="color: var(--accent-red);" x-text="safeT('general.siteNamePart2', 'Світ')"></span>
+      </a>
       <ul class="nav-links">
-        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        <li><a href="index.html" x-text="safeT('general.home', 'Головна')"></a></li>
+        <li><a href="new-stories.html" x-text="safeT('general.newStories', 'Нові історії')"></a></li>
+        <li><a href="top-stories.html" x-text="safeT('general.topStories', 'Топ рейтинг')"></a></li>
+        <li><a href="categories.html" x-text="safeT('general.categories', 'Категорії')"></a></li>
+        <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li>
       </ul>
       <div class="auth-buttons">
         <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
-            <!-- Безпечний доступ до selectedLang -->
             <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
-          <!-- Перевіряємо наявність $store.i18n -->
           <template x-if="$store?.i18n">
             <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
-              <!-- Безпечний доступ до available та ітерація -->
               <template x-for="lang in $store.i18n.available || []" :key="lang.code">
                 <div class="lang-dropdown-item"
                      :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                     @click="
-                 const newLang = lang.code;
-                 open = false;
-                 try {
-                     // Виклик setLanguage всередині try...catch
-                     $store.i18n.setLanguage(newLang);
-                     console.log('Language set to:', newLang);
-                 } catch(e) {
-                     console.error('Error setting language:', e);
-                     // Можна додати сповіщення для користувача тут
-                 }
-              "
-                     role="menuitemradio"
-                     :aria-checked="lang.code === $store.i18n.selectedLang"
-                     tabindex="0"
-                     @keydown.enter.space.prevent="
-                 const newLang = lang.code;
-                 open = false;
-                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
-              ">
+                     @click="const newLang=lang.code; open=false; try{ $store.i18n.setLanguage(newLang); }catch(e){console.error('Lang switch error',e);}"
+                     role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                     @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{ $store.i18n.setLanguage(newLang); }catch(e){console.error('Lang switch error',e);}">
                   <span x-text="lang.name"></span>
                   <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
                 </div>
@@ -320,32 +266,15 @@
         <!-- Кнопки входу/профілю -->
         <template x-if="!isLoggedIn">
           <div>
-            <a href="login.html" class="btn btn-outline">
-              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
-            </a>
-            <a href="login.html?tab=register" class="btn btn-primary">
-              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
-            </a>
+            <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="safeT('general.login', 'Увійти')"></span> </a>
+            <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="safeT('general.register', 'Реєстрація')"></span> </a>
           </div>
         </template>
         <template x-if="isLoggedIn">
           <div>
-            <a href="profile.html" class="btn btn-outline">
-              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
-            </a>
-            <!-- Кнопка виходу з покращеною обробкою -->
-            <a href="#" @click.prevent="
-              try { 
-                api.auth.logout(); 
-                isLoggedIn = false; 
-                // Оновлюємо сторінку лише після завершення logout 
-                setTimeout(() => window.location.href = 'index.html', 100); 
-              } catch (e) { 
-                console.error('Logout failed:', e); 
-                window.location.reload();
-              }
-            " class="btn btn-primary">
-              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="safeT('general.profile', 'Профіль')"></span> </a>
+            <a href="#" @click.prevent="logoutUser()" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout', 'Вийти')"></span>
             </a>
           </div>
         </template>
@@ -360,16 +289,12 @@
   <section class="hero">
     <div class="container">
       <div class="hero-content">
-        <div class="hero-subtitle" x-text="$store.i18n.t('home.heroSubtitle')"></div>
-        <h1 x-text="$store.i18n.t('home.heroTitle')"></h1>
-        <p x-text="$store.i18n.t('home.heroText')"></p>
+        <div class="hero-subtitle" x-text="safeT('home.heroSubtitle', 'Найкращі еротичні історії')"></div>
+        <h1 x-text="safeT('home.heroTitle', 'Занурся у світ найвідвертіших еротичних фантазій')"></h1>
+        <p x-text="safeT('home.heroText', 'Відкрийте тисячі захоплюючих історій...')"></p>
         <div class="hero-buttons">
-          <a href="new-stories.html" class="btn btn-primary">
-            <i class="fas fa-book-open"></i> <span x-text="$store.i18n.t('home.heroButtonStart')"></span>
-          </a>
-          <a href="top-stories.html" class="btn btn-outline">
-            <i class="fas fa-fire"></i> <span x-text="$store.i18n.t('home.heroButtonHot')"></span>
-          </a>
+          <a href="new-stories.html" class="btn btn-primary"> <i class="fas fa-book-open"></i> <span x-text="safeT('home.heroButtonStart', 'Почати читати')"></span> </a>
+          <a href="top-stories.html" class="btn btn-outline"> <i class="fas fa-fire"></i> <span x-text="safeT('home.heroButtonHot', 'Гарячі новинки')"></span> </a>
         </div>
       </div>
     </div>
@@ -381,10 +306,10 @@
       <div class="search-container">
         <form class="search-form" @submit.prevent="submitSearch()">
           <div class="search-input-container">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" x-model="searchQuery" :placeholder="$store.i18n.t('home.searchPlaceholder')">
+            <i class="fas fa-search search-icon" aria-hidden="true"></i>
+            <input type="search" class="search-input" x-model="searchQuery" :placeholder="safeT('home.searchPlaceholder', 'Пошук...')" :aria-label="safeT('home.searchPlaceholder', 'Пошук...')">
           </div>
-          <button type="submit" class="search-button" x-text="$store.i18n.t('general.search')"></button>
+          <button type="submit" class="search-button" x-text="safeT('general.search', 'Пошук')"></button>
         </form>
       </div>
     </div>
@@ -393,30 +318,22 @@
   <!-- Категорії -->
   <section class="categories-section">
     <div class="container">
-      <div class="section-header">
-        <h2 class="section-title" x-text="$store.i18n.t('general.categories')"></h2>
-      </div>
-      <!-- Індикатор завантаження категорій -->
-      <div x-show="isLoadingCategories" class="loading-indicator-small" style="justify-content: flex-start;">
-        <div class="loading-spinner-small"></div> <span x-text="$store.i18n.t('categoriesPage.loadingCategories')"></span>
-      </div>
-      <!-- Список категорій -->
-      <div class="categories-container" x-show="!isLoadingCategories && categories.length > 0">
+      <div class="section-header"> <h2 class="section-title" x-text="safeT('general.categories', 'Категорії')"></h2> </div>
+      <!-- Індикатор/Помилка -->
+      <div x-show="isLoadingCategories" class="loading-indicator-small"> <div class="loading-spinner-small"></div> <span x-text="safeT('categoriesPage.loadingCategories', 'Завантаження категорій...')"></span> </div>
+      <div x-show="categoriesError" class="error-message"> <i class="fas fa-exclamation-circle"></i> <span x-text="categoriesError"></span> <button @click="loadCategories()" class="btn btn-outline btn-small" x-text="safeT('general.retryButton', 'Повторити')"></button> </div>
+      <!-- Список -->
+      <div class="categories-container" x-show="!isLoadingCategories && !categoriesError && categories.length > 0">
         <template x-for="category in categories" :key="category.slug">
-          <a :href="`category-page.html?slug=${category.slug}`" class="category-tag">
+          <a :href="`category-page.html?slug=${category.slug}`" class="category-tag" :aria-label="`${safeT('general.categoryLabel', 'Категорія')}: ${category.name}`">
             <span x-text="category.name"></span>
-            <span x-text="`(${category.count || 0})`"></span>
+            <span x-text="`(${category.stats?.storyCount || 0})`" aria-hidden="true"></span>
           </a>
         </template>
-        <!-- Посилання для перегляду всіх категорій -->
-        <a href="categories.html" class="category-tag view-all-tag">
-          <span x-text="$store.i18n.t('home.viewAll')"></span> <i class="fas fa-arrow-right"></i>
-        </a>
+        <a href="categories.html" class="category-tag view-all-tag"> <span x-text="safeT('home.viewAll', 'Усі')"></span> <i class="fas fa-arrow-right"></i> </a>
       </div>
-      <!-- Повідомлення, якщо категорії не завантажено -->
-      <div x-show="!isLoadingCategories && categories.length === 0" class="empty-tab-message">
-        <span x-text="$store.i18n.t('categoriesPage.noCategoriesAvailable')"></span>
-      </div>
+      <!-- Порожній стан -->
+      <div x-show="!isLoadingCategories && !categoriesError && categories.length === 0" class="empty-tab-message"> <span x-text="safeT('categoriesPage.noCategoriesAvailable', 'Категорії відсутні.')"></span> </div>
     </div>
   </section>
 
@@ -424,41 +341,32 @@
   <section class="stories-section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title" x-text="$store.i18n.t('home.popularStories')"></h2>
-        <a href="top-stories.html" class="view-all">
-          <span x-text="$store.i18n.t('home.viewAll')"></span> <i class="fas fa-arrow-right"></i>
-        </a>
+        <h2 class="section-title" x-text="safeT('home.popularStories', 'Популярні історії')"></h2>
+        <a href="top-stories.html" class="view-all"> <span x-text="safeT('home.viewAll', 'Усі')"></span> <i class="fas fa-arrow-right"></i> </a>
       </div>
-      <!-- Індикатор завантаження історій -->
-      <div x-show="isLoadingStories" class="loading-indicator">
-        <span x-text="$store.i18n.t('storyLists.loadingStories')"></span>
-      </div>
-      <!-- Сітка історій -->
-      <div class="stories-grid" x-show="!isLoadingStories && popularStories.length > 0">
+      <!-- Індикатор/Помилка -->
+      <div x-show="isLoadingStories" class="loading-indicator"> <i class="fas fa-spinner fa-spin"></i> <span x-text="safeT('storyLists.loadingStories', 'Завантаження історій...')"></span> </div>
+      <div x-show="storiesError" class="error-message"> <i class="fas fa-exclamation-circle"></i> <span x-text="storiesError"></span> <button @click="loadPopularStories()" class="btn btn-outline btn-small" x-text="safeT('general.retryButton', 'Повторити')"></button> </div>
+      <!-- Сітка -->
+      <div class="stories-grid" x-show="!isLoadingStories && !storiesError && popularStories.length > 0">
         <template x-for="story in popularStories" :key="story._id">
           <div class="story-card">
-            <a :href="`story-detailed.html?id=${story._id}`" style="display: contents;">
+            <a :href="`story-detailed.html?id=${story._id}`" style="display: contents;" :aria-label="story.title">
               <div class="story-card-image">
-                <img :src="story.imageUrl || `https://source.unsplash.com/random/600x400/?story,${story._id}`" :alt="story.title">
-                <div :class="story.isPremium ? 'story-badge premium-badge' : 'story-badge'" x-text="story.ageRestriction || (story.isPremium ? '21+' : '18+')"></div>
+                <img :src="story.imageUrlSafe" :alt="safeT('storyLists.coverImageAlt', { title: story.title }, `Обкладинка історії ${story.title}`)" loading="lazy">
+                <div :class="story.isPremium ? 'story-badge premium-badge' : 'story-badge'" x-text="story.ageRating || (story.isPremium ? '21+' : '18+')" aria-label="Вікове обмеження"></div>
               </div>
             </a>
             <div class="story-card-content">
-              <!-- Безпечна перевірка властивостей категорії -->
-              <div class="story-tags">
-                <a :href="`category-page.html?slug=${story.category?.slug || (typeof story.category === 'string' ? story.category : '')}`" 
-                   class="story-tag" 
-                   x-text="story.category?.name || (typeof story.category === 'string' ? story.category : $store.i18n.t('general.defaultCategory') || 'Без категорії')"></a>
+              <div class="story-tags" aria-label="Категорія">
+                <a :href="`category-page.html?slug=${story.categorySlug}`" class="story-tag" x-text="story.categoryName"></a>
               </div>
-              <h3 class="story-title">
-                <a :href="`story-detailed.html?id=${story._id}`" x-text="story.title"></a>
-              </h3>
+              <h3 class="story-title"> <a :href="`story-detailed.html?id=${story._id}`" x-text="story.title"></a> </h3>
               <p class="story-excerpt" x-text="story.excerpt ? story.excerpt + '...' : ''"></p>
               <div class="story-meta">
-                <div class="story-meta-item"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="$store.i18n.t('general.readingTimeSuffix')"></span></div>
-                <div class="story-meta-item"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
-                <div class="story-meta-item rating">
-                  <!-- Використовуємо нову функцію для зіркового рейтингу -->
+                <div class="story-meta-item" :aria-label="safeT('general.readingTimeLabel')"><i class="far fa-clock" aria-hidden="true"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="safeT('general.readingTimeSuffix')"></span></div>
+                <div class="story-meta-item" :aria-label="safeT('general.viewsLabel')"><i class="far fa-eye" aria-hidden="true"></i> <span x-text="story.views || 0"></span></div>
+                <div class="story-meta-item rating" :aria-label="safeT('general.ratingLabel')">
                   <span x-html="formatStars(story.averageRating)"></span>
                   <span class="rating-text" x-text="(story.averageRating || 0).toFixed(1)"></span>
                 </div>
@@ -467,66 +375,28 @@
           </div>
         </template>
       </div>
-      <!-- Повідомлення, якщо історії не завантажено -->
-      <div x-show="!isLoadingStories && popularStories.length === 0" class="empty-tab-message">
-        <span x-text="$store.i18n.t('storyLists.noStoriesFound') || 'Наразі немає популярних історій.'"></span>
-      </div>
+      <!-- Порожній стан -->
+      <div x-show="!isLoadingStories && !storiesError && popularStories.length === 0" class="empty-tab-message"> <span x-text="safeT('storyLists.noStoriesFound', 'Історії відсутні.')"></span> </div>
     </div>
   </section>
 </main>
 
 <!-- Плаваюча кнопка -->
-<a href="create_story.html" class="floating-button" :title="$store.i18n.t('createStory.title')">
-  <i class="fas fa-plus"></i>
+<a href="create_story.html" class="floating-button" :title="safeT('createStory.title', 'Створити історію')" :aria-label="safeT('createStory.title', 'Створити історію')">
+  <i class="fas fa-plus" aria-hidden="true"></i>
 </a>
 
 <!-- Footer -->
 <footer>
   <div class="container">
-    <!-- Код футера як раніше -->
+    <!-- Код футера з i18n -->
     <div class="footer-content">
-      <div class="footer-section footer-about">
-        <h4 x-text="$store.i18n.t('general.about')"></h4>
-        <p x-text="$store.i18n.t('general.aboutText')"></p>
-        <div class="social-links">
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
-          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
-        </div>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
-        <ul>
-          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.support')"></h4>
-        <ul>
-          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.join')"></h4>
-        <ul>
-          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
-        </ul>
-      </div>
+      <div class="footer-section footer-about"> <h4 x-text="safeT('general.about')"></h4> <p x-text="safeT('general.aboutText')"></p> <div class="social-links"> <a href="#" class="social-link" :title="safeT('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a> <a href="#" class="social-link" :title="safeT('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a> <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a> </div> </div>
+      <div class="footer-section"> <h4 x-text="safeT('general.navigation')"></h4> <ul> <li><a href="index.html" x-text="safeT('general.home')"></a></li> <li><a href="categories.html" x-text="safeT('general.categories')"></a></li> <li><a href="new-stories.html" x-text="safeT('general.newStories')"></a></li> <li><a href="top-stories.html" x-text="safeT('general.topStories')"></a></li> <li><a href="authors.html" x-text="safeT('general.authors')"></a></li> </ul> </div>
+      <div class="footer-section"> <h4 x-text="safeT('general.support')"></h4> <ul> <li><a href="faq.html" x-text="safeT('faq.title')"></a></li> <li><a href="contact.html" x-text="safeT('contact.title')"></a></li> <li><a href="terms-page.html" x-text="safeT('general.terms')"></a></li> <li><a href="privacy-policy.html" x-text="safeT('general.privacy')"></a></li> </ul> </div>
+      <div class="footer-section"> <h4 x-text="safeT('general.join')"></h4> <ul> <li><a href="login.html" x-text="safeT('general.login')"></a></li> <li><a href="login.html?tab=register" x-text="safeT('general.register')"></a></li> <li><a href="premium.html" x-text="safeT('general.premium')"></a></li> <li><a href="create_story.html" x-text="safeT('createStory.title')"></a></li> </ul> </div>
     </div>
-    <div class="footer-bottom">
-      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
-    </div>
+    <div class="footer-bottom"> © <span x-text="new Date().getFullYear()"></span> <span x-text="safeT('general.copyright')"></span>. <span x-text="safeT('general.allRightsReserved')"></span>. 18+ <br> <a href="terms-page.html" x-text="safeT('general.terms')"></a> | <a href="privacy-policy.html" x-text="safeT('general.privacy')"></a> </div>
   </div>
 </footer>
 

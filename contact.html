@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<!-- Виправлено: :lang з безпечним доступом -->
-<html lang="uk" x-data :lang="$store.i18n.selectedLang">
+<!-- Виправлено: :lang з безпечним доступом, x-data перенесено нижче -->
+<html lang="uk" :lang="$store.i18n?.selectedLang || 'uk'">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Виправлено: Title використовує $store.i18n.t, а не safeT -->
-  <title x-text="`${$store.i18n?.t('contact.title') || 'Зворотний зв\'язок'} — ${$store.i18n?.t('general.copyright') || 'Таємний Світ'}`"
+  <!-- Виправлено: Title використовує $store.i18n.t -->
+  <title x-data x-text="`${$store.i18n?.t('contact.title') || 'Зворотний зв\'язок'} — ${$store.i18n?.t('general.copyright') || 'Таємний Світ'}`"
          data-fallback-title="Зворотний зв'язок — Таємний Світ"></title>
 
   <!-- Виправлено: Meta-теги використовують $store.i18n.t -->
-  <meta name="description" :content="$store.i18n?.t('contact.metaDescription') || 'Зв\'яжіться з командою Таємного Світу.'">
-  <meta property="og:title" :content="`${$store.i18n?.t('contact.title') || 'Зворотний зв\'язок'} — ${$store.i18n?.t('general.copyright') || 'Таємний Світ'}`">
-  <meta property="og:description" :content="$store.i18n?.t('contact.metaOgDescription') || 'Сторінка зворотного зв\'язку сайту Таємний Світ.'">
+  <meta name="description" x-data :content="$store.i18n?.t('contact.metaDescription') || 'Зв\'яжіться з командою Таємного Світу.'">
+  <meta property="og:title" x-data :content="`${$store.i18n?.t('contact.title') || 'Зворотний зв\'язок'} — ${$store.i18n?.t('general.copyright') || 'Таємний Світ'}`">
+  <meta property="og:description" x-data :content="$store.i18n?.t('contact.metaOgDescription') || 'Сторінка зворотного зв\'язку сайту Таємний Світ.'">
   <meta property="og:type" content="website">
 
   <!-- Шрифти -->
@@ -19,11 +19,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Internationalization -->
-  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
-
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+  <!-- Internationalization -->
+  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -32,13 +32,10 @@
   <script src="js/api-config.js" defer></script>
   <script src="js/api-utils.js" defer></script>
 
-
-
-
   <!-- CSS -->
   <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/contact.css"> <!-- CSS файл для контактної сторінки -->
-  <style>[x-cloak] { display: none !important; }</style> <!-- Стилі для x-cloak -->
+  <link rel="stylesheet" href="css/contact.css">
+  <style>[x-cloak] { display: none !important; }</style>
   <style>
     /* Додаткові стилі для повідомлень */
     .error-message, .success-message {
@@ -58,9 +55,8 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
-
 </head>
-<body> <!-- Забираємо x-data звідси -->
+<body> <!-- Забрано x-data звідси -->
 
 <!-- Корінь x-data -->
 <div x-data="{
@@ -73,21 +69,7 @@
     successMessage: '',
     errorMessage: '',
 
-    // Компонентна версія safeT (залишаємо, бо використовується в методах)
-    safeT(key, fallback = '', params = {}) {
-        try {
-            if (typeof $store !== 'undefined' && $store.i18n?.initialized) {
-                const translation = $store.i18n.t(key, params);
-                 return (translation && translation !== key && translation.trim() !== '') ? translation : fallback;
-            }
-            if (Object.keys(params).length > 0 && typeof fallback === 'string') {
-                return Object.keys(params).reduce((str, pKey) => str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), params[pKey]), fallback);
-            }
-            return fallback;
-        } catch (error) { console.warn(`safeT error for key: ${key}`, error); return fallback; }
-    },
-
-    // --- Допоміжні функції валідації (перенесено сюди) ---
+    // --- Допоміжні функції валідації ---
     validateEmail(email) {
         if (!email) return false;
         const emailRegex = /^(([^<>()[\]\\.,;:\s@']+(\.[^<>()[\]\\.,;:\s@']+)*)|('.+'))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -103,19 +85,19 @@
         this.clearMessages();
         try {
             if (!this.contactName.trim()) {
-                this.errorMessage = this.safeT('contact.errorNameRequired', 'Будь ласка, введіть ваше ім\'я.'); return false;
+                this.errorMessage = $store.i18n.t('contact.errorNameRequired', 'Будь ласка, введіть ваше ім\'я.'); return false;
             }
             if (!this.contactEmail) {
-                this.errorMessage = this.safeT('contact.errorEmailRequired', 'Будь ласка, введіть ваш email.'); return false;
+                this.errorMessage = $store.i18n.t('contact.errorEmailRequired', 'Будь ласка, введіть ваш email.'); return false;
             }
             if (!this.validateEmail(this.contactEmail)) {
-                this.errorMessage = this.safeT('contact.errorEmailInvalid', 'Будь ласка, введіть коректний email.'); return false;
+                this.errorMessage = $store.i18n.t('contact.errorEmailInvalid', 'Будь ласка, введіть коректний email.'); return false;
             }
             if (!this.contactSubject.trim()) {
-                this.errorMessage = this.safeT('contact.errorSubjectRequired', 'Будь ласка, введіть тему повідомлення.'); return false;
+                this.errorMessage = $store.i18n.t('contact.errorSubjectRequired', 'Будь ласка, введіть тему повідомлення.'); return false;
             }
             if (!this.contactMessage.trim()) {
-                this.errorMessage = this.safeT('contact.errorMessageRequired', 'Будь ласка, введіть текст повідомлення.'); return false;
+                this.errorMessage = $store.i18n.t('contact.errorMessageRequired', 'Будь ласка, введіть текст повідомлення.'); return false;
             }
             return true;
         } catch (error) {
@@ -138,55 +120,47 @@
                 subject: this.contactSubject.trim().replace(/</g, '<').replace(/>/g, '>'),
                 message: this.contactMessage.trim().replace(/</g, '<').replace(/>/g, '>')
             };
-            console.log('Simulating API call: contact.sendMessage', formData);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            // await api.contact.sendMessage(formData); // Реальний виклик API
-            this.successMessage = this.safeT('contact.successMessage', 'Повідомлення успішно надіслано!');
+
+            // --- TODO: Замінити симуляцію на реальний виклик API ---
+            console.log('API CALL: api.contact.sendMessage', formData);
+            // await api.contact.sendMessage(formData);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Симуляція затримки
+            // --- Кінець TODO ---
+
+            this.successMessage = $store.i18n.t('contact.successMessage', 'Повідомлення успішно надіслано!');
             this.contactName = ''; this.contactEmail = ''; this.contactSubject = ''; this.contactMessage = '';
             this.$nextTick(() => { document.querySelector('.success-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
         } catch (error) {
-            this.errorMessage = error.message || this.safeT('contact.errorGeneral', 'Помилка відправки повідомлення.');
+            this.errorMessage = error.message || $store.i18n.t('contact.errorGeneral', 'Помилка відправки повідомлення.');
             console.error('Contact form error:', error);
             this.$nextTick(() => { document.querySelector('.error-message')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
         } finally { this.isSubmitting = false; }
     }
 }" x-init="
-    $nextTick(async () => {
-        // Чекаємо i18n, якщо потрібно
-        let waitCount = 0;
-        while ((typeof $store === 'undefined' || !$store.i18n?.initialized) && waitCount < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            waitCount++;
-        }
-        if (typeof $store === 'undefined' || !$store.i18n?.initialized) {
-             console.error('i18n store failed to initialize on contact page!');
-             this.errorMessage = 'Помилка завантаження мовних налаштувань.';
-        }
-
-        // Чекаємо api
-        waitCount = 0;
-        while ((typeof api === 'undefined' || typeof api.utils === 'undefined') && waitCount < 50) {
-             await new Promise(resolve => setTimeout(resolve, 100));
-             waitCount++;
-        }
-        if (typeof api === 'undefined' || typeof api.utils === 'undefined') {
-            console.error('API object failed to load on contact page!');
-            this.errorMessage = 'Помилка завантаження API.';
-            return; // Зупиняємо подальшу ініціалізацію
-        }
-
-        // Основна логіка ініціалізації
-        try {
-            this.isLoggedIn = api.utils.isAuthenticated();
-            if (this.isLoggedIn) {
-                const user = await api.users.getCurrentUser();
-                if(user) {
-                    this.contactName = user.name || '';
-                    this.contactEmail = user.email || '';
-                }
+    // Чекаємо ініціалізації API та i18n
+    let waitCount = 0;
+    const checkReady = setInterval(async () => {
+        if ((typeof api !== 'undefined' && typeof $store !== 'undefined' && $store.i18n?.initialized) || waitCount > 50) {
+            clearInterval(checkReady);
+            if (typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) {
+                console.error('API or i18n failed to initialize on contact page!');
+                this.errorMessage = 'Помилка завантаження сторінки. Спробуйте оновити.';
+            } else {
+                // Основна логіка ініціалізації
+                try {
+                    this.isLoggedIn = api.utils.isAuthenticated();
+                    if (this.isLoggedIn) {
+                        const user = await api.users.getCurrentUser();
+                        if(user) {
+                            this.contactName = user.name || '';
+                            this.contactEmail = user.email || '';
+                        }
+                    }
+                } catch(e) { console.warn('Failed to check auth or autofill contact form:', e); this.isLoggedIn = false; }
             }
-        } catch(e) { console.warn('Failed to check auth or autofill contact form:', e); this.isLoggedIn = false; }
-    });
+        }
+        waitCount++;
+    }, 100);
 ">
 
   <!-- Хедер -->
@@ -208,37 +182,17 @@
           <!-- Мовний перемикач -->
           <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
             <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
-              <!-- Безпечний доступ до selectedLang -->
               <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
               <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
             </div>
-            <!-- Перевіряємо наявність $store.i18n -->
             <template x-if="$store?.i18n">
               <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
-                <!-- Безпечний доступ до available та ітерація -->
                 <template x-for="lang in $store.i18n.available || []" :key="lang.code">
                   <div class="lang-dropdown-item"
                        :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                       @click="
-                 const newLang = lang.code;
-                 open = false;
-                 try {
-                     // Виклик setLanguage всередині try...catch
-                     $store.i18n.setLanguage(newLang);
-                     console.log('Language set to:', newLang);
-                 } catch(e) {
-                     console.error('Error setting language:', e);
-                     // Можна додати сповіщення для користувача тут
-                 }
-              "
-                       role="menuitemradio"
-                       :aria-checked="lang.code === $store.i18n.selectedLang"
-                       tabindex="0"
-                       @keydown.enter.space.prevent="
-                 const newLang = lang.code;
-                 open = false;
-                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
-              ">
+                       @click="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}"
+                       role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                       @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}">
                     <span x-text="lang.name"></span>
                     <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
                   </div>
@@ -246,9 +200,9 @@
               </div>
             </template>
           </div>
+          <!-- Кнопки авторизації -->
           <template x-if="!isLoggedIn">
             <div>
-              <!-- Використовуємо $store.i18n.t для тексту кнопок -->
               <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n?.t('general.login') || 'Увійти'"></span> </a>
               <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n?.t('general.register') || 'Реєстрація'"></span> </a>
             </div>
@@ -256,7 +210,7 @@
           <template x-if="isLoggedIn">
             <div>
               <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n?.t('general.profile') || 'Профіль'"></span> </a>
-              <a href="#" @click.prevent="try { api.auth.logout(); window.location.reload(); } catch (e) { console.error('Logout error:', e); alert(safeT('general.logoutError', 'Помилка виходу'));}" class="btn btn-primary">
+              <a href="#" @click.prevent="try { api.auth.logout(); window.location.reload(); } catch (e) { console.error('Logout error:', e); alert($store.i18n?.t('general.logoutError') || 'Помилка виходу');}" class="btn btn-primary">
                 <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n?.t('general.logout') || 'Вийти'"></span>
               </a>
             </div>
@@ -276,9 +230,9 @@
     </div>
 
     <div class="contact-page-container">
-      <div class="contact-header">
-        <h1 class="contact-title" x-text="$store.i18n?.t('contact.title') || 'Зворотний зв\'язок'"></h1>
-        <p class="contact-description" x-text="$store.i18n?.t('contact.description') || 'Маєте запитання? Заповніть форму.'"></p>
+      <div class="page-header contact-header"> <!-- Додано клас .page-header -->
+        <h1 class="page-title" x-text="$store.i18n?.t('contact.title') || 'Зворотний зв\'язок'"></h1>
+        <p class="page-description" x-text="$store.i18n?.t('contact.description') || 'Маєте запитання? Заповніть форму.'"></p>
       </div>
 
       <div class="contact-content">
@@ -286,9 +240,9 @@
           <h2 class="contact-subtitle" x-text="$store.i18n?.t('contact.infoTitle') || 'Контактна інформація'"></h2>
           <p x-text="$store.i18n?.t('contact.infoText') || 'Ви можете зв\'язатися з нами напряму:'"></p>
           <div class="contact-details">
-            <div class="contact-item"> <i class="fas fa-envelope"></i> <div> <strong x-text="$store.i18n?.t('contact.infoGeneral') || 'Загальні питання:'"></strong> <a href="mailto:contact@erostory.world">contact@erostory.world</a> </div> </div>
-            <div class="contact-item"> <i class="fas fa-headset"></i> <div> <strong x-text="$store.i18n?.t('contact.infoSupport') || 'Технічна підтримка:'"></strong> <a href="mailto:help@erostory.world">help@erostory.world</a> </div> </div>
-            <div class="contact-item"> <i class="fas fa-shield-alt"></i> <div> <strong x-text="$store.i18n?.t('contact.infoSecurity') || 'Безпека та скарги:'"></strong> <a href="mailto:admin@erostory.world">admin@erostory.world</a> </div> </div>
+            <div class="contact-item"> <i class="fas fa-envelope" aria-hidden="true"></i> <div> <strong x-text="$store.i18n?.t('contact.infoGeneral') || 'Загальні питання:'"></strong> <a href="mailto:contact@erostory.world">contact@erostory.world</a> </div> </div>
+            <div class="contact-item"> <i class="fas fa-headset" aria-hidden="true"></i> <div> <strong x-text="$store.i18n?.t('contact.infoSupport') || 'Технічна підтримка:'"></strong> <a href="mailto:help@erostory.world">help@erostory.world</a> </div> </div>
+            <div class="contact-item"> <i class="fas fa-shield-alt" aria-hidden="true"></i> <div> <strong x-text="$store.i18n?.t('contact.infoSecurity') || 'Безпека та скарги:'"></strong> <a href="mailto:admin@erostory.world">admin@erostory.world</a> </div> </div>
           </div>
           <p x-text="$store.i18n?.t('contact.infoResponseTime') || 'Намагаємося відповідати протягом 24-48 годин.'"></p>
           <p x-html="$store.i18n?.t('contact.infoCheckFAQ', { link: `<a href='faq.html'>${$store.i18n?.t('contact.infoFAQLink') || 'FAQ'}</a>` }) || 'Рекомендуємо переглянути <a href=\'faq.html\'>FAQ</a>.'"></p>
@@ -296,17 +250,18 @@
 
         <div class="contact-form-container">
           <h2 class="contact-subtitle" x-text="$store.i18n?.t('contact.formTitle') || 'Надіслати повідомлення'"></h2>
+          <!-- Повідомлення про помилки/успіх з ARIA -->
           <div x-show="errorMessage" x-transition class="error-message" role="alert" aria-live="assertive"> <i class="fas fa-exclamation-circle" aria-hidden="true"></i> <span x-text="errorMessage"></span> </div>
           <div x-show="successMessage" x-transition class="success-message" role="status" aria-live="polite"> <i class="fas fa-check-circle" aria-hidden="true"></i> <span x-text="successMessage"></span> </div>
 
           <form @submit.prevent="submitForm()" class="contact-form" novalidate>
             <div class="form-group">
               <label for="contactName" class="form-label"><span x-text="$store.i18n?.t('contact.formNameLabel') || 'Ваше ім\'я *'"></span></label>
-              <input type="text" id="contactName" class="form-input" x-model="contactName" :placeholder="$store.i18n?.t('contact.formNamePlaceholder') || 'Введіть ваше ім\'я'" required aria-required="true">
+              <input type="text" id="contactName" class="form-input" x-model="contactName" :placeholder="$store.i18n?.t('contact.formNamePlaceholder') || 'Введіть ваше ім\'я'" required aria-required="true" autocomplete="name">
             </div>
             <div class="form-group">
               <label for="contactEmail" class="form-label"><span x-text="$store.i18n?.t('contact.formEmailLabel') || 'Ваша електронна пошта *'"></span></label>
-              <input type="email" id="contactEmail" class="form-input" x-model="contactEmail" :placeholder="$store.i18n?.t('contact.formEmailPlaceholder') || 'Введіть вашу пошту'" required aria-required="true">
+              <input type="email" id="contactEmail" class="form-input" x-model="contactEmail" :placeholder="$store.i18n?.t('contact.formEmailPlaceholder') || 'Введіть вашу пошту'" required aria-required="true" autocomplete="email">
             </div>
             <div class="form-group">
               <label for="contactSubject" class="form-label"><span x-text="$store.i18n?.t('contact.formSubjectLabel') || 'Тема повідомлення *'"></span></label>
@@ -319,7 +274,7 @@
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" :class="{ 'processing': isSubmitting }"
                       :disabled="isSubmitting" :aria-busy="isSubmitting">
-                <span x-text="isSubmitting ? ($store.i18n?.t('contact.sendingButton') || 'Відправляємо...') : ($store.i18n?.t('contact.sendButton') || 'Надіслати повідомлення')"></span>
+                <span x-text="isSubmitting ? ($store.i18n?.t('contact.sendingButton') || 'Надсилання...') : ($store.i18n?.t('contact.sendButton') || 'Надіслати повідомлення')"></span>
               </button>
             </div>
           </form>
@@ -344,8 +299,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Видаляємо окремий блок <script> для винесеної логіки -->
 
 </div> <!-- Кінець кореня x-data -->
 </body>

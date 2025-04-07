@@ -1,10 +1,11 @@
 /* css/create_story.css */
 /* CSS для сторінки створення/редагування історії */
 
+/* --- Загальний контейнер та хедер --- */
 .editor-container {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 40px 20px; /* Зменшено вертикальні падінги */
 }
 
 .editor-header {
@@ -16,27 +17,43 @@
     font-size: 2.5rem;
     margin-bottom: 1rem;
     font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color); /* Додано колір */
 }
 
 .editor-subtitle {
     color: var(--secondary-text);
     max-width: 800px;
     margin: 0 auto 2rem;
+    line-height: 1.7;
 }
 
+/* --- Таби (Вкладки) --- */
 .editor-tabs {
     display: flex;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 2rem;
+    overflow-x: auto;
+    /* Стилі скролбару */
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-red) rgba(255, 255, 255, 0.05);
 }
+.editor-tabs::-webkit-scrollbar { height: 4px; }
+.editor-tabs::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+.editor-tabs::-webkit-scrollbar-thumb { background-color: var(--accent-red); border-radius: 10px; }
 
 .editor-tab {
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     cursor: pointer;
     color: var(--secondary-text);
     font-weight: 500;
     position: relative;
-    transition: all 0.3s;
+    transition: color 0.3s, background-color 0.3s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    font-size: 1rem;
+    font-family: inherit; /* Успадкування шрифту */
 }
 
 .editor-tab.active {
@@ -53,6 +70,18 @@
     background: var(--accent-red);
 }
 
+.editor-tab:hover:not(.active) {
+    color: var(--text-color);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.editor-tab:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено на золотий */
+    outline-offset: -2px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px 4px 0 0;
+}
+
+/* --- Форма редактора --- */
 .editor-form {
     margin-bottom: 2rem;
 }
@@ -62,33 +91,47 @@
     gap: 1.5rem;
     margin-bottom: 1.5rem;
 }
+.form-row > .form-group {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0; /* Для правильної роботи flex на малих екранах */
+}
 
 
-
+/* --- Завантаження зображення --- */
 .image-upload {
     border: 2px dashed rgba(255, 255, 255, 0.2);
     border-radius: var(--border-radius);
     padding: 2rem;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: border-color 0.3s, background-color 0.3s;
     position: relative;
     overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.02);
 }
 
-.image-upload:hover {
+.image-upload:hover,
+.image-upload:focus-visible {
     border-color: var(--accent-red);
+    background-color: rgba(153, 0, 0, 0.05);
+    outline: none; /* Додано, бо рамка вже змінює колір */
 }
 
 .image-upload-icon {
     font-size: 2.5rem;
     color: rgba(255, 255, 255, 0.3);
     margin-bottom: 1rem;
+    transition: color 0.3s;
+}
+.image-upload:hover .image-upload-icon {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .image-upload-text {
     color: var(--secondary-text);
     margin-bottom: 0.5rem;
+    font-weight: 500;
 }
 
 .image-upload-subtext {
@@ -98,15 +141,17 @@
 
 .image-preview {
     margin-top: 1.5rem;
-    display: none;
     position: relative;
+    display: block; /* Щоб не було зайвих відступів */
 }
 
 .image-preview img {
+    display: block; /* Щоб не було зайвих відступів */
     width: 100%;
-    max-height: 300px;
+    max-height: 300px; /* Обмеження висоти прев'ю */
     object-fit: cover;
     border-radius: var(--border-radius);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .image-preview-remove {
@@ -122,34 +167,154 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.3s, transform 0.3s;
+    border: none;
+    padding: 0;
 }
 
 .image-preview-remove:hover {
     background-color: var(--accent-red);
+    transform: scale(1.1);
+}
+.image-preview-remove:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено на золотий */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.4);
 }
 
+/* --- Редактор Quill.js --- */
+.ql-toolbar.ql-snow {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    background-color: var(--card-color) !important;
+    padding: 8px 8px !important;
+}
+
+.ql-container.ql-snow {
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: none !important; /* Прибираємо верхню межу, бо вона є у toolbar */
+    border-radius: 0 0 var(--border-radius) var(--border-radius) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important; /* Трохи світліший фон для області редагування */
+    color: var(--text-color) !important;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem; /* Базовий розмір шрифту редактора */
+    min-height: 300px; /* Мінімальна висота */
+}
+
+/* Стилізація кнопок панелі інструментів */
+.ql-snow .ql-picker-label,
+.ql-snow .ql-stroke,
+.ql-snow .ql-fill,
+.ql-snow .ql-picker-options {
+    color: var(--secondary-text) !important;
+    stroke: var(--secondary-text) !important;
+    fill: var(--secondary-text) !important;
+}
+/* Випадаючі списки */
+.ql-snow .ql-picker-options {
+    background-color: var(--card-color) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.ql-snow .ql-picker-item:hover {
+    color: var(--accent-red) !important;
+}
+.ql-snow .ql-picker-item.ql-selected {
+    color: var(--accent-red) !important;
+    font-weight: 600;
+}
+
+
+/* Ховер та активні стани кнопок */
+.ql-snow .ql-picker-label:hover,
+.ql-snow button:hover .ql-stroke,
+.ql-snow button:hover .ql-fill {
+    color: var(--text-color) !important;
+    stroke: var(--text-color) !important;
+    fill: var(--text-color) !important;
+}
+.ql-snow button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+.ql-snow button.ql-active,
+.ql-snow .ql-picker-label.ql-active {
+    background-color: rgba(153, 0, 0, 0.2) !important; /* Фон активної кнопки */
+    border-radius: 3px;
+}
+.ql-snow button.ql-active .ql-stroke,
+.ql-snow button.ql-active .ql-fill,
+.ql-snow .ql-picker-label.ql-active {
+    color: var(--text-color) !important;
+    stroke: var(--text-color) !important;
+    fill: var(--text-color) !important;
+}
+
+/* Стилі для контенту всередині Quill (важливо для відображення) */
+.ql-editor {
+    line-height: 1.7; /* Збільшено для кращої читабельності */
+    padding: 1rem 1.5rem !important; /* Внутрішні відступи */
+    word-wrap: break-word; /* Перенос довгих слів */
+    overflow-wrap: break-word; /* Перенос довгих слів */
+}
+.ql-editor h1, .ql-editor h2, .ql-editor h3 { font-family: 'Cormorant Garamond', serif; margin-bottom: 1rem; margin-top: 1.5rem; line-height: 1.3; font-weight: 700; color: var(--text-color); }
+.ql-editor p { margin-bottom: 1rem; }
+.ql-editor a { color: var(--accent-red); text-decoration: underline; }
+.ql-editor blockquote {
+    border-left: 3px solid var(--accent-red); margin: 1.5rem 0 1.5rem 1rem; /* Додано відступ зліва */
+    padding: 0.5rem 1rem 0.5rem 1.5rem; /* Змінено відступи */
+    font-style: italic; color: var(--secondary-text);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.ql-editor ul, .ql-editor ol { padding-left: 1.5em; margin-bottom: 1rem; }
+.ql-editor li { margin-bottom: 0.5rem; }
+.ql-editor pre {
+    background-color: #110d0e; /* Темний фон для коду */
+    color: #f8f8f2; /* Світлий текст коду */
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    font-family: monospace;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: pre-wrap; /* Дозволяє перенос коду */
+    word-wrap: break-word; /* Перенос довгих рядків коду */
+}
+/* Додамо стилі для зображень в редакторі */
+.ql-editor img {
+    max-width: 100%;
+    height: auto;
+    display: block; /* Щоб зображення були блочними */
+    margin: 1rem auto; /* Центрування зображень */
+    border-radius: var(--border-radius); /* Закруглення */
+}
+
+
+/* --- Дії редактора --- */
 .editor-actions {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-top: 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 2rem;
-}
-
-.action-left {
-    display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
 }
 
+.action-left,
 .action-right {
     display: flex;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
+/* --- Блок порад --- */
 .editor-tips {
-    background-color: rgba(153, 0, 0, 0.1);
-    border: 1px solid rgba(153, 0, 0, 0.2);
+    background-color: rgba(153, 0, 0, 0.05);
+    border: 1px solid rgba(153, 0, 0, 0.15);
+    border-left: 3px solid var(--accent-red);
     border-radius: var(--border-radius);
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -160,45 +325,58 @@
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
+    color: var(--text-color); /* Додано колір */
 }
 
 .editor-tips-title i {
-    margin-right: 0.5rem;
+    margin-right: 0.7rem;
     color: var(--accent-red);
+    font-size: 1.2em;
 }
 
 .editor-tips-list {
     list-style-type: none;
+    padding-left: 0;
+    color: var(--secondary-text);
 }
 
 .editor-tips-list li {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.7rem;
     position: relative;
-    padding-left: 1.5rem;
+    padding-left: 1.8rem;
+    line-height: 1.6;
+}
+.editor-tips-list li:last-child {
+    margin-bottom: 0;
 }
 
 .editor-tips-list li:before {
-    content: '•';
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
     color: var(--accent-red);
     position: absolute;
     left: 0;
-    top: 0;
+    top: 0.1em;
+    font-size: 0.9em;
 }
 
-/* Стилі для попереднього перегляду */
+/* --- Стилі для попереднього перегляду --- */
 .preview-container {
-    max-width: 800px;
-    margin: 0 auto;
     background-color: var(--card-color);
     border-radius: var(--border-radius);
     padding: 2rem;
     border: 1px solid rgba(153, 0, 0, 0.1);
+    margin-top: 2rem; /* Змінено з 2rem */
 }
 
 .preview-title {
     font-size: 2.5rem;
     font-family: 'Cormorant Garamond', serif;
     margin-bottom: 1rem;
+    line-height: 1.2;
+    color: var(--text-color); /* Додано колір */
+    word-wrap: break-word; /* Перенос довгих заголовків */
 }
 
 .preview-meta {
@@ -206,7 +384,8 @@
     color: var(--secondary-text);
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.9rem;
 }
 
 .preview-meta > div {
@@ -216,6 +395,8 @@
 
 .preview-meta i {
     margin-right: 0.5rem;
+    width: 1em;
+    text-align: center;
 }
 
 .preview-featured-image {
@@ -224,13 +405,41 @@
     object-fit: cover;
     border-radius: var(--border-radius);
     margin-bottom: 2rem;
+    display: block;
+    background-color: rgba(255, 255, 255, 0.05); /* Фон для плейсхолдера */
 }
 
 .preview-content {
     font-size: 1.1rem;
     line-height: 1.8;
     margin-bottom: 2rem;
+    word-wrap: break-word; /* Додано перенос слів */
+    overflow-wrap: break-word; /* Додано перенос слів */
+    /* Стилі для контенту Quill у режимі перегляду */
+    /* Переконуємось, що стилі тут відповідають .ql-editor */
 }
+.preview-content h1, .preview-content h2, .preview-content h3,
+.preview-content h4, .preview-content h5, .preview-content h6 {
+    font-family: 'Cormorant Garamond', serif; margin-bottom: 1rem; margin-top: 1.5rem; line-height: 1.3; font-weight: 700; color: var(--text-color);
+}
+.preview-content p { margin-bottom: 1rem; color: var(--text-color); } /* Основний колір для тексту */
+.preview-content a { color: var(--accent-red); text-decoration: underline; }
+.preview-content img { max-width: 100%; height: auto; border-radius: var(--border-radius); margin: 1rem auto; display: block; } /* Центрування */
+.preview-content blockquote {
+    border-left: 3px solid var(--accent-red); margin: 1.5rem 0 1.5rem 1rem;
+    padding: 0.5rem 1rem 0.5rem 1.5rem; font-style: italic; color: var(--secondary-text);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.preview-content ul, .preview-content ol { padding-left: 1.8rem; margin-bottom: 1rem; }
+.preview-content li { margin-bottom: 0.6rem; }
+.preview-content pre {
+    background-color: #110d0e; color: #f8f8f2; padding: 1rem;
+    border-radius: var(--border-radius); overflow-x: auto; font-family: monospace;
+    margin: 1.5rem 0; border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: pre-wrap; /* Дозволяє перенос коду */
+    word-wrap: break-word; /* Перенос довгих рядків коду */
+}
+
 
 .preview-tags {
     display: flex;
@@ -249,210 +458,99 @@
     font-size: 0.9rem;
 }
 
-/* Стилізація Select2 */
-.select2-container {
-    width: 100% !important;
-}
-
-.select2-container--default .select2-selection--multiple {
+/* --- Стилізація Select2 --- */
+/* Залишаємо ці стилі, бо Select2 все ще використовується для тегів */
+.select2-container { width: 100% !important; font-family: 'Montserrat', sans-serif; }
+.select2-container--default .select2-selection--multiple { /* Змінено тему на default */
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
     color: var(--text-color);
-    min-height: 3.4rem;
+    min-height: calc(1.5em + 2rem + 2px); /* Збільшено висоту */
+    padding: 0.5rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    cursor: text; /* Курсор як для тексту */
 }
-
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: rgba(153, 0, 0, 0.3);
+    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1);
+}
 .select2-container--default .select2-selection--multiple .select2-selection__choice {
     background-color: rgba(153, 0, 0, 0.2);
     border: 1px solid rgba(153, 0, 0, 0.3);
     border-radius: 20px;
     padding: 5px 10px;
     color: var(--text-color);
+    margin-right: 5px;
+    margin-top: 5px; /* Відступ зверху */
+    cursor: default; /* Стандартний курсор */
+    float: left; /* Щоб теги обтікали */
 }
-
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
     color: var(--secondary-text);
-    margin-right: 5px;
+    margin-right: 5px; cursor: pointer; float: right; /* Змінено на float: right */
+    margin-left: 5px; /* Додано відступ зліва */
+    font-weight: bold; /* Зробимо хрестик жирнішим */
 }
-
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
-    color: var(--text-color);
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover { color: var(--text-color); }
+.select2-container--default .select2-search--inline .select2-search__field {
+    color: var(--text-color); margin-top: 0.5rem; min-height: 2rem;
+    width: 100% !important; /* Щоб поле вводу займало весь доступний простір */
+    padding: 0.5rem 0; /* Додано падінг для висоти */
 }
-
+.select2-container--default .select2-search--inline .select2-search__field::placeholder { color: rgba(255, 255, 255, 0.4); }
+/* Контейнер випадаючого списку */
 .select2-dropdown {
-    background-color: var(--card-color);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--card-color); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); z-index: 1051; /* Вищий z-index */
+    margin-top: 2px; /* Невеликий відступ */
 }
-
+/* Поле пошуку у випадаючому списку */
 .select2-container--default .select2-search--dropdown .select2-search__field {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--text-color);
+    background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color); border-radius: var(--border-radius); padding: 0.5rem 1rem;
+    margin: 0.5rem; /* Відступи навколо поля пошуку */
+    width: calc(100% - 1rem); /* Ширина мінус відступи */
 }
-
+/* Опції */
 .select2-container--default .select2-results__option {
-    color: var(--text-color);
+    color: var(--secondary-text); padding: 0.8rem 1rem; transition: background-color 0.2s;
+}
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: rgba(153, 0, 0, 0.2); color: var(--text-color);
+}
+.select2-container--default .select2-results__option--selected {
+    background-color: rgba(153, 0, 0, 0.3); color: var(--text-color);
+}
+.select2-results__message { color: var(--secondary-text); padding: 0.8rem 1rem; }
+
+/* --- Додаткові класи для контенту редактора (залишаємо) --- */
+.editor-info-block {
+    background-color: rgba(153, 0, 0, 0.1); border-left: 3px solid var(--accent-red);
+    padding: 1.5rem; margin: 1.5rem 0; border-radius: var(--border-radius);
+}
+.editor-text-highlight {
+    background-color: rgba(var(--accent-gold-rgb), 0.2); color: var(--accent-gold);
+    padding: 0.1em 0.4em; border-radius: 3px; font-weight: 500;
 }
 
-.select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: rgba(153, 0, 0, 0.2);
-}
-
-/* Стилізація TinyMCE */
-.tox-tinymce {
-    border-radius: var(--border-radius) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.tox .tox-menubar {
-    background-color: var(--card-color) !important;
-}
-
-.tox .tox-toolbar__group {
-    background-color: var(--card-color) !important;
-}
-
-.tox .tox-toolbar,
-.tox .tox-toolbar__overflow,
-.tox .tox-toolbar__primary {
-    background-color: var(--card-color) !important;
-}
-
-.tox .tox-edit-area__iframe {
-    background-color: var(--card-color) !important;
-}
-
-.tox .tox-statusbar {
-    background-color: var(--card-color) !important;
-}
-
-/* Анімація завантаження */
-.loading-indicator {
-    display: inline-block;
-    position: relative;
-    width: 30px;
-    height: 30px;
-}
-
-.loading-indicator:after {
-    content: " ";
-    display: block;
-    width: 20px;
-    height: 20px;
-    margin: 5px;
-    border-radius: 50%;
-    border: 2px solid var(--accent-red);
-    border-color: var(--accent-red) transparent var(--accent-red) transparent;
-    animation: loading-indicator 1.2s linear infinite;
-}
-
-@keyframes loading-indicator {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-/* Responsiveness */
+/* --- Адаптивність --- */
 @media (max-width: 768px) {
-    .form-row {
-        flex-direction: column;
-        gap: 0;
-    }
-    
-    .editor-actions {
-        flex-direction: column-reverse;
-        gap: 1rem;
-    }
-    
-    .action-left,
-    .action-right {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .preview-meta {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
+    .editor-title { font-size: 2rem; }
+    .editor-subtitle { font-size: 1rem; }
 
-/* Темна тема для TinyMCE */
-.mce-content-body {
-    color: var(--text-color);
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.1rem;
-    line-height: 1.8;
-}
+    .form-row { flex-direction: column; gap: 0; margin-bottom: 0; } /* Змінено gap */
+    .form-row > .form-group { margin-bottom: 1.5rem; }
+    .form-row > .form-group:last-child { margin-bottom: 1.5rem; } /* Відступ однаковий */
 
-.mce-content-body p {
-    margin-bottom: 1.5rem;
-}
+    .editor-actions { flex-direction: column-reverse; gap: 1rem; align-items: stretch; } /* Змінено align */
+    .action-left, .action-right { width: 100%; justify-content: center; }
+    /* Кнопки займають доступну ширину */
+    .action-left .btn, .action-right .btn { flex-grow: 1; max-width: none; }
 
-.mce-content-body h1,
-.mce-content-body h2,
-.mce-content-body h3,
-.mce-content-body h4,
-.mce-content-body h5,
-.mce-content-body h6 {
-    font-family: 'Cormorant Garamond', serif;
-    margin-bottom: 1rem;
-}
-
-.mce-content-body a {
-    color: var(--accent-red);
-    text-decoration: none;
-}
-
-.mce-content-body a:hover {
-    text-decoration: underline;
-}
-
-.mce-content-body img {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--border-radius);
-}
-
-.mce-content-body blockquote {
-    border-left: 3px solid var(--accent-red);
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 1.5rem;
-    font-style: italic;
-}
-
-.mce-content-body table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-bottom: 1.5rem;
-}
-
-.mce-content-body table th,
-.mce-content-body table td {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.5rem;
-}
-
-.mce-content-body table th {
-    background-color: rgba(153, 0, 0, 0.2);
-    font-weight: 600;
-}
-
-/* Додаткові класи для красивих кольорових блоків у редакторі */
-.sexy-block {
-    background-color: rgba(153, 0, 0, 0.1);
-    border-left: 3px solid var(--accent-red);
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-    border-radius: var(--border-radius);
-}
-
-.sexy-highlight {
-    background-color: rgba(217, 164, 91, 0.2);
-    color: var(--accent-gold);
-    padding: 0 5px;
-    border-radius: 3px;
+    .preview-title { font-size: 2rem; }
+    .preview-meta { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .preview-content { font-size: 1rem; }
+    /* Зменшуємо висоту редактора на мобільних */
+    .ql-container.ql-snow { min-height: 250px; }
 }

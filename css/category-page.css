@@ -1,211 +1,250 @@
 /* css/category-page.css */
-/* Стилі для сторінки категорії */
+/* Стилі для сторінки конкретної категорії */
 
-/* Заголовок категорії */
+/* --- Заголовок категорії --- */
 .category-header {
-    position: relative;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    margin-bottom: 3rem;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    position: relative; /* Для позиціонування оверлею та контенту */
+    border-radius: var(--border-radius); /* Закруглення кутів */
+    overflow: hidden; /* Обрізаємо все, що виходить за межі */
+    margin-bottom: 3rem; /* Відступ знизу */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); /* Тінь для глибини */
 }
 
 .category-background {
-    height: 300px;
-    background-size: cover;
-    background-position: center;
-    position: relative;
+    height: 300px; /* Висота фонового зображення */
+    background-size: cover; /* Масштабування фону */
+    background-position: center; /* Центрування фону */
+    position: relative; /* Для псевдоелемента оверлею */
 }
 
 .category-overlay {
-    position: absolute;
+    position: absolute; /* Позиціонування поверх фону */
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    /* Градієнт для затемнення */
     background: linear-gradient(to bottom, rgba(15, 10, 12, 0.6) 0%, rgba(15, 10, 12, 0.9) 100%);
 }
 
 .category-content {
-    position: absolute;
+    position: absolute; /* Позиціонування поверх оверлею */
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 2rem;
-    color: var(--text-color);
+    padding: 2rem; /* Внутрішні відступи */
+    color: var(--text-color); /* Колір тексту */
 }
 
 .category-title {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    position: relative;
-    display: inline-block;
+    font-size: 3rem; /* Розмір заголовка */
+    margin-bottom: 1rem; /* Відступ під заголовком */
+    position: relative; /* Для псевдоелемента лінії */
+    display: inline-block; /* Щоб :after працював коректно */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт заголовка */
+    color: var(--text-color); /* Додано основний колір */
 }
 
+/* TODO: Уніфікувати стиль :after для заголовків у main.css */
 .category-title:after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -8px; /* Позиція лінії */
     left: 0;
-    width: 100px;
-    height: 3px;
-    background: var(--accent-red);
+    width: 100px; /* Ширина лінії */
+    height: 3px; /* Товщина лінії */
+    background: var(--accent-red); /* Колір лінії */
 }
 
 .category-description {
-    color: var(--secondary-text);
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
-    max-width: 800px;
-    line-height: 1.7;
+    color: var(--secondary-text); /* Колір опису */
+    font-size: 1.1rem; /* Розмір шрифту опису */
+    margin-bottom: 1.5rem; /* Відступ під описом */
+    max-width: 800px; /* Максимальна ширина */
+    line-height: 1.7; /* Міжрядковий інтервал */
 }
 
 .category-meta {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-between; /* Розміщення елементів по краях */
+    align-items: center; /* Вирівнювання по вертикалі */
+    flex-wrap: wrap; /* Дозволяє перенос на малих екранах */
+    gap: 1rem 1.5rem; /* Проміжки між елементами */
 }
 
 .category-stats {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.5rem; /* Проміжок між статистикою */
+    flex-wrap: wrap; /* Дозволяє перенос */
 }
 
 .category-stat {
     display: flex;
-    align-items: center;
-    color: var(--secondary-text);
-    font-size: 0.95rem;
+    align-items: center; /* Вирівнювання іконки та тексту */
+    color: var(--secondary-text); /* Колір тексту статистики */
+    font-size: 0.95rem; /* Розмір шрифту */
 }
 
 .category-stat i {
-    margin-right: 8px;
-    color: var(--accent-gold);
+    margin-right: 8px; /* Відступ від іконки */
+    color: var(--accent-gold); /* Колір іконки */
+    width: 1em; /* Фіксована ширина */
+    text-align: center; /* Центрування */
 }
 
 .category-actions {
     display: flex;
-    gap: 1rem;
+    gap: 1rem; /* Проміжок між кнопками */
+    flex-wrap: wrap; /* Дозволяє перенос */
 }
+/* Стилі для кнопок в .category-actions успадковуються з main.css (.btn, .btn-outline, .btn-primary) */
 
-/* Фільтри і сортування */
+
+/* --- Фільтри і сортування --- */
 .filters-section {
-    margin-bottom: 2rem;
+    margin-bottom: 2rem; /* Відступ під фільтрами */
 }
 
 .filters-container {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    overflow: hidden;
-    border: 1px solid rgba(153, 0, 0, 0.1);
-    background-image: var(--card-gradient);
+    overflow: hidden; /* Обрізаємо вміст при анімації */
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.1)); /* Рамка */
+    background-image: var(--card-gradient); /* Градієнт */
 }
 
 .filters-header {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.5rem; /* Внутрішні відступи */
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    justify-content: space-between; /* Розміщення елементів */
+    align-items: center; /* Вирівнювання */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Розділювач */
+    cursor: pointer; /* Робимо весь хедер клікабельним для розгортання */
 }
 
 .filter-summary {
-    font-weight: 500;
+    font-weight: 500; /* Напівжирний шрифт */
     color: var(--text-color);
 }
 
 .filter-count {
-    color: var(--secondary-text);
-    font-size: 0.9rem;
-    margin-left: 8px;
+    color: var(--secondary-text); /* Колір лічильника */
+    font-size: 0.9rem; /* Розмір шрифту */
+    margin-left: 8px; /* Відступ */
 }
 
 .btn-filter-toggle {
-    background: none;
-    border: none;
+    /* Стилі кнопки скинуто в main.css, додаємо специфічні */
     color: var(--secondary-text);
-    cursor: pointer;
     font-size: 0.95rem;
     display: flex;
     align-items: center;
     transition: color 0.3s;
+    background: none; /* Явно вказуємо */
+    border: none; /* Явно вказуємо */
+    padding: 0.5rem; /* Збільшуємо область кліку */
+    margin: -0.5rem; /* Компенсуємо падінг */
 }
 
 .btn-filter-toggle:hover {
-    color: var(--accent-red);
+    color: var(--accent-red); /* Колір при наведенні */
+}
+/* Доступність: стиль фокусу */
+.btn-filter-toggle:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 1px;
+    border-radius: 4px;
 }
 
-.btn-filter-toggle i {
+.btn-filter-toggle i:first-child { /* Іконка фільтра */
+    margin-right: 8px;
+}
+.btn-filter-toggle i:last-child { /* Іконка стрілки */
     margin-left: 8px;
+    transition: transform 0.3s; /* Анімація повороту */
+}
+/* Клас для повороту стрілки (керується Alpine.js) */
+.btn-filter-toggle i.rotate-180 {
+    transform: rotate(180deg);
 }
 
 .filters-body {
-    padding: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Додано, щоб з'являлося тільки при відкритті */
+    padding: 1.5rem; /* Відступи для тіла фільтрів */
+    /* border-top: 1px solid rgba(255, 255, 255, 0.05); - Прибрано, бо межа вже є у header */
+    /* Анімація розгортання керується Alpine.js (x-collapse) */
 }
 
 .filter-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.5rem; /* Відступ між групами фільтрів */
 }
 
 .filter-group:last-child {
-    margin-bottom: 0;
+    margin-bottom: 0; /* Прибираємо відступ у останньої групи */
 }
 
 .filter-label {
-    font-weight: 500;
-    margin-bottom: 0.8rem;
-    color: var(--accent-gold);
+    display: block; /* Робимо блочним */
+    font-weight: 500; /* Напівжирний шрифт */
+    margin-bottom: 0.8rem; /* Відступ під міткою */
+    color: var(--accent-gold); /* Акцентний колір */
 }
 
 .filter-options {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.8rem;
+    flex-wrap: wrap; /* Дозволяє переносити кнопки */
+    gap: 0.8rem; /* Проміжок між кнопками */
 }
 
 .filter-btn {
+    /* Базові стилі кнопки */
     padding: 0.5rem 1.2rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 30px;
-    color: var(--secondary-text);
+    border-radius: 30px; /* Закруглені краї */
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Стандартна рамка */
+    background-color: rgba(255, 255, 255, 0.05); /* Стандартний фон */
+    color: var(--secondary-text); /* Стандартний колір */
 }
 
 .filter-btn:hover {
-    background-color: rgba(153, 0, 0, 0.1);
-    border-color: rgba(153, 0, 0, 0.2);
-    color: var(--text-color);
+    background-color: rgba(153, 0, 0, 0.1); /* Фон при наведенні */
+    border-color: rgba(153, 0, 0, 0.2); /* Рамка при наведенні */
+    color: var(--text-color); /* Колір тексту при наведенні */
 }
 
 .filter-btn.active {
-    background-color: rgba(153, 0, 0, 0.2);
-    border-color: rgba(153, 0, 0, 0.3);
-    color: var(--text-color);
+    background-color: rgba(153, 0, 0, 0.2); /* Фон активної кнопки */
+    border-color: rgba(153, 0, 0, 0.3); /* Рамка активної кнопки */
+    color: var(--text-color); /* Колір тексту активної кнопки */
+    font-weight: 500; /* Напівжирний для активної */
+}
+/* Доступність: стиль фокусу для кнопок фільтра */
+.filter-btn:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
 }
 
-/* Список історій */
+
+/* --- Список історій --- */
 .stories-list {
     display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    margin-bottom: 3rem;
+    flex-direction: column; /* Історії розташовуються вертикально */
+    gap: 2rem; /* Проміжок між історіями */
+    margin-bottom: 3rem; /* Відступ знизу списку */
 }
 
 .story-item {
     background-color: var(--card-color);
     border-radius: var(--border-radius);
-    overflow: hidden;
-    display: flex;
-    border: 1px solid rgba(153, 0, 0, 0.05);
-    background-image: var(--card-gradient);
-    transition: all 0.5s;
+    overflow: hidden; /* Обрізаємо вміст */
+    display: flex; /* Горизонтальне розташування */
+    border: 1px solid var(--border-color-soft, rgba(153, 0, 0, 0.05)); /* Рамка */
+    background-image: var(--card-gradient); /* Градієнт */
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; /* Плавні переходи */
+    /* Стилі для анімації появи (керовані JS) */
     opacity: 0;
     transform: translateY(20px);
-    position: relative;
 }
 
 .story-item.visible { /* Клас для анімації */
@@ -214,134 +253,156 @@
 }
 
 .story-item:hover {
+    transform: translateY(-5px); /* Ефект підняття */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Тінь */
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2)); /* Зміна рамки */
+}
+/* Доступність: стиль фокусу */
+.story-item:focus-within,
+.story-item a:focus-visible {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    border-color: rgba(153, 0, 0, 0.2);
+    border-color: var(--border-color-medium, rgba(153, 0, 0, 0.2));
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+}
+.story-item:focus-within a:focus {
+    outline: none;
 }
 
+
 .story-preview {
-    width: 200px;
-    flex-shrink: 0;
-    position: relative;
-    overflow: hidden;
+    width: 200px; /* Ширина блоку з зображенням */
+    flex-shrink: 0; /* Заборона стискання */
+    position: relative; /* Для позиціонування бейджів */
+    overflow: hidden; /* Обрізаємо зображення */
 }
 
 .story-preview img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s;
+    object-fit: cover; /* Масштабування зображення */
+    transition: transform 0.5s ease; /* Плавний зум */
+    display: block; /* Прибираємо зайвий відступ */
 }
 
 .story-item:hover .story-preview img {
-    transform: scale(1.05);
+    transform: scale(1.05); /* Зум при наведенні */
 }
 
 .story-badge {
+    /* Стилі успадковуються з main.css */
     position: absolute;
     top: 1rem;
-    left: 1rem;
-    background-color: rgba(153, 0, 0, 0.8);
-    color: white;
-    padding: 0.3rem 0.8rem;
-    border-radius: 30px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    left: 1rem; /* Змінено на left */
     z-index: 1;
 }
 
 .story-badge.premium-badge {
-    background-color: var(--accent-gold);
-    color: #000;
+    background-color: var(--premium-gold); /* Колір для преміум */
+    color: #000; /* Колір тексту для преміум */
 }
 
 .story-rating {
-    position: absolute;
+    position: absolute; /* Позиціонування */
     bottom: 1rem;
     right: 1rem;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: var(--accent-gold);
-    padding: 0.3rem 0.8rem;
-    border-radius: 30px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    z-index: 1;
+    background-color: rgba(0, 0, 0, 0.7); /* Фон */
+    color: var(--accent-gold); /* Колір */
+    padding: 0.3rem 0.8rem; /* Відступи */
+    border-radius: 30px; /* Закруглення */
+    font-size: 0.8rem; /* Розмір шрифту */
+    font-weight: 600; /* Напівжирний */
+    z-index: 1; /* Перекриває зображення */
     display: flex;
-    align-items: center;
+    align-items: center; /* Вирівнювання */
 }
 
 .story-rating i {
-    margin-right: 5px;
+    margin-right: 5px; /* Відступ від іконки */
 }
 
 .story-details {
-    flex: 1;
-    padding: 1.5rem;
+    flex: 1; /* Займає доступний простір */
+    padding: 1.5rem; /* Внутрішні відступи */
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Вміст вертикально */
+    min-width: 0; /* Для правильного переносу тексту */
 }
 
 .story-meta {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.8rem;
+    justify-content: space-between; /* Розміщення елементів */
+    margin-bottom: 0.8rem; /* Відступ знизу */
+    flex-wrap: wrap; /* Дозволяє перенос */
+    gap: 0.5rem 1rem; /* Проміжки */
 }
 
 .story-category {
-    color: var(--accent-gold);
-    font-size: 0.9rem;
-    font-weight: 500;
+    color: var(--accent-gold); /* Колір категорії */
+    font-size: 0.9rem; /* Розмір шрифту */
+    font-weight: 500; /* Напівжирний */
+}
+.story-category a { /* Додаємо стиль для посилання */
+    color: inherit;
+    text-decoration: none;
+}
+.story-category a:hover {
+    text-decoration: underline;
 }
 
 .story-date {
-    color: var(--secondary-text);
-    font-size: 0.9rem;
+    color: var(--secondary-text); /* Колір дати */
+    font-size: 0.9rem; /* Розмір шрифту */
 }
 
 .story-title {
+    /* Стилі успадковуються з main.css */
     font-size: 1.5rem;
     margin-bottom: 1rem;
     line-height: 1.3;
 }
 
 .story-title a {
-    color: var(--text-color);
-    text-decoration: none;
-    transition: color 0.3s;
-}
-
-.story-title a:hover {
-    color: var(--accent-red);
+    /* Стилі успадковуються з main.css */
 }
 
 .story-excerpt {
+    /* Стилі успадковуються з main.css */
     color: var(--secondary-text);
     font-size: 0.95rem;
     line-height: 1.6;
     margin-bottom: 1.5rem;
-    flex: 1; /* Заповнює доступний простір */
+    flex-grow: 1; /* Займає доступний простір */
     /* Обмеження тексту */
     display: -webkit-box;
-    -webkit-line-clamp: 3; /* Кількість рядків */
+    -webkit-line-clamp: 3; /* Максимум 3 рядки */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-height: calc(1.6em * 3); /* Мінімальна висота для 3 рядків */
+    min-width: 0; /* Дозволяє тексту переноситись коректно */
 }
 
 .story-footer {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    justify-content: space-between; /* Розміщення елементів */
+    align-items: center; /* Вирівнювання */
+    padding-top: 1rem; /* Відступ зверху */
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Розділювач */
+    margin-top: auto; /* Притискає до низу */
+    flex-wrap: wrap; /* Дозволяє перенос */
+    gap: 1rem; /* Проміжок */
 }
 
 .story-stats {
     display: flex;
-    gap: 1.5rem;
+    gap: 1.5rem; /* Проміжок між статистикою */
+    flex-wrap: wrap; /* Дозволяє перенос */
 }
 
 .story-stat {
+    /* Стилі успадковуються з main.css */
     display: flex;
     align-items: center;
     color: var(--secondary-text);
@@ -354,97 +415,169 @@
 
 .story-author {
     display: flex;
-    align-items: center;
+    align-items: center; /* Вирівнювання */
 }
 
+/* Стиль .author-avatar успадковується з main.css */
 .author-avatar {
-    margin-right: 0.8rem;
+    width: 35px; /* Менший розмір аватара тут */
+    height: 35px;
+    margin-right: 0.8rem; /* Відступ */
 }
 
 .author-name {
-    color: var(--text-color);
-    font-size: 0.9rem;
-    font-weight: 500;
+    color: var(--text-color); /* Колір імені */
+    font-size: 0.9rem; /* Розмір шрифту */
+    font-weight: 500; /* Напівжирний */
+}
+.author-name a { /* Додаємо стиль для посилання */
+    color: inherit;
+    text-decoration: none;
+}
+.author-name a:hover {
+    text-decoration: underline;
+    color: var(--accent-red);
 }
 
-/* Преміум-оверлей */
+
+/* --- Преміум-оверлей --- */
 .premium-overlay {
-    position: absolute;
+    position: absolute; /* Позиціонування поверх картки */
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(10, 5, 7, 0.8);
+    background-color: rgba(10, 5, 7, 0.8); /* Затемнення */
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    z-index: 10; /* Вище за контент картки */
     opacity: 0; /* Приховано за замовчуванням */
-    transition: opacity 0.3s;
+    pointer-events: none; /* Не перехоплює кліки, коли приховано */
+    transition: opacity 0.3s ease; /* Плавна поява */
 }
 
 .story-item:hover .premium-overlay {
     opacity: 1; /* З'являється при наведенні */
+    pointer-events: auto; /* Дозволяє клікати на кнопку */
 }
 
 .premium-content {
-    text-align: center;
-    padding: 2rem;
+    text-align: center; /* Центрування вмісту */
+    padding: 2rem; /* Відступи */
 }
 
-.premium-content i {
-    font-size: 2.5rem;
-    color: var(--accent-gold);
-    margin-bottom: 1rem;
+.premium-content i.fa-crown { /* Додав .fa-crown для специфічності */
+    font-size: 2.5rem; /* Розмір іконки */
+    color: var(--premium-gold); /* Колір іконки */
+    margin-bottom: 1rem; /* Відступ */
 }
 
 .premium-text {
-    font-size: 1.5rem;
-    font-family: 'Cormorant Garamond', serif;
-    margin-bottom: 1.5rem;
-    color: var(--accent-gold);
+    font-size: 1.5rem; /* Розмір тексту */
+    font-family: 'Cormorant Garamond', serif; /* Шрифт */
+    margin-bottom: 1.5rem; /* Відступ */
+    color: var(--premium-gold); /* Колір */
 }
 
 .btn-premium {
-    background: linear-gradient(135deg, var(--accent-gold) 0%, #a67c3f 100%);
-    color: #000;
-    font-weight: 600;
-    padding: 0.8rem 1.5rem;
-    border-radius: var(--button-radius);
+    /* Стилі кнопки преміум */
+    display: inline-flex; /* Використовуємо flex для вирівнювання */
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.5rem; /* Розмір */
+    border-radius: var(--button-radius); /* Закруглення */
     text-decoration: none;
-    display: inline-block;
-    transition: all 0.3s;
+    font-weight: 600; /* Жирний шрифт */
+    background: linear-gradient(135deg, var(--premium-gold) 0%, var(--premium-gold-dark) 100%); /* Градієнт */
+    color: #000; /* Колір тексту */
+    transition: transform 0.3s, box-shadow 0.3s; /* Плавні переходи */
+    border: none; /* Прибираємо рамку */
 }
 
 .btn-premium:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(166, 124, 63, 0.3);
+    transform: translateY(-3px); /* Ефект підняття */
+    box-shadow: 0 10px 20px rgba(var(--accent-gold-rgb), 0.3); /* Тінь */
+    text-decoration: none; /* Прибираємо підкреслення */
+}
+/* Доступність: стиль фокусу */
+.btn-premium:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Уніфіковано */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.4);
 }
 
-/* Адаптивність */
+
+/* --- Адаптивність --- */
 @media (max-width: 992px) {
     .category-title {
-        font-size: 2.5rem;
+        font-size: 2.5rem; /* Зменшуємо заголовок категорії */
     }
 
     .story-item {
-        flex-direction: column;
+        flex-direction: column; /* Картка історії стає вертикальною */
     }
 
     .story-preview {
-        width: 100%;
-        height: 200px;
+        width: 100%; /* Зображення на всю ширину */
+        height: 200px; /* Фіксована висота */
+    }
+    .story-details {
+        padding: 1.2rem; /* Зменшуємо відступи */
     }
 }
 
 @media (max-width: 768px) {
+    .category-header {
+        margin-bottom: 2rem; /* Зменшуємо відступ */
+    }
+    .category-background {
+        height: 250px; /* Зменшуємо висоту фону */
+    }
+    .category-content {
+        padding: 1.5rem; /* Зменшуємо відступи */
+    }
+    .category-title {
+        font-size: 2rem; /* Ще зменшуємо заголовок */
+    }
+    .category-description {
+        font-size: 1rem; /* Зменшуємо опис */
+    }
     .category-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        /* Залишаємо flex-wrap, gap вже адаптує */
+    }
+    .category-actions {
+        width: 100%; /* Кнопки займають всю ширину */
+        justify-content: center; /* Центруємо кнопки */
+    }
+    .category-actions .btn {
+        flex-grow: 1; /* Кнопки розтягуються */
+        max-width: 200px; /* Обмеження ширини */
     }
 
-    .category-stats {
-        flex-wrap: wrap;
+    .filters-header {
+        flex-direction: column; /* Елементи хедера фільтрів вертикально */
+        align-items: flex-start; /* Вирівнювання по лівому краю */
+        gap: 0.5rem; /* Менший проміжок */
+    }
+    .btn-filter-toggle {
+        align-self: flex-end; /* Кнопку розгортання вправо */
+    }
+
+    .story-title {
+        font-size: 1.3rem; /* Зменшуємо заголовок історії */
+    }
+    .story-excerpt {
+        font-size: 0.9rem; /* Зменшуємо текст */
+        -webkit-line-clamp: 2; /* Менше рядків */
+        min-height: calc(1.6em * 2);
+    }
+    .story-footer {
+        flex-direction: column; /* Футер картки вертикально */
+        align-items: flex-start; /* Вирівнювання по лівому краю */
+        gap: 0.8rem;
+    }
+    .story-author {
+        margin-top: 0.5rem; /* Додаємо відступ */
     }
 }

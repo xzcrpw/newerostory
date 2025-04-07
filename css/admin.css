@@ -1,0 +1,339 @@
+/* css/admin.css */
+
+/* --- Загальний макет адмінки --- */
+body.admin-page {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-color); /* Фон як на сайті */
+}
+
+.admin-sidebar {
+    width: 260px; /* Ширина бічної панелі */
+    background-color: var(--card-color); /* Темніший фон */
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    position: fixed; /* Фіксована панель */
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 100;
+    overflow-y: auto; /* Додаємо скрол, якщо багато пунктів */
+    border-right: 1px solid var(--border-color-soft);
+    scrollbar-width: thin; /* Тонкий скролбар для Firefox */
+    scrollbar-color: var(--accent-red) rgba(255, 255, 255, 0.05); /* Кольори скролбару */
+}
+/* Стилізація скролбару для Webkit (Chrome, Safari) */
+.admin-sidebar::-webkit-scrollbar { width: 6px; }
+.admin-sidebar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+.admin-sidebar::-webkit-scrollbar-thumb { background-color: var(--accent-red); border-radius: 10px; }
+
+.admin-content {
+    margin-left: 260px; /* Відступ зліва, рівний ширині сайдбару */
+    padding: 2rem 3rem; /* Внутрішні відступи */
+    flex-grow: 1; /* Займає решту простору */
+    background-color: var(--bg-color); /* Основний фон контенту */
+    min-width: 0; /* Для правильної роботи flex/grid всередині */
+}
+
+/* Логотип в сайдбарі */
+.admin-logo {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.admin-logo a {
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text-color);
+    text-decoration: none;
+}
+.admin-logo span {
+    color: var(--accent-red);
+}
+
+/* Навігація в сайдбарі */
+.admin-nav {
+    margin-top: 1rem;
+    flex-grow: 1; /* Щоб навігація займала доступний простір */
+}
+.admin-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.admin-nav li {
+    margin-bottom: 0.5rem;
+}
+.admin-nav a {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-radius: var(--border-radius);
+    color: var(--secondary-text);
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.admin-nav a i {
+    margin-right: 1rem;
+    width: 20px; /* Фіксована ширина іконки */
+    text-align: center;
+    font-size: 1.1em; /* Трохи більша іконка */
+}
+.admin-nav a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+}
+.admin-nav a.active {
+    background-color: rgba(var(--accent-red-rgb), 0.15); /* Акцентний фон */
+    color: var(--accent-red); /* Акцентний колір */
+    font-weight: 600;
+}
+.admin-nav a.active i {
+    color: var(--accent-red);
+}
+/* Стиль фокусу для посилань навігації */
+.admin-nav a:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: -2px; /* Внутрішній контур */
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-color);
+}
+
+
+/* Заголовок сторінки в адмінці */
+.admin-page-title {
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color-soft);
+    padding-bottom: 1rem;
+    color: var(--text-color); /* Додано колір */
+}
+
+/* Секції контенту */
+.admin-section {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color-soft);
+}
+.admin-section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent-gold);
+    font-family: 'Cormorant Garamond', serif; /* Додано шрифт */
+}
+
+/* Стилі для карток статистики (Дашборд) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+.stat-card {
+    background-color: rgba(255, 255, 255, 0.03); /* Трохи світліший фон */
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-width: 0; /* Додано */
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+.stat-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(var(--accent-red-rgb), 0.15);
+    color: var(--accent-red);
+}
+.stat-info {
+    min-width: 0; /* Для переносу тексту */
+}
+.stat-info .stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    display: block;
+    line-height: 1.1;
+    color: var(--text-color);
+    white-space: nowrap; /* Щоб значення не переносилось */
+    overflow: hidden; /* Обрізаємо, якщо занадто довге */
+    text-overflow: ellipsis; /* Додаємо три крапки */
+}
+.stat-info .stat-label {
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+}
+
+/* Стилі для таблиць */
+.admin-table-wrapper {
+    overflow-x: auto; /* Дозволяє горизонтальний скрол для таблиці */
+}
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+}
+.admin-table th,
+.admin-table td {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color-soft);
+    vertical-align: middle; /* Вирівнювання по центру */
+    white-space: nowrap; /* За замовчуванням текст не переноситься */
+}
+/* Дозволяємо перенос для певних колонок */
+.admin-table td.wrap {
+    white-space: normal;
+    min-width: 150px; /* Мінімальна ширина для переносу */
+}
+.admin-table th {
+    background-color: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: var(--secondary-text);
+}
+.admin-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.admin-table td {
+    font-size: 0.95rem;
+}
+/* Стилі для дій в таблиці */
+.admin-table .actions {
+    display: flex;
+    gap: 0.5rem;
+}
+.admin-table .actions .btn-icon {
+    padding: 0.4rem 0.6rem; /* Менші кнопки */
+    font-size: 0.9rem;
+    border-radius: var(--border-radius); /* Звичайне заокруглення */
+    border: 1px solid transparent; /* Додано для консистентності */
+    background-color: rgba(255, 255, 255, 0.05); /* Додано фон */
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+.admin-table .actions .btn-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+/* Використовуємо базовий стиль .btn-outline для консистентності */
+.admin-table .actions .btn-icon {
+    /* Властивості, що перекривають .btn-outline */
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    border-radius: var(--border-radius);
+}
+/* Кольори для конкретних дій */
+.admin-table .actions .btn-icon.edit { color: var(--accent-gold); }
+.admin-table .actions .btn-icon.edit:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+.admin-table .actions .btn-icon.delete { color: #ff6b6b; }
+.admin-table .actions .btn-icon.delete:hover { border-color: #ff6b6b; color: #ff6b6b; }
+.admin-table .actions .btn-icon.approve { color: #4cd964; }
+.admin-table .actions .btn-icon.approve:hover { border-color: #4cd964; color: #4cd964; }
+.admin-table .actions .btn-icon.reject { color: #ff9500; }
+.admin-table .actions .btn-icon.reject:hover { border-color: #ff9500; color: #ff9500; }
+
+/* Статуси в таблиці */
+.status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--border-radius-round);
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    display: inline-block; /* Додано для коректного відображення */
+}
+.status-pending { background-color: rgba(255, 149, 0, 0.2); color: #ff9500; }
+.status-published, .status-approved, .status-resolved, .status-active { background-color: rgba(76, 217, 100, 0.2); color: #4cd964; }
+.status-rejected, .status-inactive { background-color: rgba(255, 50, 50, 0.2); color: #ff6b6b; }
+.status-draft { background-color: rgba(142, 142, 147, 0.2); color: #8e8e93; }
+.status-in_progress { background-color: rgba(50, 173, 230, 0.2); color: #32ade6; }
+.status-new { background-color: rgba(88, 86, 214, 0.2); color: #5856d6; }
+
+/* Аватар в таблиці */
+.table-avatar {
+    width: 35px; height: 35px; border-radius: 50%; object-fit: cover;
+    vertical-align: middle; margin-right: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1); /* Placeholder color */
+    flex-shrink: 0; /* Щоб не стискався */
+}
+
+/* Пагінація для адмінки */
+.admin-pagination {
+    margin-top: 2rem; /* Відступ над пагінацією */
+    /* Використовуємо стилі з main.css */
+}
+
+/* Стилі для заглушок нових секцій */
+.placeholder-section {
+    padding: 3rem;
+    text-align: center;
+    color: var(--secondary-text);
+    font-style: italic;
+    border: 1px dashed var(--border-color-soft);
+    border-radius: var(--border-radius);
+}
+
+/* Адаптивність для адмінки */
+@media (max-width: 992px) {
+    .admin-sidebar {
+        width: 220px; /* Зменшуємо сайдбар */
+    }
+    .admin-content {
+        margin-left: 220px;
+        padding: 1.5rem 2rem; /* Зменшуємо падінги */
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-page {
+        flex-direction: column; /* Вертикальний макет */
+    }
+    .admin-sidebar {
+        position: static; /* Не фіксована */
+        width: 100%; /* На всю ширину */
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color-soft);
+        padding: 1rem;
+    }
+    .admin-logo { margin-bottom: 1.5rem; padding-bottom: 1rem; }
+    .admin-nav { margin-top: 0; }
+    .admin-nav ul { display: flex; overflow-x: auto; gap: 0.5rem; padding-bottom: 0.5rem; } /* Горизонтальний скрол */
+    .admin-nav li { margin-bottom: 0; }
+    .admin-nav a { padding: 0.6rem 1rem; white-space: nowrap; }
+    .admin-nav a i { margin-right: 0.5rem; }
+
+    .admin-content {
+        margin-left: 0; /* Немає відступу */
+        padding: 1.5rem;
+    }
+    .admin-page-title { font-size: 1.8rem; margin-bottom: 1.5rem; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .stat-card { padding: 1rem; }
+    .stat-icon { width: 40px; height: 40px; font-size: 1.5rem; }
+    .stat-info .stat-value { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+    .admin-content { padding: 1rem; }
+    .admin-section { padding: 1.5rem; }
+    .admin-table th, .admin-table td { padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+    .admin-table .actions { gap: 0.3rem; } /* Зменшуємо gap */
+    .admin-table .actions .btn-icon { padding: 0.3rem 0.5rem; font-size: 0.8rem; }
+    .stats-grid { grid-template-columns: 1fr; } /* Одна картка на рядок */
+}

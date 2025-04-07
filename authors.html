@@ -1,109 +1,5 @@
 <!DOCTYPE html>
-<!-- Додано :lang -->
-<html lang="uk" x-data :lang="$store.i18n.selectedLang">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Title використовує i18n -->
-  <title x-text="`${$store.i18n.t('general.authors')} — ${$store.i18n.t('general.copyright')}`"></title>
-
-  <!-- Мета-теги використовують i18n -->
-  <meta name="description" :content="$store.i18n.t('authorsPage.metaDescription') || 'Знайдіть талановитих авторів еротичних історій на сайті Таємний Світ. Читайте їхні твори та стежте за новими публікаціями.'">
-  <meta property="og:title" :content="`${$store.i18n.t('general.authors')} — ${$store.i18n.t('general.copyright')}`">
-  <meta property="og:description" :content="$store.i18n.t('authorsPage.metaDescription') || 'Знайдіть талановитих авторів еротичних історій на сайті Таємний Світ.'">
-  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?writing,author">
-  <meta property="og:type" content="website">
-
-  <!-- Шрифти -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
-
-  <!-- Internationalization -->
-  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
-
-  <!-- Alpine.js -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-  <!-- API Config & Utils -->
-  <script src="js/api-config.js" defer></script>
-  <script src="js/api-utils.js" defer></script>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/authors.css">
-
-  <style>
-    /* Стилі для завантаження/помилок/порожнього стану */
-    .loading-indicator { text-align: center; padding: 2rem; color: var(--secondary-text); }
-    .error-message {
-      background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3);
-      border-radius: var(--border-radius); padding: 1rem; margin: 1.5rem 0;
-      color: #ff6b6b; font-size: 0.9rem; display: flex; align-items: center;
-    }
-    .error-message i { margin-right: 8px; }
-    /* Стиль кнопки Retry в повідомленні про помилку */
-    .error-message button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
-    .empty-state {
-      text-align: center; padding: 3rem; background-color: var(--card-color);
-      border-radius: var(--border-radius); margin: 2rem 0; color: var(--secondary-text);
-      grid-column: 1 / -1; /* Щоб займало всю ширину сітки, якщо вона є */
-    }
-    .empty-state .highlight-query { font-weight: 600; color: var(--accent-gold); }
-    /* Анімація */
-    .author-card { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
-    .author-card.visible { opacity: 1; transform: translateY(0); }
-    /* Стиль для кнопки "Стежу" */
-    .btn-follow.following {
-      background-color: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.3);
-      color: var(--secondary-text);
-    }
-    .btn-follow.following:hover {
-      background-color: rgba(153, 0, 0, 0.1);
-      border-color: rgba(153, 0, 0, 0.2);
-      color: var(--text-color); /* Колір тексту при наведенні на "Стежу" */
-    }
-    /* Стиль для кнопки під час обробки */
-    button.removing { 
-      opacity: 0.7; 
-      pointer-events: none; 
-      position: relative;
-    }
-    button.removing::before {
-      content: '\f110'; 
-      font-family: 'Font Awesome 6 Free'; 
-      font-weight: 900;
-      display: inline-block; 
-      animation: spin 1s linear infinite; 
-      margin-right: 5px;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    button.removing > span {
-      visibility: hidden;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    /* Сповіщення */
-    .notification {
-      position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-      background-color: var(--card-color); color: var(--text-color);
-      padding: 1rem 1.5rem; border-radius: var(--border-radius);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
-      opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
-      min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
-    }
-    .notification.show { opacity: 1; bottom: 20px; }
-    /* Класи для success/error сповіщень (приклад) */
-    .notification.success { border-left: 4px solid #4cd964; }
-    .notification.error { border-left: 4px solid #ff6b6b; }
-  </style>
-</head>
-<body x-data="{
+<html lang="uk" x-data="{
     // --- Стани UI ---
     authors: [],
     isLoading: true,
@@ -111,314 +7,303 @@
     currentPage: 1,
     totalPages: 1,
     totalAuthors: 0,
-    currentSort: 'rating', // 'rating', 'stories', 'followers' - Сортування за замовчуванням
+    currentSort: 'rating', // Сортування за замовчуванням
     searchQuery: '',
     showSortMenu: false,
     isLoggedIn: false,
-    userId: null, // Додано для перевірки кнопки стеження за собою
-    followedAuthorIds: [], // Масив ID авторів, за якими стежить поточний користувач
-    notificationVisible: false, // Для сповіщень
-    notificationMessage: '', // Для сповіщень
-    notificationTimeout: null, // Для сповіщень
+    userId: null, // ID поточного користувача
+    followedAuthorIds: [], // Масив ID авторів, за якими стежить користувач
+    processingFollow: {}, // Об'єкт для відстеження стану обробки для кожної кнопки
+    notificationVisible: false,
+    notificationMessage: '',
+    notificationType: 'success',
+    notificationTimeout: null,
 
     // --- Мапа сортувань для API ---
     sortOptionsMap: {
-        rating: '-stats.averageRating', // Припускаємо, що статистика вкладена
-        stories: '-stats.storyCount',
-        followers: '-stats.followersCount'
+        rating: '-stats.averageRating', // Виправлено: сортуємо за полем статистики
+        stories: '-stats.storyCount',   // Виправлено
+        followers: '-stats.followersCount' // Виправлено
     },
 
-    // --- Функція для показу сповіщень ---
+    // --- Безпечний доступ до i18n ---
+    safeT(key, params = {}, fallback = '') {
+        try {
+            if (typeof $store !== 'undefined' && $store.i18n?.initialized) {
+                const translation = $store.i18n.t(key, params);
+                return (translation && translation !== key && translation.trim() !== '') ? translation : fallback;
+            }
+            if (Object.keys(params).length > 0 && typeof fallback === 'string') {
+                return Object.keys(params).reduce((str, pKey) => str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), params[pKey]), fallback);
+            }
+            return fallback;
+        } catch (error) { console.warn(`safeT error for key: ${key}`, error); return fallback; }
+    },
+
+    // --- Сповіщення ---
     showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
         const notificationElement = document.getElementById('global-notification');
         if (notificationElement) {
-            notificationElement.classList.toggle('success', isSuccess);
-            notificationElement.classList.toggle('error', !isSuccess);
-            notificationElement.classList.add('show'); // Додаємо клас show для відображення
+            notificationElement.classList.remove('success', 'error');
+            notificationElement.classList.add(this.notificationType);
+            notificationElement.classList.add('show');
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { 
-            this.notificationVisible = false; 
-            // Забезпечуємо, що елемент ще існує, перед видаленням класу
-            const notificationEl = document.getElementById('global-notification');
-            if (notificationEl) {
-                notificationEl.classList.remove('show');
-            }
+        this.notificationTimeout = setTimeout(() => {
+            this.notificationVisible = false;
+            const el = document.getElementById('global-notification');
+            if (el) el.classList.remove('show');
         }, 3000);
     },
 
     // --- Завантаження авторів ---
     async fetchAuthors() {
-        this.isLoading = true;
-        this.error = null;
-
+        this.isLoading = true; this.error = null;
         try {
             const params = {
                 page: this.currentPage,
-                limit: 12, // Кількість авторів на сторінку
-                sort: this.sortOptionsMap[this.currentSort] || '-stats.averageRating',
-                // Додаємо мову як параметр, якщо API це підтримує
-                // lang: $store.i18n.selectedLang
+                limit: 12,
+                sort: this.sortOptionsMap[this.currentSort] || '-stats.averageRating', // Виправлено дефолтне сортування
+                lang: $store.i18n.selectedLang || 'uk'
             };
             if (this.searchQuery.trim()) {
-                params.search = this.searchQuery.trim(); // Додаємо параметр пошуку
+                params.search = this.searchQuery.trim(); // Використовуємо параметр search
             }
 
-            console.log('Simulating API call: getAuthors with params:', params);
-            await new Promise(resolve => setTimeout(resolve, 550)); // Симуляція
+            console.log('API CALL: api.authors.getAuthors with params:', params);
+            // --- TODO: Замінити на реальний виклик api.authors.getAuthors ---
+            // const response = await api.authors.getAuthors(params);
+            // this.authors = response.data || [];
+            // this.currentPage = response.pagination?.currentPage || 1;
+            // this.totalPages = response.pagination?.totalPages || 1;
+            // this.totalAuthors = response.pagination?.totalResults || 0;
+             // --- Симуляція відповіді ---
+             await new Promise(resolve => setTimeout(resolve, 550));
+             const totalSimulated = 40;
+             this.totalPages = Math.ceil(totalSimulated / params.limit);
+             this.totalAuthors = totalSimulated;
+              this.authors = Array.from({ length: params.limit }, (_, i) => {
+                  const authorNum = (this.currentPage - 1) * params.limit + i + 1;
+                  if (authorNum > totalSimulated) return null;
+                  const name = `${this.safeT('general.authorLabel')} ${params.search || ''} ${authorNum}`;
+                  if (params.search && !name.toLowerCase().includes(params.search.toLowerCase())) { return null; }
+                  return {
+                      _id: `author_${authorNum}`, name: name,
+                      avatarUrl: `https://source.unsplash.com/random/100x100/?profile,person,${authorNum}`,
+                      bio: `${this.safeT('authorsPage.simulatedBioPrefix')} ${authorNum}. ${this.safeT('authorsPage.simulatedBioSuffix')}`,
+                      stats: { storyCount: Math.floor(Math.random() * 50) + 1, averageRating: (Math.random() * 1.5 + 3.5).toFixed(1), followersCount: Math.floor(Math.random() * 1000) }
+                  };
+              }).filter(author => author !== null);
+              if (params.search) {
+                  this.totalAuthors = this.authors.length + (this.currentPage === 1 && this.authors.length === params.limit ? 5 : 0);
+                  this.totalPages = Math.ceil(this.totalAuthors / params.limit);
+              }
+              if (this.currentPage > this.totalPages && this.totalPages > 0) this.currentPage = this.totalPages > 0 ? this.totalPages : 1;
+              if (this.authors.length === 0 && this.currentPage > 1) { this.currentPage--; await this.fetchAuthors(); return; }
+             // --- Кінець симуляції ---
 
-            // --- Симуляція відповіді API ---
-            const totalSimulated = 40; // Загальна кількість авторів
-            this.totalPages = Math.ceil(totalSimulated / params.limit);
-            this.totalAuthors = totalSimulated;
-             // Генеруємо фіктивних авторів
-             this.authors = Array.from({ length: params.limit }, (_, i) => {
-                 const authorNum = (this.currentPage - 1) * params.limit + i + 1;
-                 if (authorNum > totalSimulated) return null;
-                 const name = `${$store.i18n.t('general.authorLabel') || 'Автор'} ${params.search || ''} ${authorNum}`;
-                 if (params.search && !name.toLowerCase().includes(params.search.toLowerCase())) { return null; }
-                 return {
-                     _id: `author_${authorNum}`, name: name,
-                     avatarUrl: `https://source.unsplash.com/random/100x100/?profile,person,${authorNum}`,
-                     bio: `${$store.i18n.t('authorsPage.simulatedBioPrefix') || 'Коротка біографія автора'} ${authorNum}. ${$store.i18n.t('authorsPage.simulatedBioSuffix') || 'Пишу про пристрасть та несподівані зустрічі.'}`,
-                     stats: { storyCount: Math.floor(Math.random() * 50) + 1, averageRating: (Math.random() * 1.5 + 3.5).toFixed(1), followersCount: Math.floor(Math.random() * 1000) }
-                 };
-             }).filter(author => author !== null);
-             // Коригування для симуляції пошуку
-             if (params.search) {
-                 this.totalAuthors = this.authors.length + (this.currentPage === 1 && this.authors.length === params.limit ? 5 : 0);
-                 this.totalPages = Math.ceil(this.totalAuthors / params.limit);
-             }
-             if (this.currentPage > this.totalPages) this.currentPage = this.totalPages > 0 ? this.totalPages : 1;
-             if (this.authors.length === 0 && this.currentPage > 1) { this.currentPage--; await this.fetchAuthors(); return; }
-            // --- Кінець симуляції ---
-
-            // Завантажуємо підписки, якщо потрібно
             if (this.isLoggedIn && this.followedAuthorIds.length === 0) {
-                 await this.fetchFollowedAuthors();
+                 await this.fetchFollowedAuthors(); // Завантажуємо підписки, якщо ще не завантажені
             }
              this.$nextTick(() => this.initCardAnimation());
 
         } catch (error) {
-            this.error = error.message || $store.i18n.t('authorsPage.errorLoadingAuthors'); // i18n
+            this.error = error.message || this.safeT('authorsPage.errorLoadingAuthors');
             console.error('Authors fetch error:', error);
         } finally {
             this.isLoading = false;
-            // Перевіряємо чи елемент ще в DOM перед анімацією
-            if (this.$el && this.$el.isConnected) {
-                this.$nextTick(() => this.initCardAnimation());
-            }
         }
     },
 
     // --- Завантаження списку підписок користувача ---
     async fetchFollowedAuthors() {
         if (!this.isLoggedIn) return;
-        console.log('Simulating API call: getFollowing');
         try {
-            await new Promise(resolve => setTimeout(resolve, 300));
-             // Симуляція
-             this.followedAuthorIds = Array.from({ length: Math.min(this.totalAuthors, 12) }, (_, i) => `author_${i + 1}`)
-                                          .filter((_, index) => (index + 1) % 5 === 0); // Симулюємо підписку на кожного 5-го
-             console.log('Followed authors IDs (simulated):', this.followedAuthorIds);
+            console.log('API CALL: api.users.getFollowing({ fields: \'_id\' })'); // Запитуємо тільки ID
+            const response = await api.users.getFollowing({ fields: '_id', limit: 500 }); // Завантажуємо більше ID, якщо їх багато
+            this.followedAuthorIds = response.data?.map(author => author._id) || [];
+            console.log('Followed authors IDs loaded:', this.followedAuthorIds.length);
         } catch(error) {
             console.error('Failed to fetch followed authors:', error);
-            // Не показуємо помилку користувачу, щоб не заважати основній функції
+             this.followedAuthorIds = []; // Скидаємо при помилці
         }
     },
 
     // --- Керування сортуванням/пошуком ---
-    setSort(sort) {
-        if (this.isLoading || this.currentSort === sort) { this.showSortMenu = false; return; }
-        this.currentSort = sort; this.showSortMenu = false; this.currentPage = 1; this.fetchAuthors();
-    },
+    setSort(sort) { if (this.isLoading || this.currentSort === sort) { this.showSortMenu = false; return; } this.currentSort = sort; this.showSortMenu = false; this.currentPage = 1; this.fetchAuthors(); },
     toggleSortMenu() { this.showSortMenu = !this.showSortMenu; },
     closeSortMenu() { this.showSortMenu = false; },
-    submitSearch() {
-        this.currentPage = 1; this.fetchAuthors();
-        console.log('Searching authors for:', this.searchQuery);
-        // Скрол до результатів (якщо потрібно)
-        this.$nextTick(() => { document.querySelector('.authors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-    },
+    submitSearch() { this.currentPage = 1; this.fetchAuthors(); console.log('Searching authors for:', this.searchQuery); this.$nextTick(() => { document.querySelector('.authors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
 
     // --- Пагінація ---
-    nextPage() {
-        if (this.isLoading || this.currentPage >= this.totalPages) return;
-        this.currentPage++; this.fetchAuthors();
-        this.$nextTick(() => { document.querySelector('.authors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-    },
-    prevPage() {
-        if (this.isLoading || this.currentPage <= 1) return;
-        this.currentPage--; this.fetchAuthors();
-        this.$nextTick(() => { document.querySelector('.authors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-    },
+    nextPage() { if (this.isLoading || this.currentPage >= this.totalPages) return; this.currentPage++; this.fetchAuthors(); this.$nextTick(() => { document.querySelector('.authors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
+    prevPage() { if (this.isLoading || this.currentPage <= 1) return; this.currentPage--; this.fetchAuthors(); this.$nextTick(() => { document.querySelector('.authors-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); },
 
     // --- Підписка/Відписка ---
     async toggleFollow(authorId, event) {
-        // Перевіряємо чи користувач авторизований і перенаправляємо на логін, якщо ні
-        if (!this.isLoggedIn) { 
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); 
-            return; 
-        }
-        if (!authorId) return;
-        
-        // Знаходимо елемент кнопки і додаємо клас для індикації завантаження
-        const button = event?.currentTarget;
-        if (button) button.classList.add('removing');
-        
-        // Зберігаємо поточний стан підписки для відкочування у разі помилки
-        const isCurrentlyFollowing = this.followedAuthorIds.includes(authorId);
+        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+        if (!authorId || this.processingFollow[authorId]) return; // Запобігаємо подвійним клікам
+
+        this.processingFollow[authorId] = true; // Встановлюємо прапорець обробки для конкретної кнопки
+        const isCurrentlyFollowing = this.isFollowing(authorId);
         const authorIndex = this.authors.findIndex(a => a._id === authorId);
-        const originalFollowersCount = authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined 
-            ? this.authors[authorIndex].stats.followersCount 
-            : 0;
-        
+        const originalFollowersCount = authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined ? this.authors[authorIndex].stats.followersCount : 0;
+        const authorName = authorIndex !== -1 ? this.authors[authorIndex].name : '';
+
         // Оптимістичне оновлення UI
         if (isCurrentlyFollowing) {
             this.followedAuthorIds = this.followedAuthorIds.filter(id => id !== authorId);
-            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
-                this.authors[authorIndex].stats.followersCount = Math.max(0, this.authors[authorIndex].stats.followersCount - 1);
-            }
+            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) this.authors[authorIndex].stats.followersCount = Math.max(0, originalFollowersCount - 1);
         } else {
             this.followedAuthorIds.push(authorId);
-            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
-                this.authors[authorIndex].stats.followersCount++;
-            }
+            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) this.authors[authorIndex].stats.followersCount++;
         }
-        
+
         try {
-            console.log(`Simulating API call: toggleFollow(${authorId})`);
-            await new Promise(resolve => setTimeout(resolve, 450));
-            // await api.users.toggleFollow(authorId); // Реальний виклик
-            
-            // Використовуємо i18n для сповіщення, з перевіркою наявності імені автора
-            this.showNotification(
-                isCurrentlyFollowing
-                    ? $store.i18n.t('notifications.unfollowingAuthor', { name: (authorIndex !== -1 ? this.authors[authorIndex]?.name : '') || '' })
-                    : $store.i18n.t('notifications.followingAuthor', { name: (authorIndex !== -1 ? this.authors[authorIndex]?.name : '') || '' }),
-                true // isSuccess = true
-            );
+            console.log(`API CALL: api.users.toggleFollow(${authorId})`);
+            await api.users.toggleFollow(authorId); // Реальний виклик API
+            this.showNotification( isCurrentlyFollowing ? this.safeT('notifications.unfollowingAuthor', { name: authorName }) : this.safeT('notifications.followingAuthor', { name: authorName }), true );
         } catch (error) {
             console.error('Toggle follow error:', error);
-            
-            // Відкат UI
-            if (isCurrentlyFollowing) {
-                if (!this.followedAuthorIds.includes(authorId)) this.followedAuthorIds.push(authorId);
-                if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
-                    this.authors[authorIndex].stats.followersCount = originalFollowersCount;
-                }
-            } else {
-                this.followedAuthorIds = this.followedAuthorIds.filter(id => id !== authorId);
-                if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) {
-                    this.authors[authorIndex].stats.followersCount = originalFollowersCount;
-                }
-            }
-            
-            // Використовуємо i18n для сповіщення про помилку
-            this.showNotification(
-                $store.i18n.t('story.errorTogglingFollow') + ': ' + 
-                (error.message || $store.i18n.t('general.unknownError')), 
-                false
-            );
+            // Відкат UI при помилці
+            if (isCurrentlyFollowing) { if (!this.followedAuthorIds.includes(authorId)) this.followedAuthorIds.push(authorId); }
+            else { this.followedAuthorIds = this.followedAuthorIds.filter(id => id !== authorId); }
+            if (authorIndex !== -1 && this.authors[authorIndex].stats?.followersCount !== undefined) this.authors[authorIndex].stats.followersCount = originalFollowersCount;
+            this.showNotification( this.safeT('story.errorTogglingFollow') + ': ' + (error.message || this.safeT('general.unknownError')), false );
         } finally {
-            // Видаляємо індикатор завантаження
-            if (button) button.classList.remove('removing');
+            this.processingFollow[authorId] = false; // Знімаємо прапорець обробки
         }
     },
-     // --- Перевірка підписки ---
-     isFollowing(authorId) { return this.followedAuthorIds.includes(authorId); },
+    isFollowing(authorId) { return this.followedAuthorIds.includes(authorId); },
 
     // --- Анімація карток ---
     initCardAnimation() {
-        // Перевірка підтримки IntersectionObserver
-        if (!('IntersectionObserver' in window)) {
-            // Якщо браузер не підтримує IntersectionObserver, 
-            // просто показуємо всі картки одразу
-            this.$el.querySelectorAll('.author-card').forEach(card => {
-                card.classList.add('visible');
-            });
-            return;
-        }
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1 });
-        
-        // Шукаємо картки в межах поточного елемента Alpine.js
-        this.$el.querySelectorAll('.author-card:not(.visible)').forEach(card => {
-            observer.observe(card);
-        });
-    }
-
+        try {
+            if (!('IntersectionObserver' in window)) { this.$el.querySelectorAll('.author-card').forEach(card => card.classList.add('visible')); return; }
+            if (this.authorCardObserver) this.authorCardObserver.disconnect();
+            this.authorCardObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); this.authorCardObserver.unobserve(entry.target); } });
+            }, { threshold: 0.1 });
+            this.$nextTick(() => { this.$el.querySelectorAll('.author-card:not(.visible)').forEach(card => this.authorCardObserver.observe(card)); });
+        } catch(e) { console.warn('Intersection Observer error:', e); document.querySelectorAll('.author-card').forEach(card => card.classList.add('visible')); }
+    },
+    // --- Метод для виходу ---
+    async logoutUser() {
+         try {
+             console.log('Attempting logout...');
+             if (typeof api !== 'undefined' && api.auth && typeof api.auth.logout === 'function') {
+                 api.auth.logout();
+                 this.isLoggedIn = false; this.userId = null; this.followedAuthorIds = []; // Очищаємо підписки
+                 this.showNotification(this.safeT('notifications.logoutSuccess', {}, 'Вихід успішний!'), true);
+                 // Можливо, оновити список авторів, якщо відображення залежить від статусу підписки
+                 // this.fetchAuthors();
+             } else { throw new Error('API logout function is not available.'); }
+         } catch (error) {
+             console.error('Logout error:', error);
+             this.showNotification(this.safeT('auth.logoutError', {}, 'Помилка при виході з системи.'), false);
+         }
+    },
 }" x-init="
-    try {
-        isLoggedIn = api.utils.isAuthenticated();
-        userId = api.utils.getUserId(); // Зберігаємо ID поточного користувача
-    } catch(e) {
-        console.error('Error during initialization:', e);
-        isLoggedIn = false;
-        userId = null;
-    }
-    fetchAuthors(); // Завантажуємо авторів (і підписки, якщо залогінений і масив порожній)
-">
+    // Ініціалізація
+    $nextTick(async () => {
+        let waitCount = 0;
+        while ((typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) && waitCount < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100)); waitCount++;
+        }
+        if (typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) {
+            console.error('API or i18n failed to initialize!');
+            error = 'Помилка завантаження сторінки.'; isLoading = false; return;
+        }
+        try {
+            isLoggedIn = api.utils.isAuthenticated();
+            userId = api.utils.getUserId();
+            if(isLoggedIn) await fetchFollowedAuthors(); // Завантажуємо підписки, якщо залогінені
+        } catch(e) { console.error('Auth/Following check error:', e); isLoggedIn = false; userId = null; }
+        await fetchAuthors(); // Завантажуємо авторів
+         // Відслідковуємо зміни мови
+         $watch('$store.i18n.selectedLang', (newLang, oldLang) => {
+            if (newLang !== oldLang) {
+                console.log(`Language changed to ${newLang} on authors page. Reloading authors.`);
+                fetchAuthors();
+            }
+        });
+    });
+" :lang="$store.i18n.selectedLang">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title x-text="`${safeT('general.authors', 'Автори')} — ${safeT('general.copyright', 'Таємний Світ')}`"></title>
+  <meta name="description" :content="safeT('authorsPage.metaDescription', 'Знайдіть талановитих авторів еротичних історій.')">
+  <meta property="og:title" :content="`${safeT('general.authors', 'Автори')} — ${safeT('general.copyright', 'Таємний Світ')}`">
+  <meta property="og:description" :content="safeT('authorsPage.metaDescription', 'Знайдіть талановитих авторів еротичних історій.')">
+  <meta property="og:image" content="https://source.unsplash.com/random/1200x630/?writing,author">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+  <script type="module" src="js/i18n.js" defer></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/authors.css">
+  <style>
+    .loading-indicator { text-align: center; padding: 2rem; color: var(--secondary-text); }
+    .error-message { background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3); border-radius: var(--border-radius); padding: 1rem; margin: 1.5rem 0; color: #ff6b6b; font-size: 0.9rem; display: flex; align-items: center; grid-column: 1 / -1; }
+    .error-message i { margin-right: 8px; }
+    .error-message button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+    .empty-state { text-align: center; padding: 3rem; background-color: var(--card-color); border-radius: var(--border-radius); margin: 2rem 0; color: var(--secondary-text); grid-column: 1 / -1; }
+    .empty-state .highlight-query { font-weight: 600; color: var(--accent-gold); }
+    .author-card { opacity: 0; transform: translateY(20px); transition: opacity 0.5s, transform 0.5s; }
+    .author-card.visible { opacity: 1; transform: translateY(0); }
+    .btn-follow.following { background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); color: var(--secondary-text); }
+    .btn-follow.following:hover { background-color: rgba(153, 0, 0, 0.1); border-color: rgba(153, 0, 0, 0.2); color: var(--text-color); }
+    button.removing { opacity: 0.7; pointer-events: none; position: relative; }
+    button.removing > span { visibility: hidden; }
+    button.removing::after { content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900; display: inline-block; animation: spin 1s linear infinite; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 1em; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .notification { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%) translateY(150%); background-color: var(--card-color); color: var(--text-color); padding: 1rem 1.5rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1050; opacity: 0; transition: opacity 0.3s ease-out, transform 0.4s ease-out; min-width: 250px; max-width: 90%; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); border-left-width: 4px; pointer-events: none; }
+    .notification.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .notification.success { border-left-color: #4cd964; }
+    .notification.error { border-left-color: #ff6b6b; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body x-cloak> <!-- x-data перенесено на html -->
 
 <!-- Хедер -->
 <header>
   <div class="container">
     <nav class="navbar">
       <a href="index.html" class="logo" aria-label="На головну">
-        <span x-text="$store.i18n?.t('general.siteNamePart1') || 'Таємний'"></span><span style="color: var(--accent-red);" x-text="$store.i18n?.t('general.siteNamePart2') || 'Світ'"></span>
+        <span x-text="safeT('general.siteNamePart1', 'Таємний')"></span><span style="color: var(--accent-red);" x-text="safeT('general.siteNamePart2', 'Світ')"></span>
       </a>
-      <!-- Навігація з i18n -->
       <ul class="nav-links">
-        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        <li><a href="index.html" x-text="safeT('general.home', 'Головна')"></a></li>
+        <li><a href="new-stories.html" x-text="safeT('general.newStories', 'Нові історії')"></a></li>
+        <li><a href="top-stories.html" x-text="safeT('general.topStories', 'Топ рейтинг')"></a></li>
+        <li><a href="categories.html" x-text="safeT('general.categories', 'Категорії')"></a></li>
+        <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li>
       </ul>
       <div class="auth-buttons">
         <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
-            <!-- Безпечний доступ до selectedLang -->
             <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
-          <!-- Перевіряємо наявність $store.i18n -->
           <template x-if="$store?.i18n">
             <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
-              <!-- Безпечний доступ до available та ітерація -->
               <template x-for="lang in $store.i18n.available || []" :key="lang.code">
                 <div class="lang-dropdown-item"
                      :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                     @click="
-                 const newLang = lang.code;
-                 open = false;
-                 try {
-                     // Виклик setLanguage всередині try...catch
-                     $store.i18n.setLanguage(newLang);
-                     console.log('Language set to:', newLang);
-                 } catch(e) {
-                     console.error('Error setting language:', e);
-                     // Можна додати сповіщення для користувача тут
-                 }
-              "
-                     role="menuitemradio"
-                     :aria-checked="lang.code === $store.i18n.selectedLang"
-                     tabindex="0"
-                     @keydown.enter.space.prevent="
-                 const newLang = lang.code;
-                 open = false;
-                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
-              ">
+                     @click="const newLang=lang.code; open=false; try{ $store.i18n.setLanguage(newLang); }catch(e){console.error('Lang switch error',e);}"
+                     role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                     @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{ $store.i18n.setLanguage(newLang); }catch(e){console.error('Lang switch error',e);}">
                   <span x-text="lang.name"></span>
                   <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
                 </div>
@@ -429,21 +314,15 @@
         <!-- Кнопки входу/профілю -->
         <template x-if="!isLoggedIn">
           <div>
-            <a href="login.html" class="btn btn-outline">
-              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
-            </a>
-            <a href="login.html?tab=register" class="btn btn-primary">
-              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
-            </a>
+            <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="safeT('general.login', 'Увійти')"></span> </a>
+            <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="safeT('general.register', 'Реєстрація')"></span> </a>
           </div>
         </template>
         <template x-if="isLoggedIn">
           <div>
-            <a href="profile.html" class="btn btn-outline">
-              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
-            </a>
-            <a href="#" @click.prevent="api.auth.logout(); isLoggedIn = false; window.location.reload();" class="btn btn-primary">
-              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="safeT('general.profile', 'Профіль')"></span> </a>
+            <a href="#" @click.prevent="logoutUser()" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout', 'Вийти')"></span>
             </a>
           </div>
         </template>
@@ -456,83 +335,84 @@
 <main class="container" @click.away="closeSortMenu()">
   <!-- Хлібні крихти -->
   <div class="breadcrumbs">
-    <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+    <a href="index.html" x-text="safeT('general.home', 'Головна')"></a>
     <span class="separator">/</span>
-    <span class="current" x-text="$store.i18n.t('general.authors')"></span>
+    <span class="current" x-text="safeT('general.authors', 'Автори')"></span>
   </div>
 
   <!-- Заголовок -->
   <div class="authors-header">
-    <h1 class="authors-title" x-text="$store.i18n.t('authorsPage.title')"></h1>
-    <p class="authors-description" x-text="$store.i18n.t('authorsPage.description')"></p>
+    <h1 class="authors-title" x-text="safeT('authorsPage.title', 'Автори')"></h1>
+    <p class="authors-description" x-text="safeT('authorsPage.description', 'Відкрийте талановитих авторів.')"></p>
   </div>
 
   <!-- Пошук та сортування -->
-  <div class="filter-bar">
+  <div class="filter-bar"> <!-- Використовуємо клас з main.css/new-stories.css -->
     <div class="search-authors">
       <form @submit.prevent="submitSearch()">
-        <input type="text" x-model="searchQuery" @keydown.enter="submitSearch()" :placeholder="$store.i18n.t('authorsPage.searchPlaceholder')" class="search-input" :aria-label="$store.i18n.t('authorsPage.searchPlaceholder')">
-        <button type="submit" class="search-button" :aria-label="$store.i18n.t('general.search')"><i class="fas fa-search"></i></button>
+        <input type="search" x-model="searchQuery" @input.debounce.500ms="submitSearch()" :placeholder="safeT('authorsPage.searchPlaceholder', 'Пошук автора...')" class="search-input" :aria-label="safeT('authorsPage.searchPlaceholder', 'Пошук автора...')">
+        <button type="submit" class="search-button" :aria-label="safeT('general.search')"><i class="fas fa-search"></i></button>
       </form>
     </div>
-    <div class="sort-authors">
-      <div class="sort-dropdown">
-        <div class="sort-button" @click="toggleSortMenu()" role="button" tabindex="0" @keydown.enter="toggleSortMenu()">
-            <span>
-                <!-- Використовуємо динамічний ключ i18n -->
-                <span x-text="$store.i18n.t('authorsPage.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1))"></span>
-            </span>
-          <i class="fas fa-chevron-down" :class="{ 'open': showSortMenu }"></i>
+    <div class="sort-authors"> <!-- Контейнер для сортування -->
+      <div class="sort-dropdown"> <!-- Використовуємо клас з main.css -->
+        <div class="sort-button" @click="toggleSortMenu()" role="button" tabindex="0" @keydown.enter.space.prevent="toggleSortMenu()" aria-haspopup="listbox" :aria-expanded="showSortMenu">
+          <span> <span x-text="safeT('authorsPage.sortBy' + currentSort.charAt(0).toUpperCase() + currentSort.slice(1), 'Сортування')"></span> </span>
+          <i class="fas fa-chevron-down" :class="{ 'open': showSortMenu }" aria-hidden="true"></i>
         </div>
-        <div class="sort-menu" x-show="showSortMenu" x-transition>
-          <div class="sort-option" :class="{ 'active': currentSort === 'rating' }" @click="setSort('rating')"><i class="fas fa-star"></i> <span x-text="$store.i18n.t('authorsPage.sortByRating')"></span></div>
-          <div class="sort-option" :class="{ 'active': currentSort === 'stories' }" @click="setSort('stories')"><i class="fas fa-book"></i> <span x-text="$store.i18n.t('authorsPage.sortByStories')"></span></div>
-          <div class="sort-option" :class="{ 'active': currentSort === 'followers' }" @click="setSort('followers')"><i class="fas fa-users"></i> <span x-text="$store.i18n.t('authorsPage.sortByFollowers')"></span></div>
+        <div class="sort-menu" x-show="showSortMenu" x-transition role="listbox">
+          <div class="sort-option" :class="{ 'active': currentSort === 'rating' }" @click="setSort('rating')" role="option" :aria-selected="currentSort === 'rating'" tabindex="0" @keydown.enter.space.prevent="setSort('rating')"><i class="fas fa-star"></i> <span x-text="safeT('authorsPage.sortByRating', 'За рейтингом')"></span></div>
+          <div class="sort-option" :class="{ 'active': currentSort === 'stories' }" @click="setSort('stories')" role="option" :aria-selected="currentSort === 'stories'" tabindex="0" @keydown.enter.space.prevent="setSort('stories')"><i class="fas fa-book"></i> <span x-text="safeT('authorsPage.sortByStories', 'За кількістю історій')"></span></div>
+          <div class="sort-option" :class="{ 'active': currentSort === 'followers' }" @click="setSort('followers')" role="option" :aria-selected="currentSort === 'followers'" tabindex="0" @keydown.enter.space.prevent="setSort('followers')"><i class="fas fa-users"></i> <span x-text="safeT('authorsPage.sortByFollowers', 'За підписниками')"></span></div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Індикатор завантаження / Помилка / Список авторів -->
-  <div x-show="isLoading" class="loading-indicator" x-text="$store.i18n.t('authorsPage.loadingAuthors')"></div>
+  <div x-show="isLoading" class="loading-indicator" x-text="safeT('authorsPage.loadingAuthors', 'Завантаження авторів...')"></div>
   <div x-show="error" class="error-message">
     <i class="fas fa-exclamation-circle"></i> <span x-text="error"></span>
-    <button @click="fetchAuthors()" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+    <button @click="fetchAuthors()" class="btn btn-outline" x-text="safeT('general.retryButton', 'Повторити')"></button>
   </div>
 
   <div class="authors-grid" x-show="!isLoading && authors.length > 0">
     <template x-for="author in authors" :key="author._id">
-      <div class="author-card">
+      <div class="author-card"> <!-- Анімація додається через JS -->
         <a :href="`author-profile.html?id=${author._id}`" class="author-avatar-link">
-          <div class="author-avatar" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile'}')`" role="img" :aria-label="`${$store.i18n.t('story.avatarOf') || 'Аватар'} ${author.name}`"></div>
+          <div class="author-avatar" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/100x100/?profile,placeholder'}')`" role="img" :aria-label="`${safeT('general.avatarOf', 'Аватар')} ${author.name}`"></div>
         </a>
         <div class="author-info">
           <h3 class="author-name"><a :href="`author-profile.html?id=${author._id}`" x-text="author.name"></a></h3>
           <div class="author-stats">
-            <div class="author-stat" :title="$store.i18n.t('authorsPage.storiesSuffix')"><i class="fas fa-book"></i> <span x-text="author.stats?.storyCount || 0"></span></div>
-            <div class="author-stat" :title="$store.i18n.t('general.ratingLabel')"><i class="fas fa-star"></i> <span x-text="(author.stats?.averageRating || 0).toFixed(1)"></span></div>
-            <div class="author-stat" :title="$store.i18n.t('authorsPage.followersSuffix')"><i class="fas fa-users"></i> <span x-text="author.stats?.followersCount || 0"></span></div>
+            <div class="author-stat" :title="safeT('authorsPage.storiesSuffix', 'історій')"><i class="fas fa-book"></i> <span x-text="author.stats?.storyCount || 0"></span></div>
+            <div class="author-stat" :title="safeT('general.ratingLabel', 'Рейтинг')"><i class="fas fa-star"></i> <span x-text="(author.stats?.averageRating || 0).toFixed(1)"></span></div>
+            <div class="author-stat" :title="safeT('authorsPage.followersSuffix', 'Підписників')"><i class="fas fa-users"></i> <span x-text="author.stats?.followersCount || 0"></span></div>
           </div>
-          <p class="author-bio" x-text="author.bio || $store.i18n.t('authorsPage.bioMissing')"></p>
+          <p class="author-bio" x-text="author.bio || safeT('authorsPage.bioMissing', 'Біографія відсутня')"></p>
         </div>
-        <!-- Кнопка стеження -->
-        <template x-if="isLoggedIn && userId !== author._id">
-          <button
-                  type="button"
-                  class="btn btn-follow"
-                  :class="isFollowing(author._id) ? 'btn-outline following' : 'btn-primary'"
-                  @click="toggleFollow(author._id, $event)"
-                  :aria-label="isFollowing(author._id) ? $store.i18n.t('authorsPage.unfollowAction') : $store.i18n.t('authorsPage.followAction')"
-          >
-            <span x-text="isFollowing(author._id) ? $store.i18n.t('authorsPage.unfollowAction') : $store.i18n.t('authorsPage.followAction')"></span>
-          </button>
-        </template>
-        <template x-if="!isLoggedIn">
-          <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-primary btn-follow" x-text="$store.i18n.t('authorsPage.followAction')"></a>
-        </template>
-        <!-- Кнопка редагування свого профілю -->
+        <!-- Кнопка стеження/редагування -->
         <template x-if="isLoggedIn && userId === author._id">
-          <a :href="'profile.html'" class="btn btn-outline btn-follow" x-text="$store.i18n.t('profile.editProfile')"></a>
+          <a :href="'profile.html'" class="btn btn-outline btn-follow" x-text="safeT('profile.editProfile', 'Редагувати')"></a>
+        </template>
+        <template x-else>
+          <template x-if="isLoggedIn">
+            <button
+                    type="button"
+                    class="btn btn-follow"
+                    :class="[isFollowing(author._id) ? 'btn-outline following' : 'btn-primary', { 'removing': processingFollow[author._id] }]"
+                    @click="toggleFollow(author._id, $event)"
+                    :disabled="processingFollow[author._id]"
+                    :aria-label="isFollowing(author._id) ? safeT('authorsPage.unfollowAction', 'Стежу') : safeT('authorsPage.followAction', 'Стежити')"
+                    :aria-live="processingFollow[author._id] ? 'polite' : 'off'"
+            >
+              <span x-text="isFollowing(author._id) ? safeT('authorsPage.unfollowAction', 'Стежу') : safeT('authorsPage.followAction', 'Стежити')"></span>
+              <!-- Спінер з'явиться завдяки класу 'removing' -->
+            </button>
+          </template>
+          <template x-if="!isLoggedIn">
+            <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-primary btn-follow" x-text="safeT('authorsPage.followAction', 'Стежити')"></a>
+          </template>
         </template>
       </div>
     </template>
@@ -540,21 +420,20 @@
 
   <!-- Стан, коли автори не знайдені -->
   <div x-show="!isLoading && authors.length === 0 && !error" class="empty-state">
-    <span x-show="!searchQuery.trim()" x-text="$store.i18n.t('authorsPage.noAuthorsAvailable')"></span>
-    <!-- Використовуємо x-html для вставки значення пошуку, якщо ключ це підтримує -->
-    <span x-show="searchQuery.trim()" x-html="$store.i18n.t('authorsPage.noAuthorsFound', { query: `<span class='highlight-query'>${searchQuery}</span>` }) || `Авторів за запитом \'${searchQuery}\' не знайдено.`"></span>
+    <span x-show="!searchQuery.trim()" x-text="safeT('authorsPage.noAuthorsAvailable', 'Автори відсутні.')"></span>
+    <span x-show="searchQuery.trim()" x-html="safeT('authorsPage.noAuthorsFound', { query: `<span class='highlight-query'>${searchQuery}</span>` }) || `Авторів за запитом '${searchQuery}' не знайдено.`"></span>
   </div>
 
 
   <!-- Пагінація -->
   <div class="pagination" x-show="!isLoading && totalPages > 1">
-    <button @click="prevPage()" :disabled="currentPage === 1" class="pagination-button prev-button">
-      <i class="fas fa-chevron-left"></i> <span x-text="$store.i18n.t('general.previous')"></span>
+    <button @click="prevPage()" :disabled="currentPage === 1 || isLoading" class="pagination-button prev-button">
+      <i class="fas fa-chevron-left"></i> <span x-text="safeT('general.previous', 'Попередня')"></span>
     </button>
-    <div class="pagination-info" x-html="$store.i18n.t('authorsPage.pageInfo', { currentPage: `<span class='current-page'>${currentPage}</span>`, totalPages: `<span class='total-pages'>${totalPages}</span>`, totalAuthors: totalAuthors }) || `Сторінка <span class='current-page'>${currentPage}</span> з <span class='total-pages'>${totalPages}</span> (${totalAuthors} авторів)`">
+    <div class="pagination-info" x-html="safeT('authorsPage.pageInfo', { currentPage: `<span class='current-page'>${currentPage}</span>`, totalPages: `<span class='total-pages'>${totalPages}</span>`, totalAuthors: totalAuthors }) || `Сторінка ${currentPage} з ${totalPages} (${totalAuthors} авторів)`">
     </div>
-    <button @click="nextPage()" :disabled="currentPage === totalPages" class="pagination-button next-button">
-      <span x-text="$store.i18n.t('general.next')"></span> <i class="fas fa-chevron-right"></i>
+    <button @click="nextPage()" :disabled="currentPage === totalPages || isLoading" class="pagination-button next-button">
+      <span x-text="safeT('general.next', 'Наступна')"></span> <i class="fas fa-chevron-right"></i>
     </button>
   </div>
 </main>
@@ -562,67 +441,51 @@
 <!-- Footer -->
 <footer>
   <div class="container">
-    <!-- Код футера як у index.html -->
+    <!-- Код футера з i18n -->
     <div class="footer-content">
-      <div class="footer-section footer-about">
-        <h4 x-text="$store.i18n.t('general.about')"></h4>
-        <p x-text="$store.i18n.t('general.aboutText')"></p>
-        <div class="social-links">
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
-          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
-        </div>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
-        <ul>
-          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.support')"></h4>
-        <ul>
-          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.join')"></h4>
-        <ul>
-          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
-        </ul>
-      </div>
+      <div class="footer-section footer-about"> <h4 x-text="safeT('general.about')"></h4> <p x-text="safeT('general.aboutText')"></p> <div class="social-links"> <a href="#" class="social-link" :title="safeT('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a> <a href="#" class="social-link" :title="safeT('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a> <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a> </div> </div>
+      <div class="footer-section"> <h4 x-text="safeT('general.navigation')"></h4> <ul> <li><a href="index.html" x-text="safeT('general.home')"></a></li> <li><a href="categories.html" x-text="safeT('general.categories')"></a></li> <li><a href="new-stories.html" x-text="safeT('general.newStories')"></a></li> <li><a href="top-stories.html" x-text="safeT('general.topStories')"></a></li> <li><a href="authors.html" x-text="safeT('general.authors')"></a></li> </ul> </div>
+      <div class="footer-section"> <h4 x-text="safeT('general.support')"></h4> <ul> <li><a href="faq.html" x-text="safeT('faq.title')"></a></li> <li><a href="contact.html" x-text="safeT('contact.title')"></a></li> <li><a href="terms-page.html" x-text="safeT('general.terms')"></a></li> <li><a href="privacy-policy.html" x-text="safeT('general.privacy')"></a></li> </ul> </div>
+      <div class="footer-section"> <h4 x-text="safeT('general.join')"></h4> <ul> <li><a href="login.html" x-text="safeT('general.login')"></a></li> <li><a href="login.html?tab=register" x-text="safeT('general.register')"></a></li> <li><a href="premium.html" x-text="safeT('general.premium')"></a></li> <li><a href="create_story.html" x-text="safeT('createStory.title')"></a></li> </ul> </div>
     </div>
-    <div class="footer-bottom">
-      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
-    </div>
+    <div class="footer-bottom"> © <span x-text="new Date().getFullYear()"></span> <span x-text="safeT('general.copyright')"></span>. <span x-text="safeT('general.allRightsReserved')"></span>. 18+ <br> <a href="terms-page.html" x-text="safeT('general.terms')"></a> | <a href="privacy-policy.html" x-text="safeT('general.privacy')"></a> </div>
   </div>
 </footer>
 
 <!-- Елемент сповіщення -->
 <div x-show="notificationVisible"
      x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 transform translate-y-2"
-     x-transition:enter-end="opacity-100 transform translate-y-0"
+     x-transition:enter-start="opacity-0 translate-y-2"
+     x-transition:enter-end="opacity-100 translate-y-0"
      x-transition:leave="transition ease-in duration-300"
-     x-transition:leave-start="opacity-100 transform translate-y-0"
+     x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
-     :class="{ 'show': notificationVisible, 'success': true, 'error': false }"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
      style="display: none;"
-     id="global-notification">
+     id="global-notification"
+     role="alert"
+     aria-live="assertive">
   <span x-text="notificationMessage"></span>
 </div>
+
+<!-- Кнопка Нагору -->
+<button id="back-to-top"
+        @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+        x-data="{ isVisible: false }"
+        x-init="window.addEventListener('scroll', () => { isVisible = window.scrollY > 300 })"
+        x-show="isVisible"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-y-2"
+        x-transition:enter-end="opacity-80 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-80 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform translate-y-2"
+        :aria-label="safeT('backToTop', {}, 'На початок сторінки')"
+        :title="safeT('backToTop', {}, 'На початок сторінки')"
+        class="back-to-top">
+  <i class="fas fa-arrow-up"></i>
+</button>
 
 </body>
 </html>

@@ -1,472 +1,257 @@
+<!-- START OF FILE faq.html -->
 <!DOCTYPE html>
-<!-- Додано x-data та :lang -->
-<html lang="uk" x-data :lang="$store.i18n.selectedLang">
+<html lang="uk" :lang="$store.i18n?.selectedLang || 'uk'">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Title використовує i18n -->
-  <title x-text="`${$store.i18n.t('faq.title')} — ${$store.i18n.t('general.copyright')}`"></title>
-
-  <!-- Мета-теги використовують i18n -->
-  <meta name="description" :content="$store.i18n.t('faq.metaDescription')">
-  <meta property="og:title" :content="`${$store.i18n.t('faq.title')} — ${$store.i18n.t('general.copyright')}`">
-  <meta property="og:description" :content="$store.i18n.t('faq.metaDescription')">
+  <!-- Використовуємо x-data на title, щоб отримати доступ до store -->
+  <title x-data x-text="`${Alpine.store('i18n')?.t('faq.title') || 'Часті запитання'} — ${Alpine.store('i18n')?.t('general.copyright') || 'Таємний Світ'}`" data-fallback-title="Часті запитання — Таємний Світ"></title>
+  <meta name="description" x-data :content="Alpine.store('i18n')?.t('faq.metaDescription') || 'Відповіді на часті запитання про сайт Таємний Світ.'">
+  <meta property="og:title" x-data :content="`${Alpine.store('i18n')?.t('faq.title') || 'Часті запитання'} — ${Alpine.store('i18n')?.t('general.copyright') || 'Таємний Світ'}`">
+  <meta property="og:description" x-data :content="Alpine.store('i18n')?.t('faq.metaDescription') || 'Відповіді на часті запитання про сайт Таємний Світ.'">
   <meta property="og:type" content="website">
-
-  <!-- Стилі -->
   <link rel="stylesheet" href="css/main.css">
-  <!-- Специфічні стилі для FAQ -->
-  <link rel="stylesheet" href="css/faq_styles.css"> <!-- Створимо або додамо в main.css -->
-
-  <!-- API Config & Utils -->
-  <script src="js/api-config.js" defer></script>
-  <script src="js/api-utils.js" defer></script>
-
-  <!-- Internationalization -->
-  <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
-
-  <!-- Шрифти -->
+  <link rel="stylesheet" href="css/faq_styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Font Awesome для іконок -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
 
-  <!-- Alpine.js для інтерактивності -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Порядок скриптів ВАЖЛИВИЙ: Alpine.js має завантажитись перед іншими скриптами -->
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/api-config.js" defer></script>
+  <script src="js/api-utils.js" defer></script>
+  <script type="module" src="js/i18n.js" defer></script>
+  <script src="js/components/faqPage.js" defer></script>
 
-  <style>
-    /* Стилі можна перенести в окремий файл faq_styles.css */
-    .faq-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem 0 4rem;
-    }
-    .faq-header {
-      text-align: center;
-      margin-bottom: 3rem;
-    }
-    .faq-title {
-      font-size: 2.8rem;
-      margin-bottom: 1rem;
-      position: relative;
-      display: inline-block;
-    }
-    .faq-title:after {
-      content: '';
-      position: absolute;
-      bottom: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100px;
-      height: 3px;
-      background: var(--accent-red);
-    }
-    .faq-description {
-      color: var(--secondary-text);
-      font-size: 1.1rem;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    .faq-categories {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 3rem;
-      flex-wrap: wrap;
-    }
-    .faq-category {
-      padding: 0.8rem 1.5rem;
-      background-color: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 30px;
-      color: var(--secondary-text);
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 0.95rem; /* Трохи збільшив */
-    }
-    .faq-category:hover {
-      background-color: rgba(153, 0, 0, 0.1);
-      border-color: rgba(153, 0, 0, 0.2);
-      color: var(--text-color);
-    }
-    .faq-category.active {
-      background-color: rgba(153, 0, 0, 0.2);
-      border-color: rgba(153, 0, 0, 0.3);
-      color: var(--text-color);
-    }
-    .faq-list {
-      margin-bottom: 3rem;
-    }
-    .faq-section-title {
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
-      color: var(--accent-gold);
-    }
-    .faq-item {
-      background-color: var(--card-color);
-      border-radius: var(--border-radius);
-      margin-bottom: 1rem;
-      border: 1px solid rgba(153, 0, 0, 0.1);
-      overflow: hidden;
-    }
-    .faq-question {
-      padding: 1.2rem 1.5rem;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 1.1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.3s;
-    }
-    .faq-question:hover {
-      background-color: rgba(255, 255, 255, 0.02);
-    }
-    .faq-toggle {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.05);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--secondary-text);
-      transition: all 0.3s;
-      flex-shrink: 0; /* Щоб іконка не стискалася */
-    }
-    .faq-item[x-data*='open: true'] .faq-toggle { /* Стиль для відкритого стану */
-      background-color: var(--accent-red);
-      color: white;
-      transform: rotate(45deg);
-    }
-    .faq-answer {
-      padding: 0 1.5rem;
-      color: var(--secondary-text);
-      line-height: 1.6;
-      overflow: hidden; /* Для анімації */
-      /* Початкові стилі для анімації - x-collapse сам впорається з анімацією */
-      transition: all 0.3s ease-out;
-    }
-
-    .faq-answer p {
-      margin-bottom: 1rem;
-    }
-
-    .faq-answer p:last-child {
-      margin-bottom: 0;
-    }
-
-    .more-questions {
-      background-color: var(--card-color);
-      border-radius: var(--border-radius);
-      padding: 2rem;
-      text-align: center;
-      border: 1px solid rgba(153, 0, 0, 0.1);
-    }
-    .more-questions-title {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    .more-questions-text {
-      color: var(--secondary-text);
-      margin-bottom: 1.5rem;
-    }
-    @media (max-width: 768px) {
-      .faq-categories { flex-wrap: wrap; justify-content: center; }
-      .faq-category { width: auto; /* Автоширина */ }
-      .faq-title { font-size: 2.2rem; }
-    }
-  </style>
+  <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body x-data="{
-    activeCategory: 'all',
-    isLoggedIn: false,
-    faqSections: ['account', 'content', 'premium', 'technical'], // Ключі секцій
-    openFaqIndex: null, // Індекс відкритого питання (для закриття інших при відкритті нового)
-    
-    // Додаємо функцію перевірки існування ключів i18n для більш надійної роботи
-    keyExists(key) {
-        try {
-            // Перевіряємо, чи існує переклад, порівнюючи вихідний ключ з результатом $store.i18n.t
-            const translation = $store.i18n.t(key);
-            return translation !== key && translation !== '';
-        } catch (error) {
-            console.warn(`Error checking i18n key: ${key}`, error);
-            return false;
-        }
-    },
-    
-    // Функція для відкриття/закриття питання з анімацією
-    toggleQuestion(index) {
-        // Закриваємо всі відкриті питання спочатку
-        document.querySelectorAll('.faq-item[x-data*=\'open: true\']').forEach(item => {
-            const itemData = item.__x.$data;
-            if (itemData && itemData.globalIndex !== index) {
-                itemData.open = false;
-            }
+<!-- Компонент Alpine застосовується до body -->
+<body>
+<div x-data="{ ready: false }" x-init="
+    setTimeout(() => {
+      // Перевіряємо, чи існує faqPage в Alpine
+      if(typeof Alpine.data('faqPage') === 'function') {
+        ready = true;
+      } else {
+        // Якщо ні, чекаємо ще
+        document.addEventListener('alpine:init', () => {
+          // Повторна перевірка після ініціалізації
+          setTimeout(() => {
+            ready = typeof Alpine.data('faqPage') === 'function';
+          }, 100);
         });
-        
-        // Встановлюємо глобальний індекс відкритого питання
-        this.openFaqIndex = (this.openFaqIndex === index) ? null : index;
-    },
-    
-    // Додаємо обробник хешу URL
-    handleHashNavigation() {
-        const hash = window.location.hash;
-        if (hash) {
-            const questionMatch = hash.match(/^#question-([a-z]+)-(\d+)$/);
-            if (questionMatch) {
-                const section = questionMatch[1];
-                const questionNum = parseInt(questionMatch[2]);
-                
-                if (this.faqSections.includes(section) && questionNum >= 1 && questionNum <= 4) {
-                    // Активуємо потрібну категорію
-                    this.activeCategory = section;
-                    
-                    // Обчислюємо глобальний індекс питання
-                    const sectionIndex = this.faqSections.indexOf(section);
-                    const globalIndex = sectionIndex * 4 + questionNum - 1;
-                    
-                    // Чекаємо рендерингу DOM перед спробою відкрити питання
-                    setTimeout(() => {
-                        this.toggleQuestion(globalIndex);
-                        
-                        // Скролимо до питання
-                        const questionElement = document.getElementById(`faq-question-${section}-${questionNum}`);
-                        if (questionElement) {
-                            questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }, 100);
-                }
-            }
-        }
-    }
-}" x-init="
-    try {
-        isLoggedIn = api.utils.isAuthenticated();
-    } catch(e) {
-        console.error('Error checking authentication status:', e);
-        isLoggedIn = false;
-    }
-    
-    // Додаємо підтримку URL параметрів для відкриття конкретної категорії
-    const urlParams = new URLSearchParams(window.location.search);
-    const category = urlParams.get('category');
-    if (category && faqSections.includes(category)) {
-        activeCategory = category;
-    }
-    
-    // Обробляємо хеш навігацію
-    $nextTick(() => {
-        handleHashNavigation();
-    });
-    
-    // Додаємо слухач зміни хешу для динамічної навігації
-    window.addEventListener('hashchange', () => handleHashNavigation());
-">
+      }
+    }, 100)
+  ">
+  <!-- Індикатор завантаження -->
+  <div x-show="!pageReady" class="loading-indicator">
+    <div class="spinner"></div>
+    <p>Завантаження...</p>
+  </div>
 
-<!-- Хедер -->
-<header>
-  <div class="container">
-    <nav class="navbar">
-      <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-      <!-- Навігація з i18n -->
-      <ul class="nav-links">
-        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
-      </ul>
-      <div class="auth-buttons">
-        <!-- Мовний перемикач -->
-        <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
-          <div class="lang-dropdown-button" @click="open = !open">
-            <span x-text="$store.i18n.selectedLang.toUpperCase()"></span>
-            <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }"></i>
-          </div>
-          <div class="lang-dropdown-menu" x-show="open" x-transition>
-            <template x-for="lang in $store.i18n.available" :key="lang.code">
-              <div class="lang-dropdown-item"
-                   :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                   @click="$store.i18n.setLanguage(lang.code); open = false;">
-                <span x-text="lang.name"></span>
-                <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check"></i>
+
+  <!-- Хедер -->
+  <div x-cloak x-show="pageReady" x-data="faqPage" x-init="init()">
+    <header>
+      <div class="container">
+        <nav class="navbar">
+          <a href="index.html" class="logo" aria-label="На головну">
+            <!-- Використовуємо safeT з компонента -->
+            <span x-text="safeT('general.siteNamePart1', {}, 'Ero')"></span><span style="color: var(--accent-red);" x-text="safeT('general.siteNamePart2', {}, 'Story')"></span>
+          </a>
+          <ul class="nav-links">
+            <li><a href="index.html" x-text="safeT('general.home', {}, 'Головна')"></a></li>
+            <li><a href="new-stories.html" x-text="safeT('general.newStories', {}, 'Нові історії')"></a></li>
+            <li><a href="top-stories.html" x-text="safeT('general.topStories', {}, 'Топ рейтинг')"></a></li>
+            <li><a href="categories.html" x-text="safeT('general.categories', {}, 'Категорії')"></a></li>
+            <li><a href="authors.html" x-text="safeT('general.authors', {}, 'Автори')"></a></li>
+          </ul>
+          <div class="auth-buttons">
+            <!-- Мовний перемикач -->
+            <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
+              <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
+                <!-- Додано перевірку на $store.i18n -->
+                <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
+                <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
               </div>
+              <!-- Додано перевірку componentReady -->
+              <template x-if="componentReady && $store?.i18n?.available">
+                <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
+                  <template x-for="lang in $store.i18n.available" :key="lang.code">
+                    <div class="lang-dropdown-item"
+                         :class="{ 'active': lang.code === $store.i18n.selectedLang }"
+                         @click="const newLang=lang.code; open=false; try{$store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}"
+                         role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                         @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{$store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}">
+                      <span x-text="lang.name"></span>
+                      <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+            <!-- Кнопки авторизації -->
+            <template x-if="componentReady">
+              <template x-if="!isLoggedIn">
+                <div>
+                  <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="safeT('general.login', {}, 'Увійти')"></span> </a>
+                  <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="safeT('general.register', {}, 'Реєстрація')"></span> </a>
+                </div>
+              </template>
+              <template x-if="isLoggedIn">
+                <div>
+                  <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="safeT('general.profile', {}, 'Профіль')"></span> </a>
+                  <a href="#" @click.prevent="logoutUser()" class="btn btn-primary">
+                    <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout', {}, 'Вийти')"></span>
+                  </a>
+                </div>
+              </template>
             </template>
           </div>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Основний контент -->
+    <main>
+      <div class="container">
+        <!-- Хлібні крихти -->
+        <div class="breadcrumbs">
+          <a href="index.html" x-text="safeT('general.home', 'Головна')"></a>
+          <span class="separator">/</span>
+          <span class="current" x-text="safeT('faq.title', 'Часті запитання')"></span>
         </div>
-        <!-- Кнопки авторизації -->
-        <template x-if="!isLoggedIn">
-          <div>
-            <a href="login.html" class="btn btn-outline">
-              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
-            </a>
-            <a href="register-page.html" class="btn btn-primary">
-              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
-            </a>
+
+        <div class="faq-container">
+          <!-- Повідомлення про помилку ініціалізації -->
+          <div x-show="initError" class="error-message" style="background-color: rgba(255, 100, 0, 0.1); border-color: rgba(255, 100, 0, 0.3); color: #ff9500;">
+            <i class="fas fa-exclamation-triangle"></i> <span x-text="initError"></span>
           </div>
-        </template>
-        <template x-if="isLoggedIn">
-          <div>
-            <a href="profile.html" class="btn btn-outline">
-              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
-            </a>
-            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary">
-              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
-            </a>
+
+          <!-- Заголовок -->
+          <div class="faq-header" x-show="componentReady"> <!-- Показуємо після ініціалізації -->
+            <h1 class="faq-title" x-text="safeT('faq.title', 'Часті запитання')"></h1>
+            <p class="faq-description" x-text="safeT('faq.description', 'Знайдіть відповіді на поширені запитання.')"></p>
           </div>
-        </template>
-      </div>
-    </nav>
-  </div>
-</header>
 
-<!-- Основний контент -->
-<main>
-  <div class="container">
-    <!-- Хлібні крихти -->
-    <div class="breadcrumbs">
-      <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
-      <span class="separator">/</span>
-      <span class="current" x-text="$store.i18n.t('faq.title')"></span>
-    </div>
+          <!-- Категорії FAQ -->
+          <div class="faq-categories" role="tablist" aria-label="Категорії питань" x-show="componentReady">
+            <button type="button" @click="activeCategory = 'all'"
+                    class="faq-category" :class="{ 'active': activeCategory === 'all' }"
+                    x-text="safeT('faq.allQuestions', 'Усі питання')"
+                    role="tab" :aria-selected="activeCategory === 'all'" aria-controls="faq-all-content">
+            </button>
+            <template x-for="section in faqSections" :key="section">
+              <button type="button" @click="activeCategory = section"
+                      class="faq-category" :class="{ 'active': activeCategory === section }"
+                      x-text="safeT(`faq.category${section.charAt(0).toUpperCase() + section.slice(1)}`, section)"
+                      role="tab" :aria-selected="activeCategory === section" :aria-controls="`faq-section-${section}`" :id="`tab-${section}`">
+              </button>
+            </template>
+          </div>
 
-    <div class="faq-container">
-      <!-- Заголовок -->
-      <div class="faq-header">
-        <h1 class="faq-title" x-text="$store.i18n.t('faq.title')"></h1>
-        <p class="faq-description" x-text="$store.i18n.t('faq.description')"></p>
-      </div>
+          <!-- Список FAQ -->
+          <div id="faq-all-content" role="tabpanel" aria-labelledby="tab-all" x-show="componentReady">
+            <template x-for="(sectionKey, sectionIndex) in faqSections" :key="sectionKey">
+              <div class="faq-list"
+                   x-show="activeCategory === 'all' || activeCategory === sectionKey"
+                   x-transition:enter="transition ease-out duration-300"
+                   x-transition:enter-start="opacity-0 transform translate-y-4"
+                   x-transition:enter-end="opacity-100 transform translate-y-0"
+                   :id="`faq-section-${sectionKey}`" role="tabpanel" :aria-labelledby="`tab-${sectionKey}`">
 
-      <!-- Покращені категорії FAQ з правильними атрибутами доступності -->
-      <div class="faq-categories">
-        <div @click="activeCategory = 'all'" 
-             class="faq-category" 
-             :class="{ 'active': activeCategory === 'all' }" 
-             x-text="$store.i18n.t('faq.allQuestions')" 
-             role="button" 
-             tabindex="0"
-             @keydown.enter="activeCategory = 'all'"></div>
-        
-        <template x-for="section in faqSections" :key="section">
-          <div @click="activeCategory = section" 
-               class="faq-category" 
-               :class="{ 'active': activeCategory === section }" 
-               x-text="$store.i18n.t(`faq.category${section.charAt(0).toUpperCase() + section.slice(1)}`)"
-               role="button"
-               tabindex="0"
-               @keydown.enter="activeCategory = section"></div>
-        </template>
-      </div>
+                <h2 class="faq-section-title"
+                    x-text="safeT(`faq.category${sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}`, sectionKey)"
+                    :id="`faq-section-title-${sectionKey}`"></h2>
 
-      <!-- Оптимізований блок секцій FAQ -->
-      <template x-for="(sectionKey, sectionIndex) in faqSections" :key="sectionKey">
-        <div class="faq-list" 
-             x-show="activeCategory === 'all' || activeCategory === sectionKey" 
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform translate-y-4"
-             x-transition:enter-end="opacity-100 transform translate-y-0">
-          
-          <!-- Заголовок секції -->
-          <h2 class="faq-section-title" 
-              x-text="$store.i18n.t(`faq.category${sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}`)"
-              :id="`faq-section-${sectionKey}`"></h2>
-          
-          <!-- Питання секції з оптимізованою логікою -->
-          <template x-for="i in 4" :key="`${sectionKey}-${i}`">
-            <!-- Перевіряємо наявність ключа у перекладах -->
-            <template x-if="keyExists(`faq.${sectionKey}Q${i}`)">
-              <div class="faq-item" 
-                   x-data="{ open: openFaqIndex === (sectionIndex * 4 + i - 1), globalIndex: sectionIndex * 4 + i - 1 }"
-                   x-id="['faq-question']">
-                <div class="faq-question" 
-                     @click="open = !open; toggleQuestion(globalIndex)" 
-                     :aria-expanded="open" 
-                     role="button" 
-                     tabindex="0"
-                     @keydown.enter="open = !open; toggleQuestion(globalIndex)"
-                     :id="`faq-question-${sectionKey}-${i}`">
-                  <span x-text="$store.i18n.t(`faq.${sectionKey}Q${i}`)"></span>
-                  <div class="faq-toggle" aria-hidden="true">
-                    <i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i>
+                <template x-for="(item, localIndex) in faqData[sectionKey]" :key="`${sectionKey}-${localIndex}`">
+                  <!-- Використовуємо x-if замість template x-if для простоти -->
+                  <div class="faq-item" x-show="safeT(item.qKey, {}, null) && safeT(item.aKey, {}, null)" :id="`faq-item-${calculateGlobalIndex(sectionIndex, localIndex)}`">
+                    <button type="button" class="faq-question"
+                            @click="toggleQuestion(calculateGlobalIndex(sectionIndex, localIndex))"
+                            :aria-expanded="openFaqIndex === calculateGlobalIndex(sectionIndex, localIndex)"
+                            :aria-controls="`faq-answer-${sectionKey}-${localIndex}`"
+                            :id="`faq-question-${sectionKey}-${localIndex + 1}`">
+                      <span x-text="safeT(item.qKey, {}, `Питання ${localIndex + 1}`)"></span>
+                      <span class="faq-toggle" aria-hidden="true">
+                            <i :class="openFaqIndex === calculateGlobalIndex(sectionIndex, localIndex) ? 'fas fa-minus' : 'fas fa-plus'"></i>
+                        </span>
+                    </button>
+                    <div class="faq-answer"
+                         x-show="openFaqIndex === calculateGlobalIndex(sectionIndex, localIndex)"
+                         x-collapse
+                         :id="`faq-answer-${sectionKey}-${localIndex}`"
+                         role="region"
+                         :aria-labelledby="`faq-question-${sectionKey}-${localIndex + 1}`">
+                      <p x-html="safeT(item.aKey, {}, 'Відповідь...')"></p>
+                    </div>
                   </div>
-                </div>
-                <div class="faq-answer" 
-                     x-show="open" 
-                     x-collapse 
-                     :id="`faq-answer-${sectionKey}-${i}`" 
-                     role="region"
-                     :aria-labelledby="`faq-question-${sectionKey}-${i}`">
-                  <p x-text="$store.i18n.t(`faq.${sectionKey}A${i}`)"></p>
-                </div>
+                </template>
               </div>
             </template>
-          </template>
-        </div>
-      </template>
+          </div>
 
-      <!-- Блок для додаткових питань -->
-      <div class="more-questions">
-        <h3 class="more-questions-title" x-text="$store.i18n.t('faq.moreQuestionsTitle')"></h3>
-        <p class="more-questions-text" x-text="$store.i18n.t('faq.moreQuestionsText')"></p>
-        <a href="contact.html" class="btn btn-primary" x-text="$store.i18n.t('faq.contactUsButton')"></a>
-      </div>
-    </div>
-  </div>
-</main>
-
-<!-- Footer -->
-<footer>
-  <div class="container">
-    <!-- Код футера як у index.html -->
-    <div class="footer-content">
-      <div class="footer-section footer-about">
-        <h4 x-text="$store.i18n.t('general.about')"></h4>
-        <p x-text="$store.i18n.t('general.aboutText')"></p>
-        <div class="social-links">
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
-          <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+          <!-- Блок для додаткових питань -->
+          <div class="more-questions" x-show="componentReady">
+            <h3 class="more-questions-title" x-text="safeT('faq.moreQuestionsTitle', 'Не знайшли відповідь?')"></h3>
+            <p class="more-questions-text" x-text="safeT('faq.moreQuestionsText', 'Зв\'яжіться з нами.')"></p>
+            <a href="contact.html" class="btn btn-primary" x-text="safeT('faq.contactUsButton', 'Зв\'язатися з нами')"></a>
+          </div>
         </div>
       </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
-        <ul>
-          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
-        </ul>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <!-- ... (код футера без змін) ... -->
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section footer-about"> <h4 x-text="safeT('general.about', 'Про нас')"></h4> <p x-text="safeT('general.aboutText', 'Платформа...')"></p> <div class="social-links"> <a href="#" class="social-link" :title="safeT('general.shareFacebook', 'Facebook')"><i class="fab fa-facebook-f"></i></a> <a href="#" class="social-link" :title="safeT('general.shareTelegram', 'Telegram')"><i class="fab fa-telegram-plane"></i></a> <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a> </div> </div>
+          <div class="footer-section"> <h4 x-text="safeT('general.navigation', 'Навігація')"></h4> <ul> <li><a href="index.html" x-text="safeT('general.home', 'Головна')"></a></li> <li><a href="categories.html" x-text="safeT('general.categories', 'Категорії')"></a></li> <li><a href="new-stories.html" x-text="safeT('general.newStories', 'Нові історії')"></a></li> <li><a href="top-stories.html" x-text="safeT('general.topStories', 'Топ рейтинг')"></a></li> <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li> </ul> </div>
+          <div class="footer-section"> <h4 x-text="safeT('general.support', 'Підтримка')"></h4> <ul> <li><a href="faq.html" x-text="safeT('faq.title', 'FAQ')"></a></li> <li><a href="contact.html" x-text="safeT('contact.title', 'Контакти')"></a></li> <li><a href="terms-page.html" x-text="safeT('general.terms', 'Умови')"></a></li> <li><a href="privacy-policy.html" x-text="safeT('general.privacy', 'Конфіденційність')"></a></li> </ul> </div>
+          <div class="footer-section"> <h4 x-text="safeT('general.join', 'Приєднуйтесь')"></h4> <ul> <li><a href="login.html" x-text="safeT('general.login', 'Увійти')"></a></li> <li><a href="login.html?tab=register" x-text="safeT('general.register', 'Реєстрація')"></a></li> <li><a href="premium.html" x-text="safeT('general.premium', 'Преміум')"></a></li> <li><a href="create_story.html" x-text="safeT('createStory.title', 'Створити історію')"></a></li> </ul> </div>
+        </div>
+        <div class="footer-bottom"> © <span x-text="new Date().getFullYear() || '2025'"></span> <span x-text="safeT('general.copyright', 'Таємний Світ')"></span>. <span x-text="safeT('general.allRightsReserved', 'Всі права захищені')"></span>. 18+ <br> <a href="terms-page.html" x-text="safeT('general.terms', 'Умови використання')"></a> | <a href="privacy-policy.html" x-text="safeT('general.privacy', 'Політика конфіденційності')"></a> </div>
       </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.support')"></h4>
-        <ul>
-          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.join')"></h4>
-        <ul>
-          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
-    </div>
+    </footer>
+
+    <!-- Кнопка Нагору (без змін) -->
+    <button id="back-to-top" @click="window.scrollTo({ top: 0, behavior: 'smooth' })" x-data="{ isVisible: false }" x-init="window.addEventListener('scroll', () => { isVisible = window.scrollY > 300 })" x-show="isVisible" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-2" x-transition:enter-end="opacity-80 transform translate-y-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-80 transform translate-y-0" x-transition:leave-end="opacity-0 transform translate-y-2" aria-label="На початок сторінки" title="На початок сторінки" class="back-to-top">
+      <i class="fas fa-arrow-up"></i>
+    </button>
   </div>
-</footer>
+</div>
+
+<!-- Стилі для індикатора завантаження -->
+<style>
+  .loading-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-color, #f9f9f9);
+    z-index: 9999;
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--accent-red, #e63946);
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
 
 </body>
 </html>
+<!-- END OF FILE faq.html -->

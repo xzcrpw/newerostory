@@ -1,0 +1,177 @@
+/* css/faq_styles.css */
+/* Перенесено стилі з faq.html */
+.faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 0 4rem;
+}
+.faq-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+.faq-title {
+    font-size: 2.8rem;
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block;
+    font-family: 'Cormorant Garamond', serif; /* Додано шрифт */
+    color: var(--text-color); /* Додано колір */
+}
+/* TODO: Уніфікувати стиль :after для заголовків у main.css */
+.faq-title:after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: var(--accent-red);
+}
+.faq-description {
+    color: var(--secondary-text);
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+.faq-categories {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+}
+.faq-category {
+    padding: 0.8rem 1.5rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    color: var(--secondary-text);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.95rem; /* Трохи збільшив */
+    font-family: inherit; /* Успадковуємо шрифт */
+}
+.faq-category:hover {
+    background-color: rgba(153, 0, 0, 0.1);
+    border-color: rgba(153, 0, 0, 0.2);
+    color: var(--text-color);
+}
+.faq-category.active {
+    background-color: rgba(153, 0, 0, 0.2);
+    border-color: rgba(153, 0, 0, 0.3);
+    color: var(--text-color);
+}
+/* Доступність: стиль фокусу */
+.faq-category:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+    border-color: rgba(153, 0, 0, 0.3); /* Підсвічуємо рамку */
+}
+
+.faq-list {
+    margin-bottom: 3rem;
+}
+.faq-section-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent-gold);
+    font-family: 'Cormorant Garamond', serif; /* Додано шрифт */
+}
+.faq-item {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+    overflow: hidden;
+    transition: border-color 0.3s; /* Додано для анімації рамки */
+}
+/* Стиль для відкритого стану */
+.faq-item[x-data*='open: true'] {
+    border-color: rgba(153, 0, 0, 0.3); /* Зміна рамки при відкритті */
+}
+
+.faq-question { /* Змінено на button */
+    padding: 1.2rem 1.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s; /* Змінено з all */
+    width: 100%; /* Щоб займав всю ширину */
+    background: none; /* Скидаємо фон */
+    border: none; /* Скидаємо рамку */
+    color: var(--text-color); /* Колір тексту */
+    text-align: left; /* Вирівнюємо текст */
+    font-family: inherit; /* Успадковуємо шрифт */
+}
+.faq-question:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+/* Доступність: стиль фокусу */
+.faq-question:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: -2px; /* Внутрішній контур */
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.faq-toggle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--secondary-text);
+    transition: all 0.3s;
+    flex-shrink: 0; /* Щоб іконка не стискалася */
+}
+.faq-item[x-data*='open: true'] .faq-toggle { /* Стиль для відкритого стану */
+    background-color: var(--accent-red);
+    color: white;
+    transform: rotate(45deg); /* Змінено на хрестик */
+}
+/* Іконка змінюється автоматично через :class в HTML */
+
+.faq-answer {
+    padding: 0 1.5rem 1.2rem; /* Додано відступ знизу */
+    color: var(--secondary-text);
+    line-height: 1.7; /* Збільшено */
+    overflow: hidden; /* Для анімації */
+    /* Анімація через x-collapse */
+    transition: padding 0.3s ease-out; /* Плавна зміна падінгу */
+}
+
+.faq-answer p {
+    margin-bottom: 1rem;
+}
+
+.faq-answer p:last-child {
+    margin-bottom: 0;
+}
+
+.more-questions {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid rgba(153, 0, 0, 0.1);
+}
+.more-questions-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-color); /* Додано колір */
+    font-family: 'Cormorant Garamond', serif; /* Додано шрифт */
+}
+.more-questions-text {
+    color: var(--secondary-text);
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 768px) {
+    .faq-categories { flex-wrap: wrap; justify-content: center; }
+    .faq-category { width: auto; /* Автоширина */ }
+    .faq-title { font-size: 2.2rem; }
+}

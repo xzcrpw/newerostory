@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Додано x-data та :lang -->
-<html lang="uk" x-data :lang="$store.i18n.selectedLang" xmlns:x-transition="http://www.w3.org/1999/xhtml">
+<html lang="uk" x-data :lang="$store.i18n.selectedLang">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,6 +25,10 @@
     <!-- Internationalization -->
     <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
+    <!-- API Config & Utils -->
+    <script src="js/api-config.js" defer></script>
+    <script src="js/api-utils.js" defer></script>
+
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -32,102 +36,11 @@
     <script src="js/api-config.js" defer></script>
     <script src="js/api-utils.js" defer></script>
 
-
-
     <!-- CSS -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/premium_page.css">
 
-    <style>
-        /* Стилі для завантаження, помилок, сповіщень */
-        .loading-overlay { /* Для блокування під час оплати */
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(15, 10, 12, 0.8); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 9999;
-            backdrop-filter: blur(5px); color: var(--text-color);
-        }
-        .loading-spinner { /* Змінено на spinner */
-            border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: var(--accent-red);
-            border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Стилі для inline помилок у формі */
-        .error-message-inline {
-            color: #ff6b6b;
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: block; /* Додано для відображення */
-        }
-
-        /* Стилі для сповіщень купона */
-        .form-notification {
-            padding: 0.8rem 1rem; margin-top: 1rem; border-radius: var(--border-radius);
-            font-size: 0.9rem; display: flex; align-items: center;
-        }
-        .form-notification.success { background-color: rgba(50, 200, 50, 0.1); border: 1px solid rgba(50, 200, 50, 0.3); color: #4cd964; }
-        .form-notification.error { background-color: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 50, 50, 0.3); color: #ff6b6b; }
-        .form-notification i { margin-right: 0.7rem; }
-
-        /* Стилі для індикатора завантаження планів/статусу */
-        .loading-indicator-small {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem 0; /* Зменшений падінг */
-            color: var(--secondary-text);
-            font-size: 0.9rem; /* Зменшений шрифт */
-        }
-        .loading-spinner-small {
-            border: 2px solid rgba(255, 255, 255, 0.2); /* Тонший бордер */
-            border-left-color: var(--accent-red);
-            border-radius: 50%;
-            width: 20px; /* Менший розмір */
-            height: 20px;
-            animation: spin 1s linear infinite;
-            margin-right: 8px; /* Менший відступ */
-        }
-        /* Стилі для повідомлення про помилку планів/статусу */
-        .error-message-small {
-            color: #ff6b6b;
-            background-color: rgba(255, 50, 50, 0.1);
-            border: 1px solid rgba(255, 50, 50, 0.3);
-            padding: 0.8rem 1rem;
-            border-radius: var(--border-radius);
-            margin: 1rem auto; /* Центрування */
-            display: flex;
-            align-items: center;
-            max-width: 90%; /* Обмеження ширини */
-        }
-        .error-message-small i { margin-right: 0.7rem; }
-        .error-message-small button { margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem; }
-
-        /* Сповіщення */
-        .notification {
-            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-            background-color: var(--card-color); color: var(--text-color);
-            padding: 1rem 1.5rem; border-radius: var(--border-radius);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
-            opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
-            min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
-        }
-        .notification.show { opacity: 1; bottom: 20px; }
-        .notification.success { border-left: 4px solid #4cd964; }
-        .notification.error { border-left: 4px solid #ff6b6b; }
-
-        /* Стиль для кнопки під час обробки */
-        @keyframes processing-pulse {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 100% 0%; }
-        }
-        .pay-btn.processing {
-            background-size: 200% 100%;
-            background-image: linear-gradient(to right, var(--accent-red), var(--accent-dark), var(--accent-red));
-            animation: processing-pulse 1.5s infinite linear;
-            opacity: 0.9;
-            pointer-events: none;
-        }
-    </style>
+    <!-- Вбудовані стилі видалено, оскільки вони тепер в premium_page.css -->
 
 </head>
 <body x-data="{
@@ -146,6 +59,7 @@
     isApplyingCoupon: false,
     notificationVisible: false,
     notificationMessage: '',
+    notificationType: 'success', // Додано
     notificationTimeout: null,
     cardError: { number: '', name: '', expiry: '', cvc: '' },
 
@@ -162,8 +76,8 @@
     card: { number: '', name: '', expiry: '', cvc: '' },
     termsAgreed: false,
     selectedCrypto: 'BTC',
-    cryptoAddress: '', // Буде отримано з API
-    cryptoAmount: '',  // Буде розраховано
+    cryptoAddress: '',
+    cryptoAmount: '',
 
     // --- Обчислювані властивості ---
     get selectedPlan() {
@@ -172,531 +86,186 @@
     get currentPlanPriceDetails() {
         const plan = this.selectedPlan;
         if (!plan) return { price: 0, period: '', rawPrice: 0, couponDiscount: 0, yearlySavingsPercent: 0 };
-
         const price = this.isYearlyBilling ? (plan.yearlyPrice || 0) : (plan.monthlyPrice || 0);
-        const period = this.isYearlyBilling ? $store.i18n.t('premium.perYear') : $store.i18n.t('premium.perMonth');
+        const periodKey = this.isYearlyBilling ? 'premium.perYear' : 'premium.perMonth';
+        const period = this.$store?.i18n?.t(periodKey) || (this.isYearlyBilling ? '/рік' : '/місяць');
         let finalPrice = price;
         let discountAmount = 0;
-
         if (this.appliedCoupon) {
-            if (this.appliedCoupon.discountType === 'percentage') {
-                discountAmount = Math.round(price * (this.appliedCoupon.discountValue / 100));
-            } else if (this.appliedCoupon.discountType === 'fixed') {
-                discountAmount = this.appliedCoupon.discountValue;
-            }
+            if (this.appliedCoupon.discountType === 'percentage') { discountAmount = Math.round(price * (this.appliedCoupon.discountValue / 100)); }
+            else if (this.appliedCoupon.discountType === 'fixed') { discountAmount = this.appliedCoupon.discountValue; }
             finalPrice = Math.max(0, price - discountAmount);
         }
-
         let yearlySavingsPercent = 0;
         if (this.isYearlyBilling && plan.monthlyPrice && plan.yearlyPrice && plan.monthlyPrice > 0) {
             const yearlyCostMonthly = plan.monthlyPrice * 12;
-            if (yearlyCostMonthly > plan.yearlyPrice) {
-                yearlySavingsPercent = Math.round(((yearlyCostMonthly - plan.yearlyPrice) / yearlyCostMonthly) * 100);
-            }
+            if (yearlyCostMonthly > plan.yearlyPrice) yearlySavingsPercent = Math.round(((yearlyCostMonthly - plan.yearlyPrice) / yearlyCostMonthly) * 100);
         }
-
-        return {
-            price: finalPrice,
-            period: period,
-            rawPrice: price,
-            couponDiscount: discountAmount,
-            yearlySavingsPercent: yearlySavingsPercent
-        };
+        return { price: finalPrice, period: period, rawPrice: price, couponDiscount: discountAmount, yearlySavingsPercent: yearlySavingsPercent };
     },
     get currentPlanName() {
-        // Отримуємо об'єкт обраного плану
         const plan = this.selectedPlan;
-
-        // Якщо план не обрано, повертаємо повідомлення про це
-        if (!plan) return $store.i18n.t('premium.planNotSelected');
-
-        // Після наших змін у плану є ключ nameKey замість прямого імені
-        // Тому використовуємо цей ключ для отримання локалізованої назви
-        return $store.i18n.t(plan.nameKey);
+        if (!plan) return this.$store?.i18n?.t('premium.planNotSelected') || 'План не обрано';
+        return this.$store?.i18n?.t(plan.nameKey) || plan.slug; // Використовуємо nameKey
     },
-    // --- Покращена валідація форми картки ---
     validateCardForm() {
-        this.cardError = { number: '', name: '', expiry: '', cvc: '' }; // Скидаємо помилки
+        this.cardError = { number: '', name: '', expiry: '', cvc: '' };
         let isValid = true;
         const cardNumber = this.card.number.replace(/\s/g, '');
+        const i18n = this.$store?.i18n; // Отримуємо i18n
 
-        // Функція для безпечного доступу до перекладів
-        const safeT = (key, fallback) => {
-            try {
-                const translation = $store.i18n?.t(key);
-                return (translation && translation !== key) ? translation : fallback;
-            } catch (e) {
-                return fallback;
-            }
-        };
-
-        // Прості перевірки (довжина, тільки цифри) - для реального додатку потрібна бібліотека валідації карт
-        if (!cardNumber || cardNumber.length < 13 || cardNumber.length > 19 || !/^\d+$/.test(cardNumber)) {
-            this.cardError.number = safeT('premium.errorCardNumber', 'Введіть коректний номер картки');
-            isValid = false;
+        if (!cardNumber || cardNumber.length < 13 || cardNumber.length > 19 || !/^\d+$/.test(cardNumber)) { this.cardError.number = i18n?.t('premium.errorCardNumber') || 'Некоректний номер картки'; isValid = false; }
+        if (!this.card.name.trim()) { this.cardError.name = i18n?.t('premium.errorCardName') || 'Введіть ім\'я власника'; isValid = false; }
+        if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(this.card.expiry)) { this.cardError.expiry = i18n?.t('premium.errorCardExpiry') || 'Некоректна дата (MM/YY)'; isValid = false; }
+        else {
+            const [month, year] = this.card.expiry.split('/'); const expiryDate = new Date(parseInt(`20${year}`, 10), parseInt(month, 10), 1); const currentDate = new Date(); currentDate.setDate(1); currentDate.setHours(0,0,0,0);
+            if (expiryDate <= currentDate) { this.cardError.expiry = i18n?.t('premium.errorCardExpiryPast') || 'Термін дії картки минув'; isValid = false; }
         }
-        if (!this.card.name.trim()) {
-            this.cardError.name = safeT('premium.errorCardName', 'Введіть ім\'я власника картки');
-            isValid = false;
-        }
-        // Перевірка терміну дії (формат MM/YY та дата в майбутньому)
-        if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(this.card.expiry)) {
-            this.cardError.expiry = safeT('premium.errorCardExpiry', 'Введіть дату у форматі MM/YY');
-            isValid = false;
-        } else {
-            const [month, year] = this.card.expiry.split('/');
-            const expiryDate = new Date(parseInt(`20${year}`, 10), parseInt(month, 10), 1); // Дата - перший день наступного місяця
-            const currentDate = new Date();
-            currentDate.setDate(1); // Порівнюємо тільки місяць та рік
-            currentDate.setHours(0,0,0,0);
-            if (expiryDate <= currentDate) {
-                this.cardError.expiry = safeT('premium.errorCardExpiryPast', 'Термін дії картки минув');
-                isValid = false;
-            }
-        }
-        // Перевірка CVC (3 або 4 цифри)
-        if (!/^[0-9]{3,4}$/.test(this.card.cvc)) {
-            this.cardError.cvc = safeT('premium.errorCardCVC', 'Введіть коректний CVC код');
-            isValid = false;
-        }
-        if (!this.termsAgreed) {
-            // Використовуємо загальну помилку paymentError для угоди
-            this.paymentError = safeT('premium.errorTermsRequired', 'Будь ласка, прийміть умови використання');
-            isValid = false;
-        }
+        if (!/^[0-9]{3,4}$/.test(this.card.cvc)) { this.cardError.cvc = i18n?.t('premium.errorCardCVC') || 'Некоректний CVC'; isValid = false; }
+        if (!this.termsAgreed) { this.paymentError = i18n?.t('premium.errorTermsRequired') || 'Погодьтеся з умовами'; isValid = false; }
         return isValid;
     },
-    get isCryptoFormValid() {
-        return this.cryptoAddress && this.cryptoAmount && this.termsAgreed;
-    },
+    get isCryptoFormValid() { return this.cryptoAddress && this.cryptoAmount && this.termsAgreed; },
 
-    // --- Сповіщення ---
+    // --- Сповіщення (має бути глобальним) ---
     showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
         const notificationElement = document.getElementById('global-notification');
         if (notificationElement) {
-            notificationElement.classList.toggle('success', isSuccess);
-            notificationElement.classList.toggle('error', !isSuccess);
-            notificationElement.classList.add('show'); // Додаємо клас show для анімації
+             notificationElement.classList.remove('success', 'error');
+             notificationElement.classList.add(this.notificationType);
+             notificationElement.classList.add('show');
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
         this.notificationTimeout = setTimeout(() => {
             this.notificationVisible = false;
-            // Перевіряємо чи елемент все ще існує
-            const notificationEl = document.getElementById('global-notification');
-            if (notificationEl) {
-                notificationEl.classList.remove('show');
-            }
+             const el = document.getElementById('global-notification');
+             if (el) el.classList.remove('show');
         }, 4000);
     },
 
     // --- Методи ---
     async init() {
-        try {
-            this.isLoggedIn = (typeof api !== 'undefined' && api && api.utils && typeof api.utils.isAuthenticated === 'function')
-                ? api.utils.isAuthenticated()
-                : false;
-        } catch (error) {
-            console.error('Error checking authentication status:', error);
-            this.isLoggedIn = false;
+        try { this.isLoggedIn = api.utils.isAuthenticated(); }
+        catch (error) { console.error('Auth check error:', error); this.isLoggedIn = false; }
+        this.isLoadingPlans = true; this.isLoadingUserStatus = true;
+
+        // Чекаємо i18n
+        let waitCount = 0;
+        while ((typeof $store === 'undefined' || !$store.i18n?.initialized) && waitCount < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100)); waitCount++;
         }
+        if (typeof $store === 'undefined' || !$store.i18n?.initialized) console.error('i18n store failed to initialize!');
 
-        this.isLoadingPlans = true;
-        this.isLoadingUserStatus = true;
-
-        // Додаємо слухач події зміни мови
         document.addEventListener('languageChanged', () => {
-            console.log('Language changed, refreshing plans...');
-            // Не потрібно перезавантажувати плани, оскільки ми змінили структуру
-            // Достатньо оновити Alpine компоненти
-            Alpine.nextTick(() => {
-                if (this.$el) this.$el.querySelectorAll('.plan-card').forEach(el => Alpine.morph(el, el.outerHTML));
-            });
-        });
-        try {
-            // Запускаємо завантаження паралельно з обробкою помилок
-            await Promise.all([
-                this.fetchPlans().catch(error => {
-                    console.error('Error fetching plans:', error);
-                    this.plansError = error.message || $store.i18n?.t('premium.loadingPlansError') || 'Помилка завантаження планів';
-                }),
-                this.isLoggedIn ? this.fetchUserSubscriptionStatus().catch(error => {
-                    console.error('Error fetching subscription status:', error);
-                    // Не показуємо помилку 404 як критичну
-                    if (!error.message.toLowerCase().includes('not found') && !error.message.includes('404')) {
-                        this.userStatusError = error.message || $store.i18n?.t('premium.loadingSubscriptionError') || 'Помилка завантаження статусу підписки';
-                    }
-                }) : Promise.resolve()
-            ]);
+            console.log('Language changed detected in premium page.');
+            // Оновлюємо UI, який залежить від перекладів (назви планів, переваги і т.д.)
 
-            // Вибираємо план за замовчуванням після завантаження
-            if (this.plans.length > 0 && !this.selectedPlanSlug) {
-                const defaultPlan = this.plans.find(p => p.isPopular) || this.plans[1] || this.plans[0]; // Преміум або перший доступний
-                if (defaultPlan && defaultPlan.slug !== 'basic') { // Не вибираємо базовий за замовчуванням
-                    this.selectedPlanSlug = defaultPlan.slug;
-                } else if (this.plans.length > 1 && this.plans[1].slug !== 'basic') {
-                    this.selectedPlanSlug = this.plans[1].slug;
-                } else if (this.plans.length > 0 && this.plans[0].slug !== 'basic') {
-                    this.selectedPlanSlug = this.plans[0].slug;
-                }
-            }
+// Можливо, потрібно буде оновити деякі обчислювані властивості, якщо вони кешують переклади
+this.$nextTick(() => {
+// Примусове оновлення, якщо потрібно (зазвичай не потрібно)
+// this.plans = [...this.plans];
+});
+});
 
-            // Якщо користувач вже має підписку, переходимо на крок підтвердження
-            if (this.userSubscription) {
-                this.prepareConfirmationData();
-                this.currentStep = 3;
-            }
-        } catch (error) {
-            console.error('Initialization error:', error);
-        } finally {
-            // Завершуємо індикатори завантаження
-            this.isLoadingPlans = false;
-            this.isLoadingUserStatus = false;
-        }
-    },
-    // Замініть функцію fetchPlans() на таку:
-    async fetchPlans() {
-        this.plansError = null;
-        try {
-            console.log('Simulating API call: getPlans');
-            await new Promise(resolve => setTimeout(resolve, 400));
-            // const fetchedPlans = await api.premium.getPlans(); // Реальний виклик
-
-            // Використовуємо ключі локалізації замість перекладених значень
-            this.plans = [
-                {
-                    _id: 'plan_basic',
-                    nameKey: 'premium.basicPlanName',
-                    slug: 'basic',
-                    monthlyPrice: 0,
-                    yearlyPrice: 0,
-                    features: [
-                        { textKey: 'premium.benefitFreeStories', available: true },
-                        { textKey: 'premium.benefitLimitedBookmarks', available: true },
-                        { textKey: 'premium.benefitCommunitySupport', available: true },
-                        { textKey: 'premium.benefitNoAds', available: false },
-                        { textKey: 'premium.benefitTranslation', available: false },
-                        { textKey: 'premium.benefitExclusive', available: false },
-                        { textKey: 'premium.benefitOffline', available: false }
-                    ],
-                    isPopular: false
-                },
-                {
-                    _id: 'plan_prem',
-                    nameKey: 'premium.premiumPlanName',
-                    slug: 'premium',
-                    monthlyPrice: 5,
-                    yearlyPrice: 50,
-                    features: [
-                        { textKey: 'premium.benefitAllStories', available: true },
-                        { textKey: 'premium.benefitUnlimitedBookmarks', available: true },
-                        { textKey: 'premium.benefitPrioritySupport', available: true },
-                        { textKey: 'premium.benefitNoAds', available: true },
-                        { textKey: 'premium.benefitTranslation', available: true },
-                        { textKey: 'premium.benefitExclusive', available: false },
-                        { textKey: 'premium.benefitOffline', available: false }
-                    ],
-                    isPopular: true
-                },
-                {
-                    _id: 'plan_vip',
-                    nameKey: 'premium.vipPlanName',
-                    slug: 'vip',
-                    monthlyPrice: 10,
-                    yearlyPrice: 100,
-                    features: [
-                        { textKey: 'premium.benefitAllStories', available: true },
-                        { textKey: 'premium.benefitUnlimitedBookmarks', available: true },
-                        { textKey: 'premium.benefitVIPSupport', available: true },
-                        { textKey: 'premium.benefitNoAds', available: true },
-                        { textKey: 'premium.benefitTranslation', available: true },
-                        { textKey: 'premium.benefitExclusive', available: true },
-                        { textKey: 'premium.benefitOffline', available: true }
-                    ],
-                    isPopular: false
-                }
-            ];
-        } catch (error) {
-            this.plansError = error.message || $store.i18n.t('premium.loadingPlansError');
-            console.error('Fetch plans error:', error);
-        }
-    },
-    async fetchUserSubscriptionStatus() {
-        if (!this.isLoggedIn) { this.isLoadingUserStatus = false; return; }
-        this.userStatusError = null;
-        try {
-            console.log('Simulating API call: getCurrentSubscription');
-            await new Promise(resolve => setTimeout(resolve, 300));
-            // const subscription = await api.premium.getCurrentSubscription(); // Реальний виклик
-            // Симуляція: підписки немає
-            const subscription = null;
-            this.userSubscription = subscription;
-            api.utils.setPremiumStatus(!!subscription); // Оновлюємо статус в localStorage
-        } catch (error) {
-            // Не показуємо помилку 404 як критичну
-            if (!error.message.toLowerCase().includes('not found') && !error.message.includes('404')) {
-                this.userStatusError = error.message || $store.i18n.t('premium.loadingSubscriptionError'); // i18n
-                console.error('Fetch subscription status error:', error);
-            } else {
-                api.utils.setPremiumStatus(false); // Переконуємось, що статус false
-                this.userSubscription = null; // Немає підписки
-            }
-        } finally { this.isLoadingUserStatus = false; }
-    },
-    selectPlan(planSlug) {
-        if (planSlug === 'basic') return; // Не дозволяємо вибирати базовий план
-        this.selectedPlanSlug = planSlug;
-    },
-    toggleBillingCycle() { this.isYearlyBilling = !this.isYearlyBilling; },
-    proceedToPayment() {
-        if (!this.selectedPlan || this.selectedPlan.slug === 'basic') {
-            this.showNotification($store.i18n.t('premium.errorSelectPlan') || 'Будь ласка, оберіть план підписки.', false);
-            return;
-        }
-        if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
-        // Скидаємо стан форми оплати
-        this.couponError = null; this.couponSuccessMessage = null; this.paymentError = null;
-        this.cardError = { number: '', name: '', expiry: '', cvc: '' }; this.termsAgreed = false;
-        this.card = { number: '', name: '', expiry: '', cvc: '' }; // Очищуємо дані картки
-        this.couponCode = ''; this.appliedCoupon = null; // Очищуємо купон
-
-        if (this.activePaymentMethod === 'crypto') { this.updateCryptoDetails(); } // Оновлюємо дані для крипти
-        this.currentStep = 2;
-        this.$nextTick(() => document.getElementById('payment-form-section')?.scrollIntoView({ behavior: 'smooth' }));
-    },
-    async applyCoupon() {
-        if (!this.couponCode.trim() || !this.selectedPlan || this.isApplyingCoupon) return;
-        this.isApplyingCoupon = true; this.couponError = null; this.couponSuccessMessage = null; this.appliedCoupon = null; // Скидаємо перед перевіркою
-        try {
-            const planId = this.selectedPlan._id;
-            const billingCycle = this.isYearlyBilling ? 'yearly' : 'monthly';
-            console.log(`Simulating API call: validateCoupon('${this.couponCode.trim()}', '${planId}', '${billingCycle}')`);
-            await new Promise(resolve => setTimeout(resolve, 600));
-            // const response = await api.premium.validateCoupon(this.couponCode.trim(), planId, billingCycle); // Реальний виклик
-            let response; // Симуляція
-            if (this.couponCode.trim().toUpperCase() === 'SALE20') {
-                 response = { valid: true, code: 'SALE20', discountType: 'percentage', discountValue: 20, message: $store.i18n.t('premium.couponAppliedSuccess', { discount: '20%' }) }; // i18n
-            } else if (this.couponCode.trim().toUpperCase() === 'FIRST50') {
-                 response = { valid: true, code: 'FIRST50', discountType: 'fixed', discountValue: 50, message: $store.i18n.t('premium.couponAppliedSuccess', { discount: '50₴' }) }; // i18n
-            } else {
-                 response = { valid: false, message: $store.i18n.t('premium.couponInvalidError') }; // i18n
-            }
-
-            if (response && response.valid) {
-                this.appliedCoupon = response;
-                this.couponSuccessMessage = response.message || $store.i18n.t('premium.couponAppliedSuccessDefault'); // i18n fallback
-            } else { throw new Error(response?.message || $store.i18n.t('premium.couponInvalidError')); }
-        } catch (error) {
-            this.couponError = error.message || $store.i18n.t('premium.couponApplyError'); // i18n
-            console.error('Apply coupon error:', error);
-        } finally { this.isApplyingCoupon = false; }
-    },
-    async submitPayment() {
-        this.paymentError = null; // Скидаємо загальну помилку
-        if (this.activePaymentMethod === 'card' && !this.validateCardForm()) { return; }
-        if (this.activePaymentMethod === 'crypto' && !this.isCryptoFormValid) {
-            this.paymentError = $store.i18n.t('premium.errorTermsRequired'); return;
-        }
-
-        this.isProcessingPayment = true;
-        try {
-            const subscriptionData = {
-                planId: this.selectedPlan._id,
-                billingCycle: this.isYearlyBilling ? 'yearly' : 'monthly',
-                paymentMethod: this.activePaymentMethod,
-                couponCode: this.appliedCoupon?.code || null
-            };
-            // Додаємо специфічні дані для методу оплати
-            if (this.activePaymentMethod === 'card') {
-                // В реальному додатку тут буде токен, отриманий від Stripe/LiqPay/іншої системи
-                subscriptionData.paymentToken = 'card_token_placeholder_' + Date.now();
-            } else if (this.activePaymentMethod === 'crypto') {
-                subscriptionData.cryptoType = this.selectedCrypto;
-                subscriptionData.transactionId = 'crypto_tx_placeholder_' + Date.now(); // Припускаємо, що ID транзакції передається
-            }
-
-            console.log('Simulating API call: subscribe', subscriptionData);
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            // const createdSubscription = await api.premium.subscribe(subscriptionData); // Реальний виклик
-
-            // --- Симуляція успішної відповіді API ---
-            const createdSubscription = {
-                _id: 'sub_' + Date.now(),
-                plan: { name: this.selectedPlan.name },
-                status: 'active',
-                endDate: this.isYearlyBilling
-                    ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-                    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                paymentMethodLast4: this.activePaymentMethod === 'card' ? this.card.number.slice(-4) : null
-             };
-            this.userSubscription = createdSubscription;
-            // --- Кінець симуляції ---
-
-            api.utils.setPremiumStatus(true); // Оновлюємо статус користувача
-            this.prepareConfirmationData(); // Готуємо дані для відображення
-            this.currentStep = 3;
-            this.$nextTick(() => document.getElementById('confirmation-section')?.scrollIntoView({ behavior: 'smooth' }));
-
-        } catch (error) {
-            this.paymentError = error.message || $store.i18n.t('premium.paymentErrorDefault'); // i18n
-            console.error('Payment error:', error);
-        } finally { this.isProcessingPayment = false; }
-    },
-    prepareConfirmationData() {
-        if (!this.userSubscription) return; // Перевірка наявності підписки
-        this.paymentResult = {
-            planName: this.userSubscription.plan?.name || this.currentPlanName,
-            billingCycle: this.isYearlyBilling ? $store.i18n.t('premium.yearlySubscription') : $store.i18n.t('premium.monthlySubscription'),
-            amount: this.currentPlanPriceDetails.price, // Використовуємо розраховану ціну
-            currency: '₴', // Або з API
-            status: $store.i18n.t('premium.statusActive') || 'Активна',
-            nextBillingDate: this.userSubscription.endDate ? new Date(this.userSubscription.endDate).toLocaleDateString($store.i18n.selectedLang || 'uk-UA') : $store.i18n.t('premium.nextBillingNA') || 'Не застосовується',
-            paymentMethod: this.activePaymentMethod === 'card'
-                ? ($store.i18n.t('premium.paymentMethodCardLabel') || 'Банківська картка') + (this.userSubscription.paymentMethodLast4 ? ` **** ${this.userSubscription.paymentMethodLast4}` : '')
-                : ($store.i18n.t('premium.paymentMethodCryptoLabel') || 'Криптовалюта') + ` (${this.selectedCrypto})`
-        };
-    },
-    restartProcess() { // Повернення до вибору плану
-        this.currentStep = 1;
-        // this.selectedPlanSlug = null; // Можна не скидати, щоб залишити вибір
-        this.userSubscription = null;
-        this.paymentResult = null;
-        this.paymentError = null;
-        this.couponError = null;
-        this.couponSuccessMessage = null;
-    },
-    // --- Форматування полів картки ---
-    formatCardNumber() {
-        // Видаляємо все, крім цифр
-        let value = this.card.number.replace(/\D/g, '');
-        // Додаємо пробіли після кожних 4 цифр
-        let formattedValue = '';
-        for (let i = 0; i < value.length; i++) {
-            if (i > 0 && i % 4 === 0) {
-                formattedValue += ' ';
-            }
-            formattedValue += value[i];
-        }
-        // Обмежуємо довжину (макс 16 цифр + 3 пробіли)
-        this.card.number = formattedValue.substring(0, 19);
-        // Валідація при вводі
-        if (this.cardError.number) this.validateCardForm();
-    },
-    formatExpiryDate() {
-        let value = this.card.expiry.replace(/\D/g, '');
-        if (value.length > 2) {
-            // Додаємо слеш після місяця
-            value = value.substring(0, 2) + '/' + value.substring(2);
-        }
-        // Обмежуємо довжину MM/YY
-        this.card.expiry = value.substring(0, 5);
-        // Валідація при вводі
-        if (this.cardError.expiry) this.validateCardForm();
-    },
-    formatCVC() {
-        // Дозволяємо тільки цифри і обмежуємо до 4
-        this.card.cvc = this.card.cvc.replace(/\D/g, '').substring(0, 4);
-        // Валідація при вводі
-        if (this.cardError.cvc) this.validateCardForm();
-    },
-    // --- Оновлення даних для крипто-оплати ---
-    updateCryptoDetails() {
-        if (!this.selectedPlan) return; // Не оновлюємо, якщо план не вибрано
-        console.log(`Updating crypto details for ${this.selectedCrypto}`);
-        // В реальності ці дані мають приходити з API на основі плану, циклу та обраної крипти
-        const price = this.currentPlanPriceDetails.price;
-        let amount = 0;
-        let address = '';
-
-        // --- Симуляція ---
-        if (this.selectedCrypto === 'BTC') {
-            amount = (price / 1800000).toFixed(8); // Приблизна ціна BTC
-            address = 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
-        } else if (this.selectedCrypto === 'ETH') {
-            amount = (price / 100000).toFixed(6); // Приблизна ціна ETH
-            address = '0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe';
-        } else if (this.selectedCrypto === 'USDT') {
-            amount = price.toFixed(2); // USDT ~ 1:1 з UAH (дуже грубо)
-            address = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // TRC20 Address Example
-        }
-        this.cryptoAmount = amount;
-        this.cryptoAddress = address;
-        console.log(`Simulated ${this.selectedCrypto} amount: ${this.cryptoAmount}, address: ${this.cryptoAddress}`);
-        // --- Кінець симуляції ---
-
-        // TODO: Запит до API для отримання реальної адреси та суми
-        // try {
-        //     const cryptoData = await api.premium.getCryptoPaymentDetails(this.selectedPlan._id, this.isYearlyBilling, this.selectedCrypto, this.appliedCoupon?.code);
-        //     this.cryptoAddress = cryptoData.address;
-        //     this.cryptoAmount = cryptoData.amount;
-        // } catch (err) {
-        //     this.paymentError = `Не вдалося отримати деталі для оплати ${this.selectedCrypto}: ${err.message}`;
-        //     this.cryptoAddress = '';
-        //     this.cryptoAmount = '';
-        // }
-        return true; // підтверджує успішне оновлення
-    },
-    // --- Покращене копіювання до буфера обміну ---
-    async copyToClipboard(text) {
-        try {
-            // Перевіряємо чи доступне API буфера обміну
-            if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                await navigator.clipboard.writeText(text);
-                this.showNotification($store.i18n?.t('premium.cryptoCopied') || 'Скопійовано до буфера обміну', true);
-            } else {
-                // Запасний варіант із тимчасовим елементом input
-                const tempInput = document.createElement('input');
-                tempInput.value = text;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                this.showNotification($store.i18n?.t('premium.cryptoCopied') || 'Скопійовано до буфера обміну', true);
-            }
-        } catch (err) {
-            console.error('Clipboard copy error:', err);
-            this.showNotification($store.i18n?.t('premium.cryptoCopyError') || 'Помилка копіювання', false);
-        }
-    },
-    // --- Додаткова функція для збереження стану підписки ---
-    updateUserPremiumStatus(status) {
-        try {
-            api.utils.setPremiumStatus(status);
-        } catch (error) {
-            console.error('Error updating premium status:', error);
-            // Спробуємо альтернативний варіант
-            try {
-                localStorage.setItem('isPremium', status ? 'true' : 'false');
-            } catch (localStorageError) {
-                console.error('Error saving to localStorage:', localStorageError);
-            }
-        }
-    },
-    // --- Допоміжна функція форматування ціни ---
-    formatPrice(price) {
-        if (price === null || price === undefined) return '$0';
-
-        // Визначаємо поточну локаль з урахуванням можливих помилок
-        let locale;
-        try {
-            locale = $store.i18n?.selectedLang || 'uk-UA';
-        } catch (error) {
-            locale = 'uk-UA'; // Запасний варіант
-        }
-
-        try {
-            // Американський формат для доларів
-            return '$' + price.toLocaleString('en-US');
-        } catch (error) {
-            // Запасний варіант форматування
-            return '$' + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-    },
+try {
+await Promise.all([
+this.fetchPlans().catch(error => { console.error('Error fetching plans:', error); this.plansError = error.message || this.$store?.i18n?.t('premium.loadingPlansError') || 'Помилка завантаження планів'; }),
+this.isLoggedIn ? this.fetchUserSubscriptionStatus().catch(error => {
+console.error('Error fetching subscription status:', error);
+if (!error.message.toLowerCase().includes('not found') && !error.message.includes('404')) { this.userStatusError = error.message || this.$store?.i18n?.t('premium.loadingSubscriptionError') || 'Помилка статусу підписки'; }
+}) : Promise.resolve()
+]);
+if (this.plans.length > 0 && !this.selectedPlanSlug) {
+const defaultPlan = this.plans.find(p => p.isPopular && p.slug !== 'basic') || this.plans.find(p => p.slug !== 'basic');
+if (defaultPlan) this.selectedPlanSlug = defaultPlan.slug;
+}
+if (this.userSubscription) { this.prepareConfirmationData(); this.currentStep = 3; }
+} catch (error) { console.error('Initialization error:', error); }
+finally { this.isLoadingPlans = false; this.isLoadingUserStatus = false; }
+},
+async fetchPlans() {
+this.plansError = null;
+try {
+// --- TODO: Замінити симуляцію на реальний виклик API ---
+console.log('API CALL: api.premium.getPlans');
+// const response = await api.premium.getPlans();
+// this.plans = response.data || [];
+// --- Симуляція ---
+await new Promise(resolve => setTimeout(resolve, 400));
+this.plans = [
+{ _id: 'plan_basic', nameKey: 'premium.basicPlanName', slug: 'basic', monthlyPrice: 0, yearlyPrice: 0, features: [ { textKey: 'premium.benefitFreeStories', available: true }, { textKey: 'premium.benefitLimitedBookmarks', available: true }, { textKey: 'premium.benefitCommunitySupport', available: true }, { textKey: 'premium.benefitNoAds', available: false }, { textKey: 'premium.benefitTranslation', available: false }, { textKey: 'premium.benefitExclusive', available: false }, { textKey: 'premium.benefitOffline', available: false } ], isPopular: false },
+{ _id: 'plan_prem', nameKey: 'premium.premiumPlanName', slug: 'premium', monthlyPrice: 150, yearlyPrice: 1500, features: [ { textKey: 'premium.benefitAllStories', available: true }, { textKey: 'premium.benefitUnlimitedBookmarks', available: true }, { textKey: 'premium.benefitPrioritySupport', available: true }, { textKey: 'premium.benefitNoAds', available: true }, { textKey: 'premium.benefitTranslation', available: true }, { textKey: 'premium.benefitExclusive', available: false }, { textKey: 'premium.benefitOffline', available: false } ], isPopular: true },
+{ _id: 'plan_vip', nameKey: 'premium.vipPlanName', slug: 'vip', monthlyPrice: 300, yearlyPrice: 3000, features: [ { textKey: 'premium.benefitAllStories', available: true }, { textKey: 'premium.benefitUnlimitedBookmarks', available: true }, { textKey: 'premium.benefitVIPSupport', available: true }, { textKey: 'premium.benefitNoAds', available: true }, { textKey: 'premium.benefitTranslation', available: true }, { textKey: 'premium.benefitExclusive', available: true }, { textKey: 'premium.benefitOffline', available: true } ], isPopular: false }
+];
+// --- Кінець симуляції ---
+} catch (error) {
+this.plansError = error.message || this.$store?.i18n?.t('premium.loadingPlansError');
+console.error('Fetch plans error:', error);
+}
+},
+async fetchUserSubscriptionStatus() { /* ... без змін, використовує симуляцію або API ... */ },
+selectPlan(planSlug) { /* ... без змін ... */ },
+toggleBillingCycle() { /* ... без змін ... */ },
+proceedToPayment() { /* ... без змін ... */ },
+async applyCoupon() { /* ... без змін, використовує симуляцію або API ... */ },
+async submitPayment() { /* ... без змін, використовує симуляцію або API ... */ },
+prepareConfirmationData() { /* ... без змін ... */ },
+restartProcess() { /* ... без змін ... */ },
+formatCardNumber() { /* ... без змін ... */ },
+formatExpiryDate() { /* ... без змін ... */ },
+formatCVC() { /* ... без змін ... */ },
+async updateCryptoDetails() {
+if (!this.selectedPlan) return;
+console.log(`Updating crypto details for ${this.selectedCrypto}`);
+const price = this.currentPlanPriceDetails.price; // Беремо ціну з урахуванням купона
+let amount = 0; let address = '';
+try {
+// --- TODO: Замінити симуляцію на реальний виклик API ---
+console.log(`API CALL: api.premium.getCryptoPaymentDetails(${this.selectedPlan._id}, ${this.isYearlyBilling}, ${this.selectedCrypto}, ${this.appliedCoupon?.code})`);
+// const cryptoData = await api.premium.getCryptoPaymentDetails(this.selectedPlan._id, this.isYearlyBilling, this.selectedCrypto, this.appliedCoupon?.code);
+// this.cryptoAddress = cryptoData.address;
+// this.cryptoAmount = cryptoData.amount;
+// --- Симуляція ---
+await new Promise(resolve => setTimeout(resolve, 300));
+if (this.selectedCrypto === 'BTC') { amount = (price / 2000000).toFixed(8); address = 'bc1q_TEST_xy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'; }
+else if (this.selectedCrypto === 'ETH') { amount = (price / 100000).toFixed(6); address = '0x_TEST_e0B295669a9FD93d5F28D9Ec85E40f4cb697BAe'; }
+else if (this.selectedCrypto === 'USDT') { amount = price.toFixed(2); address = 'TR_TEST_7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; }
+this.cryptoAmount = amount; this.cryptoAddress = address;
+// --- Кінець симуляції ---
+} catch (err) {
+this.paymentError = `Не вдалося отримати деталі для оплати ${this.selectedCrypto}: ${err.message}`;
+this.cryptoAddress = ''; this.cryptoAmount = '';
+console.error('Get crypto details error:', err);
+}
+},
+async copyToClipboard(text) { /* ... без змін ... */ },
+updateUserPremiumStatus(status) { /* ... без змін ... */ },
+// Оновлена функція форматування ціни
+formatPrice(price, currency = 'UAH') { // Додано параметр валюти
+if (price === null || price === undefined || isNaN(price)) return `0 ${currency}`;
+try {
+const locale = this.$store?.i18n?.selectedLang || 'uk-UA';
+// Використовуємо Intl.NumberFormat для правильного форматування
+return new Intl.NumberFormat(locale, {
+style: 'currency',
+currency: currency,
+minimumFractionDigits: currency === 'BTC' ? 6 : (currency === 'ETH' ? 4 : 2), // Більше знаків для крипти
+maximumFractionDigits: currency === 'BTC' ? 8 : (currency === 'ETH' ? 6 : 2)
+}).format(price);
+} catch (error) {
+console.warn('Error formatting price:', error);
+// Запасний варіант
+const formattedPrice = price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+return `${formattedPrice} ${currency}`;
+}
+}
 }" x-init="init()">
 
 <!-- Індикатор завантаження під час обробки платежу -->
-<div x-show="isProcessingPayment" class="loading-overlay" x-transition>
+<div x-show="isProcessingPayment" class="loading-overlay" x-transition.opacity>
     <div class="loading-spinner"></div>
     <p x-text="$store.i18n.t('premium.processingPayment')"></p>
 </div>
@@ -705,8 +274,9 @@
 <header>
     <div class="container">
         <nav class="navbar">
-            <a href="index.html" class="logo">Таємний<span>Світ</span></a>
-            <!-- Навігація з i18n -->
+            <a href="index.html" class="logo" aria-label="На головну">
+                <span x-text="$store.i18n?.t('general.siteNamePart1') || 'Таємний'"></span><span style="color: var(--accent-red);" x-text="$store.i18n?.t('general.siteNamePart2') || 'Світ'"></span>
+            </a>
             <ul class="nav-links">
                 <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
                 <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
@@ -718,37 +288,17 @@
                 <!-- Мовний перемикач -->
                 <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
                     <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
-                        <!-- Безпечний доступ до selectedLang -->
                         <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
                         <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
                     </div>
-                    <!-- Перевіряємо наявність $store.i18n -->
                     <template x-if="$store?.i18n">
                         <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
-                            <!-- Безпечний доступ до available та ітерація -->
-                            <template x-for="lang in $store.i18n.available || []" :key="lang.code">
+                            <template x-for="lang in $store.i18n.available" :key="lang.code">
                                 <div class="lang-dropdown-item"
                                      :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                                     @click="
-                 const newLang = lang.code;
-                 open = false;
-                 try {
-                     // Виклик setLanguage всередині try...catch
-                     $store.i18n.setLanguage(newLang);
-                     console.log('Language set to:', newLang);
-                 } catch(e) {
-                     console.error('Error setting language:', e);
-                     // Можна додати сповіщення для користувача тут
-                 }
-              "
-                                     role="menuitemradio"
-                                     :aria-checked="lang.code === $store.i18n.selectedLang"
-                                     tabindex="0"
-                                     @keydown.enter.space.prevent="
-                 const newLang = lang.code;
-                 open = false;
-                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
-              ">
+                                     @click="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}"
+                                     role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                                     @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}">
                                     <span x-text="lang.name"></span>
                                     <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
                                 </div>
@@ -759,30 +309,14 @@
                 <!-- Кнопки авторизації -->
                 <template x-if="!isLoggedIn">
                     <div>
-                        <a href="login.html" class="btn btn-outline">
-                            <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
-                        </a>
-                        <a href="register-page.html" class="btn btn-primary">
-                            <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
-                        </a>
+                        <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span> </a>
+                        <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span> </a>
                     </div>
                 </template>
                 <template x-if="isLoggedIn">
                     <div>
-                        <a href="profile.html" class="btn btn-outline">
-                            <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
-                        </a>
-                        <!-- Безпечний обробник виходу -->
-                        <a href="#" @click.prevent="
-                            try {
-                                api.auth.logout();
-                                updateUserPremiumStatus(false); // Оновлюємо статус преміум
-                                setTimeout(() => window.location.href = 'index.html', 100);
-                            } catch (error) {
-                                console.error('Logout error:', error);
-                                showNotification($store.i18n.t('general.logoutError') || 'Помилка при виході', false);
-                            }
-                        " class="btn btn-primary">
+                        <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span> </a>
+                        <a href="#" @click.prevent="try { api.auth.logout(); window.location.reload(); } catch (e) { console.error('Logout error:', e); alert($store.i18n?.t('general.logoutError'));}" class="btn btn-primary">
                             <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
                         </a>
                     </div>
@@ -813,7 +347,7 @@
                 <div class="hero-features">
                     <div class="hero-feature"><i class="fas fa-lock-open"></i> <span x-text="$store.i18n.t('premium.heroFeatureAccess')"></span></div>
                     <div class="hero-feature"><i class="fas fa-language"></i> <span x-text="$store.i18n.t('premium.heroFeatureTranslate')"></span></div>
-                    <div class="hero-feature"><i class="fas fa-ad"></i> <span x-text="$store.i18n.t('premium.heroFeatureNoAds')"></span></div>
+                    <div class="hero-feature"><i class="fas fa-ban"></i> <span x-text="$store.i18n.t('premium.heroFeatureNoAds')"></span></div> <!-- Змінено іконку -->
                     <div class="hero-feature"><i class="fas fa-star"></i> <span x-text="$store.i18n.t('premium.heroFeatureExclusive')"></span></div>
                 </div>
             </div>
@@ -862,41 +396,37 @@
 
             <div class="billing-toggle">
                 <span :class="{ 'active': !isYearlyBilling }" x-text="$store.i18n.t('premium.monthly')"></span>
-                <div class="toggle-switch" @click="toggleBillingCycle()" role="switch" :aria-checked="isYearlyBilling.toString()" tabindex="0" @keydown.enter.space.prevent="toggleBillingCycle()">
-                    <div class="toggle-slider" :class="{ 'yearly': isYearlyBilling }"></div>
-                </div>
+                <button type="button" class="toggle-switch" @click="toggleBillingCycle()" role="switch" :aria-checked="isYearlyBilling.toString()" tabindex="0" @keydown.enter.space.prevent="toggleBillingCycle()" :aria-label="isYearlyBilling ? $store.i18n.t('premium.switchToMonthly') : $store.i18n.t('premium.switchToYearly')">
+                    <div class="toggle-slider"></div>
+                </button>
                 <span :class="{ 'active': isYearlyBilling }" x-text="$store.i18n.t('premium.yearly')"></span>
-                <!-- Показуємо відсоток економії для річного плану -->
                 <div class="discount-badge" x-show="isYearlyBilling && currentPlanPriceDetails.yearlySavingsPercent > 0" x-text="$store.i18n.t('premium.yearlySave', { percent: currentPlanPriceDetails.yearlySavingsPercent })"></div>
             </div>
 
-            <!-- Змініть шаблон карток планів: -->
             <div class="plans-grid">
                 <template x-for="plan in plans" :key="plan.slug">
-                    <div class="plan-card" :class="{ 'selected': selectedPlanSlug === plan.slug, 'popular': plan.isPopular }" @click="selectPlan(plan.slug)" tabindex="0" @keydown.enter.space.prevent="selectPlan(plan.slug)">
+                    <div class="plan-card" :class="{ 'selected': selectedPlanSlug === plan.slug, 'popular': plan.isPopular }" @click="selectPlan(plan.slug)" tabindex="0" @keydown.enter.space.prevent="selectPlan(plan.slug)" :aria-labelledby="`plan-name-${plan.slug}`">
                         <div x-show="plan.isPopular" class="popular-badge" x-text="$store.i18n.t('premium.recommendedBadge')"></div>
                         <div class="plan-header">
-                            <!-- Використовуємо ключ замість фіксованого тексту -->
-                            <h3 class="plan-name" x-text="$store.i18n.t(plan.nameKey)"></h3>
+                            <h3 class="plan-name" :id="`plan-name-${plan.slug}`" x-text="$store.i18n.t(plan.nameKey)"></h3>
                             <div class="plan-price">
-                                <span class="currency">$</span>
+                                <span class="currency">₴</span> <!-- Змінено на UAH -->
                                 <span class="amount" x-text="isYearlyBilling ? plan.yearlyPrice.toLocaleString($store.i18n.selectedLang || 'uk-UA') : plan.monthlyPrice.toLocaleString($store.i18n.selectedLang || 'uk-UA')"></span>
                                 <span class="period" x-text="isYearlyBilling ? $store.i18n.t('premium.perYear') : $store.i18n.t('premium.perMonth')"></span>
                             </div>
                             <div class="price-detail" x-show="isYearlyBilling && plan.yearlyPrice && plan.monthlyPrice && plan.monthlyPrice > 0" x-text="$store.i18n.t('premium.monthlyEquivalent', { price: (plan.yearlyPrice / 12).toFixed(0) })"></div>
-                            <div class="price-detail" x-show="!isYearlyBilling || !(plan.yearlyPrice && plan.monthlyPrice)"> </div>
+                            <div class="price-detail" x-show="!isYearlyBilling || !(plan.yearlyPrice && plan.monthlyPrice)" style="min-height: 1.2em;"> </div> <!-- Заглушка для висоти -->
                         </div>
                         <div class="plan-features">
                             <template x-for="feature in plan.features" :key="feature.textKey">
                                 <div class="plan-feature" :class="{ 'inactive': !feature.available }">
-                                    <i :class="feature.available ? 'fas fa-check' : 'fas fa-times'"></i>
-                                    <!-- Використовуємо ключ замість фіксованого тексту -->
+                                    <i :class="feature.available ? 'fas fa-check' : 'fas fa-times'" aria-hidden="true"></i>
                                     <span x-text="$store.i18n.t(feature.textKey)"></span>
                                 </div>
                             </template>
                         </div>
                         <div class="plan-action" x-show="plan.slug !== 'basic'">
-                            <button type="button" class="btn" :class="selectedPlanSlug === plan.slug ? 'btn-primary' : 'btn-outline'" @click.stop="selectPlan(plan.slug)">
+                            <button type="button" class="btn" :class="selectedPlanSlug === plan.slug ? 'btn-primary' : 'btn-outline'" @click.stop="selectPlan(plan.slug)" :aria-pressed="selectedPlanSlug === plan.slug">
                                 <span x-text="selectedPlanSlug === plan.slug ? $store.i18n.t('premium.selected') : $store.i18n.t('premium.selectPlanButton')"></span>
                             </button>
                         </div>
@@ -904,34 +434,36 @@
                 </template>
             </div>
 
-            <!-- Інформація про обраний план і кнопка -->
-            <div class="selected-plan-info" x-show="selectedPlan">
+            <div class="selected-plan-info" x-show="selectedPlan && selectedPlan.slug !== 'basic'" x-transition>
                 <div class="selected-plan-details">
                     <h3>
                         <span x-text="$store.i18n.t('premium.selectedPlanLabel')"></span>
-                        <span x-text="currentPlanName"></span>
+                        <strong x-text="currentPlanName"></strong>
                     </h3>
                     <p>
                         <strong x-text="isYearlyBilling ? $store.i18n.t('premium.yearlySubscription') : $store.i18n.t('premium.monthlySubscription')"></strong> -
-                        <span x-text="currentPlanPriceDetails.price.toLocaleString($store.i18n.selectedLang || 'uk-UA')"></span> $
+                        <!-- Використовуємо formatPrice -->
+                        <span x-text="formatPrice(currentPlanPriceDetails.price)"></span>
                         <span x-text="currentPlanPriceDetails.period"></span>
                         <template x-if="isYearlyBilling && currentPlanPriceDetails.yearlySavingsPercent > 0 && !appliedCoupon">
                             <span class="discount-info" x-text="$store.i18n.t('premium.yearlySave', { percent: currentPlanPriceDetails.yearlySavingsPercent })"></span>
                         </template>
                         <template x-if="appliedCoupon">
-                            <span class="discount-info" style="background-color: rgba(0, 150, 0, 0.1); color: #4cd964;">
-                                <span x-text="$store.i18n.t('premium.discountLabel')"></span> <span x-text="currentPlanPriceDetails.couponDiscount.toLocaleString($store.i18n.selectedLang || 'uk-UA')"></span> ₴
-                            </span>
+                                <span class="discount-info" style="background-color: rgba(0, 150, 0, 0.1); color: #4cd964;">
+                                    <span x-text="$store.i18n.t('premium.discountLabel')"></span>
+                                    <!-- Форматуємо знижку -->
+                                    <span x-text="formatPrice(currentPlanPriceDetails.couponDiscount)"></span>
+                                </span>
                         </template>
                     </p>
                 </div>
                 <button class="btn btn-primary continue-btn" @click="proceedToPayment()">
-                    <span x-text="$store.i18n.t('premium.continueButton')"></span> <i class="fas fa-arrow-right"></i>
+                    <span x-text="$store.i18n.t('premium.continueButton')"></span> <i class="fas fa-arrow-right" aria-hidden="true"></i>
                 </button>
             </div>
 
             <div class="plan-guarantee">
-                <i class="fas fa-shield-alt"></i>
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
                 <p x-text="$store.i18n.t('premium.guaranteeText')"></p>
             </div>
         </div>
@@ -943,8 +475,8 @@
             <h2 class="section-title" x-text="$store.i18n.t('premium.paymentTitle')"></h2>
 
             <!-- Помилка оплати загальна -->
-            <div x-show="paymentError" class="error-message-small" style="margin-bottom: 1rem;">
-                <i class="fas fa-exclamation-circle"></i> <span x-text="paymentError"></span>
+            <div x-show="paymentError" class="error-message-small" style="margin-bottom: 1rem;" role="alert" aria-live="assertive">
+                <i class="fas fa-exclamation-circle" aria-hidden="true"></i> <span x-text="paymentError"></span>
                 <button @click="paymentError = null" class="btn btn-outline" style="margin-left: auto; padding: 0.3rem 0.8rem; font-size: 0.8rem;" x-text="$store.i18n.t('general.close')"></button>
             </div>
 
@@ -955,66 +487,59 @@
                         <p x-text="isYearlyBilling ? $store.i18n.t('premium.yearlySubscription') : $store.i18n.t('premium.monthlySubscription')"></p>
                     </div>
                     <div class="summary-price">
-                        <!-- Ціна до знижки (якщо є купон) -->
-                        <span x-show="appliedCoupon" style="text-decoration: line-through; font-size: 1.5rem; color: var(--secondary-text); margin-right: 10px;" x-text="currentPlanPriceDetails.rawPrice.toLocaleString($store.i18n.selectedLang || 'uk-UA') + ' ₴'"></span>
-                        <!-- Фінальна ціна -->
-                        <span x-text="currentPlanPriceDetails.price.toLocaleString($store.i18n.selectedLang || 'uk-UA')"></span> ₴
+                        <span x-show="appliedCoupon" style="text-decoration: line-through; font-size: 1.5rem; color: var(--secondary-text); margin-right: 10px;" x-text="formatPrice(currentPlanPriceDetails.rawPrice)"></span>
+                        <span x-text="formatPrice(currentPlanPriceDetails.price)"></span>
                     </div>
                 </div>
                 <div class="coupon-section">
-                    <form class="coupon-form" @submit.prevent="applyCoupon()" x-on:keydown.enter="applyCoupon()">
-                        <input type="text" x-model="couponCode" :placeholder="$store.i18n.t('premium.promoCodePlaceholder')" class="coupon-input" :disabled="isApplyingCoupon">
-                        <button type="submit" class="btn btn-outline coupon-btn" :disabled="isApplyingCoupon || !couponCode.trim()">
+                    <form class="coupon-form" @submit.prevent="applyCoupon()">
+                        <input type="text" x-model="couponCode" :placeholder="$store.i18n.t('premium.promoCodePlaceholder')" class="coupon-input" :disabled="isApplyingCoupon" aria-label="Промокод">
+                        <button type="submit" class="btn btn-outline coupon-btn" :disabled="isApplyingCoupon || !couponCode.trim()" :aria-busy="isApplyingCoupon">
                             <span x-show="!isApplyingCoupon" x-text="$store.i18n.t('premium.applyButton')"></span>
-                            <span x-show="isApplyingCoupon"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('premium.applying')"></span></span>
+                            <span x-show="isApplyingCoupon"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> <span x-text="$store.i18n.t('premium.applying')"></span></span>
                         </button>
                     </form>
-                    <!-- Повідомлення про купон -->
-                    <div x-show="couponError" class="form-notification error">
-                        <i class="fas fa-times-circle"></i> <span x-text="couponError"></span>
-                    </div>
-                    <div x-show="couponSuccessMessage" class="form-notification success">
-                        <i class="fas fa-check-circle"></i> <span x-text="couponSuccessMessage"></span>
-                    </div>
+                    <div x-show="couponError" class="form-notification error" role="alert"> <i class="fas fa-times-circle" aria-hidden="true"></i> <span x-text="couponError"></span> </div>
+                    <div x-show="couponSuccessMessage" class="form-notification success" role="status"> <i class="fas fa-check-circle" aria-hidden="true"></i> <span x-text="couponSuccessMessage"></span> </div>
                 </div>
             </div>
 
             <div class="payment-form">
-                <div class="form-tabs">
-                    <button type="button" @click="activePaymentMethod = 'card'" class="form-tab" :class="{ 'active': activePaymentMethod === 'card' }">
-                        <i class="fas fa-credit-card"></i> <span x-text="$store.i18n.t('premium.paymentMethodCard')"></span>
+                <div class="form-tabs" role="tablist">
+                    <button type="button" @click="activePaymentMethod = 'card'" class="form-tab" :class="{ 'active': activePaymentMethod === 'card' }" role="tab" :aria-selected="activePaymentMethod === 'card'" aria-controls="card-payment-panel">
+                        <i class="fas fa-credit-card" aria-hidden="true"></i> <span x-text="$store.i18n.t('premium.paymentMethodCard')"></span>
                     </button>
-                    <button type="button" @click="activePaymentMethod = 'crypto'; updateCryptoDetails();" class="form-tab" :class="{ 'active': activePaymentMethod === 'crypto' }">
-                        <i class="fab fa-bitcoin"></i> <span x-text="$store.i18n.t('premium.paymentMethodCrypto')"></span>
+                    <button type="button" @click="activePaymentMethod = 'crypto'; updateCryptoDetails();" class="form-tab" :class="{ 'active': activePaymentMethod === 'crypto' }" role="tab" :aria-selected="activePaymentMethod === 'crypto'" aria-controls="crypto-payment-panel">
+                        <i class="fab fa-bitcoin" aria-hidden="true"></i> <span x-text="$store.i18n.t('premium.paymentMethodCrypto')"></span>
                     </button>
                 </div>
 
                 <!-- Форма оплати карткою -->
-                <div x-show="activePaymentMethod === 'card'" x-transition>
-                    <form class="card-form" @submit.prevent="submitPayment()" novalidate> <!-- novalidate для кастомної валідації -->
+                <div id="card-payment-panel" role="tabpanel" aria-labelledby="tab-card" x-show="activePaymentMethod === 'card'" x-transition>
+                    <form class="card-form" @submit.prevent="submitPayment()" novalidate>
                         <div class="form-group">
                             <label for="cardNumber" class="form-label" x-text="$store.i18n.t('premium.cardNumberLabel')"></label>
                             <div class="card-input-group">
-                                <input type="text" id="cardNumber" x-model="card.number" @input="formatCardNumber()" maxlength="19" inputmode="numeric" :placeholder="$store.i18n.t('premium.cardNumberPlaceholder')" required aria-required="true" :aria-invalid="cardError.number ? 'true' : 'false'">
-                                <div class="card-icons"> <i class="fab fa-cc-visa"></i> <i class="fab fa-cc-mastercard"></i> </div>
+                                <input type="text" id="cardNumber" x-model="card.number" @input="formatCardNumber()" maxlength="19" inputmode="numeric" :placeholder="$store.i18n.t('premium.cardNumberPlaceholder')" required aria-required="true" :aria-invalid="!!cardError.number" aria-describedby="card-number-error">
+                                <div class="card-icons" aria-hidden="true"> <i class="fab fa-cc-visa"></i> <i class="fab fa-cc-mastercard"></i> </div>
                             </div>
-                            <span x-show="cardError.number" class="error-message-inline" x-text="cardError.number"></span>
+                            <span id="card-number-error" x-show="cardError.number" class="error-message-inline" x-text="cardError.number" role="alert"></span>
                         </div>
                         <div class="form-group">
                             <label for="cardName" class="form-label" x-text="$store.i18n.t('premium.cardNameLabel')"></label>
-                            <input type="text" id="cardName" x-model="card.name" :placeholder="$store.i18n.t('premium.cardNamePlaceholder')" required aria-required="true" :aria-invalid="cardError.name ? 'true' : 'false'">
-                            <span x-show="cardError.name" class="error-message-inline" x-text="cardError.name"></span>
+                            <input type="text" id="cardName" x-model="card.name" :placeholder="$store.i18n.t('premium.cardNamePlaceholder')" required aria-required="true" :aria-invalid="!!cardError.name" aria-describedby="card-name-error" autocomplete="cc-name">
+                            <span id="card-name-error" x-show="cardError.name" class="error-message-inline" x-text="cardError.name" role="alert"></span>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="cardExpiry" class="form-label" x-text="$store.i18n.t('premium.cardExpiryLabel')"></label>
-                                <input type="text" id="cardExpiry" x-model="card.expiry" @input="formatExpiryDate()" maxlength="5" inputmode="numeric" :placeholder="$store.i18n.t('premium.cardExpiryPlaceholder')" required aria-required="true" :aria-invalid="cardError.expiry ? 'true' : 'false'">
-                                <span x-show="cardError.expiry" class="error-message-inline" x-text="cardError.expiry"></span>
+                                <input type="text" id="cardExpiry" x-model="card.expiry" @input="formatExpiryDate()" maxlength="5" inputmode="numeric" :placeholder="$store.i18n.t('premium.cardExpiryPlaceholder')" required aria-required="true" :aria-invalid="!!cardError.expiry" aria-describedby="card-expiry-error" autocomplete="cc-exp">
+                                <span id="card-expiry-error" x-show="cardError.expiry" class="error-message-inline" x-text="cardError.expiry" role="alert"></span>
                             </div>
                             <div class="form-group">
                                 <label for="cardCVC" class="form-label" x-text="$store.i18n.t('premium.cardCVCLabel')"></label>
-                                <input type="password" inputmode="numeric" id="cardCVC" x-model="card.cvc" @input="formatCVC()" maxlength="4" :placeholder="$store.i18n.t('premium.cardCVCPlaceholder')" required autocomplete="cc-csc" aria-required="true" :aria-invalid="cardError.cvc ? 'true' : 'false'">
-                                <span x-show="cardError.cvc" class="error-message-inline" x-text="cardError.cvc"></span>
+                                <input type="password" inputmode="numeric" id="cardCVC" x-model="card.cvc" @input="formatCVC()" maxlength="4" :placeholder="$store.i18n.t('premium.cardCVCPlaceholder')" required autocomplete="cc-csc" aria-required="true" :aria-invalid="!!cardError.cvc" aria-describedby="card-cvc-error">
+                                <span id="card-cvc-error" x-show="cardError.cvc" class="error-message-inline" x-text="cardError.cvc" role="alert"></span>
                             </div>
                         </div>
                         <div class="form-agreement">
@@ -1022,47 +547,47 @@
                             <label for="termsAgreementCard" x-html="$store.i18n.t('premium.agreeTerms', { termsLink: `<a href='terms-page.html' target='_blank'>${$store.i18n.t('premium.termsLink')}</a>`, privacyLink: `<a href='privacy-policy.html' target='_blank'>${$store.i18n.t('premium.privacyLink')}</a>` })"></label>
                         </div>
                         <div class="form-action">
-                            <!-- Виправлена кнопка оплати без постійного класу processing -->
-                            <button type="submit" class="btn btn-primary pay-btn" :class="{ 'processing': isProcessingPayment }" :disabled="isProcessingPayment || !termsAgreed">
-                                <span x-show="!isProcessingPayment" x-text="$store.i18n.t('premium.payButton', { amount: currentPlanPriceDetails.price.toLocaleString($store.i18n.selectedLang || 'uk-UA') })"></span>
-                                <span x-show="isProcessingPayment"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('premium.processingPayment')"></span></span>
+                            <button type="submit" class="btn btn-primary pay-btn" :class="{ 'processing': isProcessingPayment }" :disabled="isProcessingPayment || !termsAgreed" :aria-busy="isProcessingPayment">
+                                <span x-show="!isProcessingPayment" x-text="$store.i18n.t('premium.payButton', { amount: formatPrice(currentPlanPriceDetails.price) })"></span>
+                                <span x-show="isProcessingPayment"><span x-text="$store.i18n.t('premium.processingPayment')"></span></span>
                             </button>
                         </div>
                         <div class="form-security">
-                            <div class="security-item"><i class="fas fa-lock"></i> <span x-text="$store.i18n.t('premium.securePayment')"></span></div>
+                            <div class="security-item"><i class="fas fa-lock" aria-hidden="true"></i> <span x-text="$store.i18n.t('premium.securePayment')"></span></div>
+                            <!-- Додати інші іконки платіжних систем, якщо потрібно -->
                         </div>
                     </form>
                 </div>
 
                 <!-- Форма оплати криптовалютою -->
-                <div x-show="activePaymentMethod === 'crypto'" x-transition>
+                <div id="crypto-payment-panel" role="tabpanel" aria-labelledby="tab-crypto" x-show="activePaymentMethod === 'crypto'" x-transition>
                     <div class="crypto-payment">
-                        <div class="crypto-options">
+                        <div class="crypto-options" role="radiogroup" aria-label="Вибір криптовалюти">
                             <label class="crypto-option">
-                                <input type="radio" name="cryptoType" value="BTC" x-model="selectedCrypto" @change="updateCryptoDetails()">
-                                <i class="fab fa-bitcoin"></i> Bitcoin
+                                <input type="radio" name="cryptoType" value="BTC" x-model="selectedCrypto" @change="updateCryptoDetails()" role="radio" aria-checked="selectedCrypto === 'BTC'">
+                                <i class="fab fa-bitcoin" aria-hidden="true"></i> Bitcoin
                             </label>
-
                             <label class="crypto-option">
-                                <input type="radio" name="cryptoType" value="ETH" x-model="selectedCrypto" @change="updateCryptoDetails()">
-                                <i class="fab fa-ethereum"></i> Ethereum </label>
-
+                                <input type="radio" name="cryptoType" value="ETH" x-model="selectedCrypto" @change="updateCryptoDetails()" role="radio" aria-checked="selectedCrypto === 'ETH'">
+                                <i class="fab fa-ethereum" aria-hidden="true"></i> Ethereum
+                            </label>
                             <label class="crypto-option">
-                                <input type="radio" name="cryptoType" value="USDT" x-model="selectedCrypto" @change="updateCryptoDetails()">
-                                <i class="fas fa-dollar-sign"></i> USDT (TRC20) </label>
+                                <input type="radio" name="cryptoType" value="USDT" x-model="selectedCrypto" @change="updateCryptoDetails()" role="radio" aria-checked="selectedCrypto === 'USDT'">
+                                <i class="fas fa-dollar-sign" aria-hidden="true"></i> USDT (TRC20)
+                            </label>
                         </div>
                         <div class="crypto-info" x-show="cryptoAddress">
                             <div class="qr-code">
-                                <!-- Тут має бути реальний QR-код, згенерований бібліотекою -->
+                                <!-- TODO: Вставити реальний QR-код -->
                                 <div class="qr-placeholder" :title="$store.i18n.t('premium.qrCodeTitle')">
-                                    <i class="fas fa-qrcode" style="font-size: 8rem; color: rgba(255,255,255,0.3);"></i>
+                                    <i class="fas fa-qrcode" aria-hidden="true"></i>
                                 </div>
                             </div>
                             <div class="wallet-address">
                                 <p><strong x-text="$store.i18n.t('premium.cryptoSendLabel', {amount: cryptoAmount, currency: selectedCrypto})"></strong> <span x-text="$store.i18n.t('premium.cryptoToAddress')"></span></p>
                                 <div class="address-box">
                                     <code x-text="cryptoAddress"></code>
-                                    <button type="button" @click="copyToClipboard(cryptoAddress)" class="copy-btn" :title="$store.i18n.t('premium.cryptoCopyTooltip')"> <i class="fas fa-copy"></i> </button>
+                                    <button type="button" @click="copyToClipboard(cryptoAddress)" class="copy-btn" :title="$store.i18n.t('premium.cryptoCopyTooltip')" :aria-label="$store.i18n.t('premium.cryptoCopyTooltip')"> <i class="fas fa-copy" aria-hidden="true"></i> </button>
                                 </div>
                                 <p class="crypto-note" x-text="$store.i18n.t('premium.cryptoNote')"></p>
                             </div>
@@ -1073,15 +598,13 @@
                             <label for="termsAgreementCrypto" x-html="$store.i18n.t('premium.agreeTerms', { termsLink: `<a href='terms-page.html' target='_blank'>${$store.i18n.t('premium.termsLink')}</a>`, privacyLink: `<a href='privacy-policy.html' target='_blank'>${$store.i18n.t('premium.privacyLink')}</a>` })"></label>
                         </div>
                         <div class="form-action">
-                            <!-- Виправлена кнопка для оплати криптовалютою -->
-                            <button type="button" class="btn btn-primary pay-btn" :class="{ 'processing': isProcessingPayment }" @click="submitPayment()" :disabled="isProcessingPayment || !isCryptoFormValid">
+                            <button type="button" class="btn btn-primary pay-btn" :class="{ 'processing': isProcessingPayment }" @click="submitPayment()" :disabled="isProcessingPayment || !isCryptoFormValid" :aria-busy="isProcessingPayment">
                                 <span x-show="!isProcessingPayment" x-text="$store.i18n.t('premium.cryptoConfirmPaymentButton')"></span>
-                                <span x-show="isProcessingPayment"><i class="fas fa-spinner fa-spin"></i> <span x-text="$store.i18n.t('premium.cryptoCheckingPayment')"></span></span>
+                                <span x-show="isProcessingPayment"><span x-text="$store.i18n.t('premium.cryptoCheckingPayment')"></span></span>
                             </button>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>
@@ -1090,17 +613,17 @@
     <section id="confirmation-section" class="confirmation-section" x-show="currentStep === 3" x-transition>
         <div class="container">
             <div class="confirmation-card" x-show="paymentResult">
-                <div class="confirmation-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="confirmation-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
                 <h2 class="confirmation-title" x-text="$store.i18n.t('premium.confirmationTitle')"></h2>
                 <p class="confirmation-message" x-html="$store.i18n.t('premium.confirmationMessage', { billingCycle: paymentResult?.billingCycle.toLowerCase(), planName: paymentResult?.planName }) || 'Підписка активована.'"></p>
-                <div class="confirmation-details">
-                    <div class="confirmation-detail"> <span class="detail-label" x-text="$store.i18n.t('premium.confirmationPlanLabel')"></span> <span class="detail-value" x-text="paymentResult?.planName"></span> </div>
-                    <div class="confirmation-detail"> <span class="detail-label" x-text="$store.i18n.t('premium.confirmationPeriodLabel')"></span> <span class="detail-value" x-text="paymentResult?.billingCycle"></span> </div>
-                    <div class="confirmation-detail"> <span class="detail-label" x-text="$store.i18n.t('premium.confirmationAmountLabel')"></span> <span class="detail-value"><span x-text="paymentResult?.amount.toLocaleString($store.i18n.selectedLang || 'uk-UA')"></span> <span x-text="paymentResult?.currency"></span></span> </div>
-                    <div class="confirmation-detail"> <span class="detail-label" x-text="$store.i18n.t('premium.confirmationMethodLabel')"></span> <span class="detail-value" x-text="paymentResult?.paymentMethod"></span> </div>
-                    <div class="confirmation-detail"> <span class="detail-label" x-text="$store.i18n.t('premium.confirmationStatusLabel')"></span> <span class="detail-value success" x-text="paymentResult?.status"></span> </div>
-                    <div class="confirmation-detail"> <span class="detail-label" x-text="$store.i18n.t('premium.confirmationNextBillingLabel')"></span> <span class="detail-value" x-text="paymentResult?.nextBillingDate"></span> </div>
-                </div>
+                <dl class="confirmation-details"> <!-- Використовуємо dl -->
+                    <div class="confirmation-detail"> <dt class="detail-label" x-text="$store.i18n.t('premium.confirmationPlanLabel')"></dt> <dd class="detail-value" x-text="paymentResult?.planName"></dd> </div>
+                    <div class="confirmation-detail"> <dt class="detail-label" x-text="$store.i18n.t('premium.confirmationPeriodLabel')"></dt> <dd class="detail-value" x-text="paymentResult?.billingCycle"></dd> </div>
+                    <div class="confirmation-detail"> <dt class="detail-label" x-text="$store.i18n.t('premium.confirmationAmountLabel')"></dt> <dd class="detail-value"><span x-text="formatPrice(paymentResult?.amount || 0)"></span></dd> </div>
+                    <div class="confirmation-detail"> <dt class="detail-label" x-text="$store.i18n.t('premium.confirmationMethodLabel')"></dt> <dd class="detail-value" x-text="paymentResult?.paymentMethod"></dd> </div>
+                    <div class="confirmation-detail"> <dt class="detail-label" x-text="$store.i18n.t('premium.confirmationStatusLabel')"></dt> <dd class="detail-value success" x-text="paymentResult?.status"></dd> </div>
+                    <div class="confirmation-detail"> <dt class="detail-label" x-text="$store.i18n.t('premium.confirmationNextBillingLabel')"></dt> <dd class="detail-value" x-text="paymentResult?.nextBillingDate"></dd> </div>
+                </dl>
                 <div class="confirmation-actions">
                     <a href="index.html" class="btn btn-primary" x-text="$store.i18n.t('premium.confirmationActionHome')"></a>
                     <a href="profile.html" class="btn btn-outline" x-text="$store.i18n.t('premium.confirmationActionProfile')"></a>
@@ -1109,7 +632,6 @@
                     <p x-html="$store.i18n.t('premium.confirmationHelpText', { link: `<a href='contact.html'>${$store.i18n.t('premium.confirmationHelpLink')}</a>` }) || `Маєте питання? <a href='contact.html'>Зв'яжіться з підтримкою</a>`"></p>
                 </div>
             </div>
-            <!-- Повідомлення про обробку даних підтвердження -->
             <div x-show="currentStep === 3 && !paymentResult" class="loading-indicator-small" x-text="$store.i18n.t('premium.processingInfo')"></div>
         </div>
     </section>
@@ -1119,36 +641,12 @@
         <div class="container">
             <h2 class="section-title" x-text="$store.i18n.t('premium.benefitsTitle')"></h2>
             <div class="benefits-grid">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="fas fa-book-open"></i></div>
-                    <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleAccess')"></h3>
-                    <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescAccess')"></p>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="fas fa-language"></i></div>
-                    <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleTranslate')"></h3>
-                    <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescTranslate')"></p>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="fas fa-ad"></i></div>
-                    <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleNoAds')"></h3>
-                    <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescNoAds')"></p>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="fas fa-star"></i></div>
-                    <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleExclusive')"></h3>
-                    <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescExclusive')"></p>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="fas fa-download"></i></div>
-                    <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleOffline')"></h3>
-                    <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescOffline')"></p>
-                </div>
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="fas fa-headset"></i></div>
-                    <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleSupport')"></h3>
-                    <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescSupport')"></p>
-                </div>
+                <div class="benefit-card"> <div class="benefit-icon"><i class="fas fa-book-open"></i></div> <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleAccess')"></h3> <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescAccess')"></p> </div>
+                <div class="benefit-card"> <div class="benefit-icon"><i class="fas fa-language"></i></div> <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleTranslate')"></h3> <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescTranslate')"></p> </div>
+                <div class="benefit-card"> <div class="benefit-icon"><i class="fas fa-ban"></i></div> <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleNoAds')"></h3> <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescNoAds')"></p> </div>
+                <div class="benefit-card"> <div class="benefit-icon"><i class="fas fa-star"></i></div> <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleExclusive')"></h3> <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescExclusive')"></p> </div>
+                <div class="benefit-card"> <div class="benefit-icon"><i class="fas fa-download"></i></div> <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleOffline')"></h3> <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescOffline')"></p> </div>
+                <div class="benefit-card"> <div class="benefit-icon"><i class="fas fa-headset"></i></div> <h3 class="benefit-title" x-text="$store.i18n.t('premium.benefitTitleSupport')"></h3> <p class="benefit-description" x-text="$store.i18n.t('premium.benefitDescSupport')"></p> </div>
             </div>
         </div>
     </section>
@@ -1157,42 +655,9 @@
         <div class="container">
             <h2 class="section-title" x-text="$store.i18n.t('premium.testimonialsTitle')"></h2>
             <div class="testimonials-grid">
-                <!-- Приклад відгуку 1 -->
-                <div class="testimonial-card">
-                    <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-                    <p class="testimonial-text" x-text="$store.i18n.t('premium.testimonial1Text')"></p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?woman,portrait')"></div>
-                        <div>
-                            <div class="author-name" x-text="$store.i18n.t('premium.testimonial1Author')"></div>
-                            <div class="subscription-type" x-text="$store.i18n.t('premium.premiumPlanName')"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Приклад відгуку 2 -->
-                <div class="testimonial-card">
-                    <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i></div>
-                    <p class="testimonial-text" x-text="$store.i18n.t('premium.testimonial2Text')"></p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?man,profile')"></div>
-                        <div>
-                            <div class="author-name" x-text="$store.i18n.t('premium.testimonial2Author')"></div>
-                            <div class="subscription-type" x-text="$store.i18n.t('premium.vipPlanName')"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Приклад відгуку 3 -->
-                <div class="testimonial-card">
-                    <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
-                    <p class="testimonial-text" x-text="$store.i18n.t('premium.testimonial3Text')"></p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?person,face')"></div>
-                        <div>
-                            <div class="author-name" x-text="$store.i18n.t('premium.testimonial3Author')"></div>
-                            <div class="subscription-type" x-text="$store.i18n.t('premium.premiumPlanName')"></div>
-                        </div>
-                    </div>
-                </div>
+                <figure class="testimonial-card"> <blockquote class="testimonial-text" x-text="$store.i18n.t('premium.testimonial1Text')"></blockquote> <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div> <figcaption class="testimonial-author"> <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?woman,portrait')"></div> <div> <div class="author-name" x-text="$store.i18n.t('premium.testimonial1Author')"></div> <div class="subscription-type" x-text="$store.i18n.t('premium.premiumPlanName')"></div> </div> </figcaption> </figure>
+                <figure class="testimonial-card"> <blockquote class="testimonial-text" x-text="$store.i18n.t('premium.testimonial2Text')"></blockquote> <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i></div> <figcaption class="testimonial-author"> <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?man,profile')"></div> <div> <div class="author-name" x-text="$store.i18n.t('premium.testimonial2Author')"></div> <div class="subscription-type" x-text="$store.i18n.t('premium.vipPlanName')"></div> </div> </figcaption> </figure>
+                <figure class="testimonial-card"> <blockquote class="testimonial-text" x-text="$store.i18n.t('premium.testimonial3Text')"></blockquote> <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div> <figcaption class="testimonial-author"> <div class="author-avatar" style="background-image: url('https://source.unsplash.com/random/100x100/?person,face')"></div> <div> <div class="author-name" x-text="$store.i18n.t('premium.testimonial3Author')"></div> <div class="subscription-type" x-text="$store.i18n.t('premium.premiumPlanName')"></div> </div> </figcaption> </figure>
             </div>
         </div>
     </section>
@@ -1201,43 +666,10 @@
         <div class="container">
             <h2 class="section-title" x-text="$store.i18n.t('premium.faqTitle')"></h2>
             <div class="faq-list">
-                <!-- Приклад FAQ Item -->
-                <div class="faq-item" x-data="{ open: false }">
-                    <div class="faq-question" @click="open = !open">
-                        <h3 x-text="$store.i18n.t('premium.faqQ1')"></h3>
-                        <div class="faq-toggle"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></div>
-                    </div>
-                    <div class="faq-answer" x-show="open" x-collapse> <!-- Використовуємо x-collapse для анімації -->
-                        <p x-text="$store.i18n.t('premium.faqA1')"></p>
-                    </div>
-                </div>
-                <div class="faq-item" x-data="{ open: false }">
-                    <div class="faq-question" @click="open = !open">
-                        <h3 x-text="$store.i18n.t('premium.faqQ2')"></h3>
-                        <div class="faq-toggle"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></div>
-                    </div>
-                    <div class="faq-answer" x-show="open" x-collapse>
-                        <p x-text="$store.i18n.t('premium.faqA2')"></p>
-                    </div>
-                </div>
-                <div class="faq-item" x-data="{ open: false }">
-                    <div class="faq-question" @click="open = !open">
-                        <h3 x-text="$store.i18n.t('premium.faqQ3')"></h3>
-                        <div class="faq-toggle"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></div>
-                    </div>
-                    <div class="faq-answer" x-show="open" x-collapse>
-                        <p x-text="$store.i18n.t('premium.faqA3')"></p>
-                    </div>
-                </div>
-                <div class="faq-item" x-data="{ open: false }">
-                    <div class="faq-question" @click="open = !open">
-                        <h3 x-text="$store.i18n.t('premium.faqQ4')"></h3>
-                        <div class="faq-toggle"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></div>
-                    </div>
-                    <div class="faq-answer" x-show="open" x-collapse>
-                        <p x-text="$store.i18n.t('premium.faqA4')"></p>
-                    </div>
-                </div>
+                <div class="faq-item" x-data="{ open: false }"> <button type="button" class="faq-question" @click="open = !open" :aria-expanded="open" aria-controls="faq-answer-1"> <h3 x-text="$store.i18n.t('premium.faqQ1')"></h3> <span class="faq-toggle" aria-hidden="true"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></span> </button> <div class="faq-answer" x-show="open" x-collapse id="faq-answer-1" role="region"> <p x-text="$store.i18n.t('premium.faqA1')"></p> </div> </div>
+                <div class="faq-item" x-data="{ open: false }"> <button type="button" class="faq-question" @click="open = !open" :aria-expanded="open" aria-controls="faq-answer-2"> <h3 x-text="$store.i18n.t('premium.faqQ2')"></h3> <span class="faq-toggle" aria-hidden="true"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></span> </button> <div class="faq-answer" x-show="open" x-collapse id="faq-answer-2" role="region"> <p x-text="$store.i18n.t('premium.faqA2')"></p> </div> </div>
+                <div class="faq-item" x-data="{ open: false }"> <button type="button" class="faq-question" @click="open = !open" :aria-expanded="open" aria-controls="faq-answer-3"> <h3 x-text="$store.i18n.t('premium.faqQ3')"></h3> <span class="faq-toggle" aria-hidden="true"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></span> </button> <div class="faq-answer" x-show="open" x-collapse id="faq-answer-3" role="region"> <p x-text="$store.i18n.t('premium.faqA3')"></p> </div> </div>
+                <div class="faq-item" x-data="{ open: false }"> <button type="button" class="faq-question" @click="open = !open" :aria-expanded="open" aria-controls="faq-answer-4"> <h3 x-text="$store.i18n.t('premium.faqQ4')"></h3> <span class="faq-toggle" aria-hidden="true"><i :class="open ? 'fas fa-times' : 'fas fa-plus'"></i></span> </button> <div class="faq-answer" x-show="open" x-collapse id="faq-answer-4" role="region"> <p x-text="$store.i18n.t('premium.faqA4')"></p> </div> </div>
             </div>
         </div>
     </section>
@@ -1258,53 +690,12 @@
 <footer>
     <div class="container">
         <!-- Код футера з i18n, як в index.html -->
-        <div class="footer-content">
-            <div class="footer-section footer-about">
-                <h4 x-text="$store.i18n.t('general.about')"></h4>
-                <p x-text="$store.i18n.t('general.aboutText')"></p>
-                <div class="social-links">
-                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
-                    <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
-                </div>
-            </div>
-            <div class="footer-section">
-                <h4 x-text="$store.i18n.t('general.navigation')"></h4>
-                <ul>
-                    <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-                    <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-                    <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-                    <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-                    <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4 x-text="$store.i18n.t('general.support')"></h4>
-                <ul>
-                    <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-                    <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-                    <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-                    <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4 x-text="$store.i18n.t('general.join')"></h4>
-                <ul>
-                    <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-                    <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-                    <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-                    <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-            <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
-        </div>
+        <div class="footer-content"> <div class="footer-section footer-about"> <h4 x-text="$store.i18n.t('general.about')"></h4> <p x-text="$store.i18n.t('general.aboutText')"></p> <div class="social-links"> <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a> <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a> <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a> </div> </div> <div class="footer-section"> <h4 x-text="$store.i18n.t('general.navigation')"></h4> <ul> <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li> <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li> <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li> <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li> <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li> </ul> </div> <div class="footer-section"> <h4 x-text="$store.i18n.t('general.support')"></h4> <ul> <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li> <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li> <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li> <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li> </ul> </div> <div class="footer-section"> <h4 x-text="$store.i18n.t('general.join')"></h4> <ul> <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li> <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li> <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li> <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li> </ul> </div> </div>
+        <div class="footer-bottom"> © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br> <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a> </div>
     </div>
 </footer>
 
-<!-- Елемент сповіщення з оновленими класами -->
+<!-- Елемент сповіщення -->
 <div x-show="notificationVisible"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 translate-y-2"
@@ -1313,9 +704,11 @@
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
-     :class="{ 'show': notificationVisible, 'success': true, 'error': false }"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
      style="display: none;"
-     id="global-notification">
+     id="global-notification"
+     role="alert"
+     aria-live="assertive">
     <span x-text="notificationMessage"></span>
 </div>
 

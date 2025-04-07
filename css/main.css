@@ -13,21 +13,27 @@
 
     /* Акцентні кольори */
     --accent-red: #cc0033;
+    --accent-red-rgb: 204, 0, 51; /* Додано RGB */
     --accent-burgundy: #800020;
     --accent-gold: #d9a45b;
     --accent-gold-rgb: 217, 164, 91; /* Додано RGB версію для використання в rgba() */
     --accent-dark: #1f1417; /* Додано темний відтінок для градієнтів */
 
     /* Преміум-кольори */
-    --premium-gold: #d9a45b; /* Видалено дублікат, залишено тут */
+    --premium-gold: #d9a45b; /* Використовуємо золотий акцент */
     --premium-gold-dark: #b78a4d;
     --premium-gold-light: #e3bb7d;
     --premium-gradient: linear-gradient(135deg, var(--premium-gold) 0%, var(--premium-gold-dark) 100%);
+    --premium-gold-rgb: 217, 164, 91; /* Додано RGB */
+
+    /* Рамки */
+    --border-color-soft: rgba(153, 0, 0, 0.1);
+    --border-color-medium: rgba(153, 0, 0, 0.3);
 
     /* Розміри */
     --container-width: 1240px;
     --border-radius: 12px;
-    --button-radius: 30px;
+    --border-radius-round: 30px; /* Перейменовано з --button-radius */
 }
 
 /* Глобальні стилі */
@@ -35,6 +41,8 @@
 *::before,
 *::after {
     box-sizing: border-box;
+    margin: 0; /* Додано скидання */
+    padding: 0; /* Додано скидання */
 }
 
 html {
@@ -52,7 +60,7 @@ body {
     background-image: radial-gradient(circle at 10% 20%, rgba(153, 0, 0, 0.1) 0%, transparent 20%),
     radial-gradient(circle at 90% 80%, rgba(153, 0, 0, 0.08) 0%, transparent 20%);
     background-attachment: fixed;
-    margin: 0; /* Скидаємо відступи */
+    margin: 0; /* Залишаємо для ясності */
     display: flex; /* Для притискання футера */
     flex-direction: column; /* Для притискання футера */
 }
@@ -66,12 +74,13 @@ img {
     display: block; /* Забираємо зайвий відступ під зображеннями */
 }
 
-h1, h2, h3, h4, h5, h6 { /* Додано h6 */
+h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', serif;
     font-weight: 700;
     margin-top: 0; /* Скидаємо верхній відступ */
     margin-bottom: 1rem;
     letter-spacing: 0.3px;
+    color: var(--text-color); /* Базовий колір заголовків */
 }
 
 p {
@@ -80,8 +89,8 @@ p {
 }
 ul, ol {
     list-style: none; /* Прибираємо маркери за замовчуванням */
-    padding: 0;
-    margin: 0;
+    padding: 0; /* Скидання вже було, залишаємо для ясності */
+    margin: 0; /* Скидання вже було, залишаємо для ясності */
 }
 
 a {
@@ -110,6 +119,43 @@ button {
     padding: 0 20px;
 }
 
+/* === Accessibility Focus Styles === */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:not([tabindex*="-"]):focus-visible, /* Додано для елементів з tabindex */
+.lang-dropdown-button:focus-visible,
+.sort-button:focus-visible,
+.pagination-button:focus-visible,
+.story-card a:focus-visible,
+.category-tag:focus-visible,
+.floating-button:focus-visible,
+.filter-option:focus-visible,
+.filter-btn:focus-visible,
+.faq-category:focus-visible,
+.faq-question:focus-visible,
+.auth-tab:focus-visible,
+.social-btn:focus-visible,
+.back-link:focus-visible,
+.copy-btn:focus-visible,
+.image-upload:focus-visible, /* Додано */
+.image-preview-remove:focus-visible /* Додано */
+{
+    outline: 2px solid var(--accent-gold); /* Використовуємо золотий акцент */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--accent-gold-rgb), 0.3); /* Додаткова тінь для кращої видимості */
+    border-radius: 3px; /* Легке закруглення для outline */
+}
+
+/* Скидаємо стандартний outline для елементів, де вже є focus-visible */
+a:focus, button:focus, input:focus, textarea:focus, select:focus {
+    outline: none;
+}
+/* === End of Accessibility Focus Styles === */
+
+
 /* Хедер і навігація */
 header {
     padding: 1.2rem 0;
@@ -124,7 +170,7 @@ header:after {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(153, 0, 0, 0.3), transparent); /* Зробимо менш яскравим */
+    background: linear-gradient(to right, transparent, rgba(153, 0, 0, 0.3), transparent); /* Змінено колір */
 }
 
 .navbar {
@@ -148,7 +194,7 @@ header:after {
     text-decoration: none; /* Прибираємо підкреслення для лого */
 }
 
-
+/* Назва сайту "EroStory" */
 .logo span {
     color: var(--accent-red);
 }
@@ -171,7 +217,7 @@ header:after {
     /* list-style: none; */ /* Вже скинуто глобально */
     margin: 0; /* Скидаємо */
     padding: 0; /* Скидаємо */
-    gap: 2.5rem; /* Використовуємо gap */
+    gap: 1rem; /* Використовуємо gap */
     flex-wrap: wrap; /* Дозволяємо перенос */
     justify-content: center; /* Центруємо, якщо переносяться */
 }
@@ -229,20 +275,20 @@ header:after {
     align-items: center;
     cursor: pointer;
     padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: background-color 0.3s;
 }
-.lang-dropdown-button:hover, .lang-dropdown-button:focus-visible {
+.lang-dropdown-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    outline: none; /* Прибираємо стандартний outline */
 }
 .lang-dropdown-button i {
     margin-left: 8px;
     font-size: 0.8rem;
     transition: transform 0.3s;
 }
+/* Клас для повороту іконки (керується Alpine.js) */
 .lang-dropdown-button i.rotate-180 {
     transform: rotate(180deg);
 }
@@ -257,10 +303,8 @@ header:after {
     min-width: 150px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    /* Додамо display: none за замовчуванням, Alpine буде керувати */
-    /* display: none; */ /* Закоментував, бо є x-show */
+    /* Стилі анімації для Alpine.js */
 }
-/* Додамо стилі для x-transition */
 .lang-dropdown-menu[x-transition] {
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
@@ -274,7 +318,6 @@ header:after {
     opacity: 1;
     transform: translateY(0);
 }
-
 
 .lang-dropdown-item {
     padding: 0.8rem 1.2rem;
@@ -293,7 +336,6 @@ header:after {
 }
 .lang-dropdown-item.active {
     color: var(--accent-red);
-    /* background-color: rgba(153, 0, 0, 0.1); */
 }
 .lang-dropdown-item i {
     margin-left: 10px;
@@ -306,7 +348,7 @@ header:after {
     align-items: center;
     justify-content: center;
     padding: 0.7rem 1.5rem;
-    border-radius: var(--button-radius);
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     font-weight: 500;
     text-decoration: none;
     text-align: center;
@@ -316,7 +358,7 @@ header:after {
     font-size: 0.9rem;
     position: relative;
     overflow: hidden;
-    white-space: nowrap; /* Додаємо це, щоб текст не переносився на новий рядок */
+    white-space: nowrap; /* Додано */
 }
 .btn:hover {
     text-decoration: none; /* Прибираємо підкреслення */
@@ -341,11 +383,6 @@ header:after {
 .btn:hover:after {
     left: 100%;
 }
-/* Стиль для стану фокусу кнопок */
-.btn:focus-visible {
-    outline: 2px solid var(--accent-red);
-    outline-offset: 2px;
-}
 
 .btn-outline {
     background-color: transparent;
@@ -368,11 +405,17 @@ header:after {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(153, 0, 0, 0.4);
 }
-.btn:disabled { /* Стиль для всіх заблокованих кнопок */
+
+.btn:disabled,
+.btn[disabled] { /* Додано */
     opacity: 0.6;
     cursor: not-allowed;
     transform: none !important; /* Прибираємо ефекти ховера/фокуса */
     box-shadow: none !important;
+}
+
+.btn:disabled:after { /* Додано */
+    display: none;
 }
 
 
@@ -420,15 +463,8 @@ header:after {
     position: relative;
 }
 
-.hero h1:after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 0;
-    width: 80px;
-    height: 3px;
-    background: var(--accent-red);
-}
+/* TODO: Уніфікувати стиль :after для заголовків */
+/* .hero h1:after { ... } - видалено */
 
 .hero p {
     color: var(--secondary-text);
@@ -468,6 +504,7 @@ header:after {
 .search-input-container {
     flex: 1;
     position: relative;
+    min-width: 0; /* Для правильного розрахунку flex */
 }
 
 .search-input {
@@ -485,7 +522,7 @@ header:after {
     outline: none;
     background-color: rgba(255, 255, 255, 0.08);
     border-color: rgba(153, 0, 0, 0.3);
-    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1); /* Додано для відповідності іншим полям */
+    box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.1);
 }
 
 .search-input::placeholder {
@@ -536,21 +573,32 @@ header:after {
 
 .section-title {
     font-size: 2.5rem;
-    margin-bottom: 0;
+    margin-bottom: 0; /* Змінено */
     position: relative;
     display: inline-block;
-    /* Прибрали :after, щоб він не заважав при переносі */
 }
-/* Можна додати підкреслення інакше */
-.section-title::after {
+/* Уніфікований стиль підкреслення для заголовків */
+.section-title.underline-red::after,
+.page-title.underline-red::after {
     content: '';
     position: absolute;
-    width: 60px;
+    width: 60px; /* Можна налаштовувати */
     height: 3px;
     background: var(--accent-red);
-    bottom: -10px;
+    bottom: -10px; /* Відступ знизу */
+    left: 0; /* Або left: 50%; transform: translateX(-50%); для центрування */
+}
+.section-title.underline-gold::after,
+.page-title.underline-gold::after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 3px;
+    background: var(--accent-gold);
+    bottom: -12px;
     left: 0;
 }
+
 
 .view-all {
     color: var(--secondary-text);
@@ -583,7 +631,7 @@ header:after {
     padding: 0.7rem 1.5rem;
     background-color: var(--card-color);
     border: 1px solid rgba(153, 0, 0, 0.2);
-    border-radius: 30px;
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     color: var(--text-color);
     text-decoration: none;
     font-size: 0.9rem;
@@ -657,7 +705,7 @@ header:after {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
     border-color: rgba(153, 0, 0, 0.2);
-    outline: 2px solid var(--accent-red);
+    outline: 2px solid var(--accent-gold); /* Змінено на золотий */
     outline-offset: 2px;
 }
 
@@ -696,9 +744,14 @@ header:after {
     background-color: rgba(153, 0, 0, 0.8);
     color: white;
     padding: 0.3rem 0.8rem;
-    border-radius: 30px;
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     font-size: 0.8rem;
     z-index: 1;
+}
+/* Стиль для преміум-бейджа (перенесено з category-page.css) */
+.story-badge.premium-badge {
+    background-color: var(--premium-gold);
+    color: #000;
 }
 
 .story-card-content {
@@ -706,6 +759,7 @@ header:after {
     flex-grow: 1; /* Дозволяє рости */
     display: flex; /* Для мета-даних внизу */
     flex-direction: column; /* Вміст вертикально */
+    min-width: 0; /* Для правильного переносу тексту */
 }
 
 .story-tags {
@@ -756,6 +810,13 @@ header:after {
     font-size: 0.95rem;
     line-height: 1.7;
     flex-grow: 1; /* Росте, щоб вирівняти мета-дані */
+    /* Додано обмеження тексту (перенесено з category-page.css) */
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Або інше значення */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: calc(1.7em * 3); /* Мінімальна висота */
 }
 
 .story-meta {
@@ -877,8 +938,9 @@ header:after {
     box-shadow: 0 8px 25px rgba(153, 0, 0, 0.5);
     text-decoration: none; /* Прибираємо */
 }
-.floating-button:focus-visible { /* Доступність */
-    outline: 2px solid var(--accent-red);
+/* Доступність */
+.floating-button:focus-visible {
+    outline: 2px solid var(--accent-gold); /* Змінено на золотий */
     outline-offset: 2px;
 }
 
@@ -907,7 +969,7 @@ footer {
 
 .footer-section ul {
     /* list-style: none; */ /* Вже скинуто */
-    padding: 0;
+    padding: 0; /* Вже скинуто */
 }
 
 .footer-section li {
@@ -985,7 +1047,7 @@ footer {
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: var(--text-color);
     padding: 0.8rem 1.5rem;
-    border-radius: var(--button-radius);
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     cursor: pointer;
     transition: all 0.3s;
     display: flex;
@@ -1004,10 +1066,6 @@ footer {
     opacity: 0.5;
     cursor: not-allowed;
 }
-.pagination-button:focus-visible { /* Доступність */
-    outline: 2px solid var(--accent-red);
-    outline-offset: 2px;
-}
 
 .prev-button i {
     margin-right: 8px;
@@ -1022,6 +1080,7 @@ footer {
     font-size: 0.95rem;
     text-align: center; /* Центруємо при переносі */
     flex-grow: 1; /* Займає місце між кнопками */
+    min-width: 150px; /* Щоб не стискалось */
 }
 
 .current-page {
@@ -1063,16 +1122,12 @@ footer {
     padding: 0.7rem 1.2rem;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 30px;
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
     color: var(--secondary-text);
     cursor: pointer;
     transition: all 0.3s;
     font-size: 0.9rem;
     white-space: nowrap;
-}
-.sort-button:focus-visible { /* Доступність */
-    outline: 2px solid var(--accent-red);
-    outline-offset: 2px;
 }
 
 .sort-button i {
@@ -1080,7 +1135,8 @@ footer {
     transition: transform 0.3s;
 }
 
-.sort-button[aria-expanded="true"] i { /* Використовуємо aria-expanded */
+/* Клас для повороту іконки (керується Alpine.js) */
+.sort-button i.open {
     transform: rotate(180deg);
 }
 
@@ -1102,7 +1158,7 @@ footer {
     overflow: hidden;
     /* Анімація через x-transition */
 }
-/* Додамо стилі для x-transition меню */
+/* Стилі для x-transition меню */
 .sort-menu[x-transition] {
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
@@ -1131,14 +1187,17 @@ footer {
     width: 100%; /* Займає всю ширину */
     text-align: left; /* Вирівнюємо текст */
 }
-.sort-option:focus {
-    outline: none; /* Прибираємо стандартний outline */
-}
 
 .sort-option:hover, .sort-option:focus-visible {
     background-color: rgba(255, 255, 255, 0.05);
     color: var(--text-color);
+    outline: none; /* Прибираємо стандартний outline для фокусу, якщо є :focus-visible */
 }
+/* Доступність: окремий стиль для фокусу */
+.sort-option:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent-gold); /* Внутрішня рамка */
+}
+
 
 .sort-option i {
     margin-right: 8px;
@@ -1172,13 +1231,8 @@ footer {
     color: var(--secondary-text);
     font-size: 0.95rem;
 }
-/* Додамо стиль для обов'язкових полів */
-.form-label[for]:after { /* Якщо є атрибут for */
-    /* content: ' *'; */ /* Зірочка */
-    /* color: var(--accent-red); */
-    /* font-weight: normal; */
-    /* margin-left: 2px; */
-}
+/* TODO: Стиль для обов'язкових полів може бути реалізований через JS або додаванням класу */
+/* .form-label.required::after { content: ' *'; color: var(--accent-red); } */
 
 .form-input,
 .form-textarea,
@@ -1193,6 +1247,7 @@ footer {
     font-size: 1rem;
     transition: all 0.3s;
     line-height: 1.5;
+    appearance: none; /* Скидаємо стандартний вигляд */
 }
 
 .form-input::placeholder,
@@ -1212,10 +1267,21 @@ footer {
 .form-input:invalid,
 .form-textarea:invalid,
 .form-select:invalid,
-input[aria-invalid="true"] { /* Додаємо aria-invalid */
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] { /* Додано селектори */
     border-color: #ff6b6b; /* Червона рамка */
     box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.1); /* Червона тінь */
 }
+
+/* Стиль для повідомлення про помилку під полем */
+.input-error-message {
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+    display: block;
+}
+
 
 .form-textarea {
     resize: vertical;
@@ -1224,16 +1290,26 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 
 .form-select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff80'%3E%3Cpath fill-rule='evenodd' d='M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z'/%3E%3C/svg%3E"); /* Інша стрілка */
+    -webkit-appearance: none; /* Для Safari */
+    -moz-appearance: none; /* Для Firefox */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='rgba(255,255,255,0.7)'%3E%3Cpath fill-rule='evenodd' d='M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z' clip-rule='evenodd'/%3E%3C/svg%3E"); /* Змінено колір */
     background-repeat: no-repeat;
     background-position: right 1rem center;
-    background-size: 1.2em 1.2em; /* Збільшимо стрілку */
-    padding-right: 3rem;
+    background-size: 1em 1em; /* Змінено розмір */
+    padding-right: 2.8rem; /* Трохи скориговано відступ */
+    cursor: pointer; /* Додано курсор */
 }
-.form-select option { /* Стиль для опцій */
+/* Стилі для опцій */
+.form-select option {
     background-color: var(--card-color);
     color: var(--text-color);
+    padding: 10px; /* Додамо трохи відступів для опцій */
 }
+/* Стилі для Firefox (якщо стандартна стрілка потрібна) */
+/* @-moz-document url-prefix() {
+    .form-select { background-image: none; }
+} */
+
 
 .form-help {
     font-size: 0.85rem;
@@ -1288,69 +1364,39 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 /* === End of Base Form Styles === */
 
 
-/* === Notification Messages === */
-
-.error-message,
-.success-message {
-    padding: 0.8rem 1.2rem;
-    margin-bottom: 1.5rem;
-    border-radius: var(--border-radius);
-    font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    border: 1px solid transparent;
-}
-
-.error-message {
-    background-color: rgba(255, 50, 50, 0.1);
-    border-color: rgba(255, 50, 50, 0.3);
-    color: #ff6b6b;
-}
-
-.success-message {
-    background-color: rgba(50, 200, 50, 0.1);
-    border-color: rgba(50, 200, 50, 0.3);
-    color: #4cd964;
-}
-
-.error-message i,
-.success-message i {
-    margin-right: 0.8rem;
-    font-size: 1.1em;
-}
-/* Додамо стилі для inline помилок, якщо потрібні біля полів */
-.error-message-inline {
-    color: #ff6b6b;
-    font-size: 0.85rem;
-    margin-top: 0.3rem;
-    display: block;
-}
-
+/* === Notification Messages (Inline) === */
+/* Стилі .error-message та .success-message перенесено з main.css,
+   вони вже уніфіковані та можуть використовуватися для inline сповіщень. */
 
 /* === End of Notification Messages === */
 
-/* === Global Notification Style (Перенесено з premium.html) === */
+
+/* === Global Notification Style === */
 .notification {
     position: fixed;
-    bottom: 20px;
+    bottom: -100px; /* Початкове положення за межами екрану */
     left: 50%;
-    transform: translateX(-50%) translateY(150%);
+    transform: translateX(-50%) translateY(0); /* Тільки горизонтальне центрування спочатку */
     background-color: var(--card-color);
     color: var(--text-color);
     padding: 1rem 1.5rem;
     border-radius: var(--border-radius);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-    z-index: 1000;
+    z-index: 1050; /* Вище, ніж інші елементи */
     min-width: 250px;
     max-width: 90%;
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-left-width: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease-out, transform 0.4s ease-out, bottom 0.4s ease-out; /* Додано bottom */
+    pointer-events: none; /* Неактивний, коли прихований */
 }
 
-.notification[x-show] { /* Стиль коли видимий через x-show */
+.notification.show { /* Стиль коли видимий */
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    bottom: 20px; /* Кінцеве положення */
+    transform: translateX(-50%) translateY(0); /* Тільки горизонтальне центрування */
     pointer-events: auto; /* Активний коли видимий */
 }
 
@@ -1382,6 +1428,9 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
     padding: 1.5rem 0;
     font-size: 0.9rem;
     color: var(--secondary-text);
+    display: flex; /* Додано для кращого вирівнювання */
+    flex-wrap: wrap; /* Додано для переносу */
+    gap: 0 0.5rem; /* Проміжок між елементами */
 }
 
 .breadcrumbs a {
@@ -1396,7 +1445,7 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 }
 
 .breadcrumbs .separator {
-    margin: 0 0.5rem;
+    /* margin: 0 0.5rem; - Замінено на gap */
     color: rgba(255, 255, 255, 0.3);
 }
 
@@ -1408,20 +1457,62 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 
 /* === Visually Hidden Class === */
 .visually-hidden {
-    position: absolute;
-    width: 1px;
+    border: 0;
+    clip: rect(0 0 0 0);
     height: 1px;
-    padding: 0;
     margin: -1px;
     overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    white-space: nowrap; /* Додано */
 }
 /* === End of Visually Hidden Class === */
 
 
-/* Адаптивність */
+/* === Filter Options (Buttons) Styles === */
+/* Перенесено з category-page.css */
+.filter-options {
+    display: flex;
+    flex-wrap: wrap; /* Дозволяє перенос кнопок */
+    gap: 0.8rem; /* Проміжок між кнопками */
+}
+
+.filter-option {
+    /* Базові стилі кнопки */
+    padding: 0.5rem 1.2rem; /* Внутрішні відступи */
+    border-radius: var(--border-radius-round); /* Використовуємо круглу рамку */
+    font-size: 0.9rem; /* Розмір шрифту */
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Стандартна рамка */
+    background-color: rgba(255, 255, 255, 0.05); /* Стандартний фон */
+    color: var(--secondary-text); /* Стандартний колір */
+    white-space: nowrap; /* Заборона переносу тексту */
+    /* Скидання стилів кнопки за замовчуванням */
+    font-family: inherit;
+    text-align: center;
+    appearance: none; /* Скидання вигляду */
+}
+
+.filter-option:hover {
+    background-color: rgba(153, 0, 0, 0.1); /* Фон при наведенні */
+    border-color: rgba(153, 0, 0, 0.2); /* Рамка при наведенні */
+    color: var(--text-color); /* Колір тексту при наведенні */
+}
+
+.filter-option.active {
+    background-color: rgba(153, 0, 0, 0.2); /* Фон активної кнопки */
+    border-color: rgba(153, 0, 0, 0.3); /* Рамка активної кнопки */
+    color: var(--text-color); /* Колір тексту активної кнопки */
+    font-weight: 500; /* Напівжирний для активної */
+}
+/* Доступність: стиль фокусу для кнопок фільтра */
+/* .filter-option:focus-visible - стиль вже є в глобальних стилях фокусу */
+
+/* === End of Filter Options Styles === */
+
+/* === Адаптивність === */
 @media (max-width: 992px) {
     .hero h1 {
         font-size: 3rem;
@@ -1432,6 +1523,17 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 
     .search-form {
         flex-direction: column;
+        gap: 1rem; /* Додано проміжок для мобільних */
+    }
+    /* Рамка для інпута пошуку */
+    .search-authors .search-input {
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius); /* Змінено заокруглення */
+    }
+    /* Рамка для кнопки пошуку */
+    .search-authors .search-button {
+        border-radius: var(--border-radius); /* Змінено заокруглення */
+        width: 100%; /* Кнопка на всю ширину */
     }
 
     .stories-grid {
@@ -1449,9 +1551,9 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 }
 
 @media (max-width: 768px) {
+    /* TODO: Реалізувати мобільне меню (бургер) */
     .nav-links {
         display: none; /* Залишаємо прихованим для мобільних */
-        /* TODO: Реалізувати мобільне меню (бургер) */
     }
     .auth-buttons {
         gap: 0.3rem; /* Зменшимо */
@@ -1483,13 +1585,15 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
 
     .hero-buttons .btn {
         width: 100%;
+        max-width: 300px; /* Обмеження ширини */
+        margin: 0 auto; /* Центрування */
     }
 
     .search-section { margin-bottom: 3rem; }
     .search-container { padding: 1.5rem; }
     .search-input { padding: 0.8rem 0.8rem 0.8rem 2.5rem; font-size: 0.9rem;}
     .search-icon { left: 0.8rem; }
-    .search-button { padding: 0.8rem 1.5rem; min-width: 100px;}
+    .search-button { padding: 0.8rem 1.5rem; min-width: 100%;} /* Кнопка на всю ширину */
 
     .section-header { margin-bottom: 2rem; }
     .section-title { font-size: 2rem; }
@@ -1516,7 +1620,7 @@ input[aria-invalid="true"] { /* Додаємо aria-invalid */
         margin-top: 2rem;
         margin-bottom: 3rem;
     }
-    .pagination-button { padding: 0.7rem 1.2rem; font-size: 0.9rem; }
+    .pagination-button { padding: 0.7rem 1.2rem; font-size: 0.9rem; width: 100%; max-width: 200px; } /* Кнопки на всю ширину */
     .pagination-info { order: -1; font-size: 0.9rem; }
 
     .filter-bar {

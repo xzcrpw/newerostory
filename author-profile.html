@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Title встановлюється динамічно з використанням i18n -->
-  <title x-text="isLoadingAuthor ? `${$store.i18n.t('general.loading')}... — ${$store.i18n.t('general.copyright')}` : (authorError ? `${$store.i18n.t('general.error')} — ${$store.i18n.t('general.copyright')}` : (author ? `${$store.i18n.t('authorProfilePage.pageTitle', { name: author.name })} — ${$store.i18n.t('general.copyright')}` : `${$store.i18n.t('general.error')} — ${$store.i18n.t('general.copyright')}`))"></title>
+  <title x-text="isLoadingAuthor ? `${safeT('general.loading')}... — ${safeT('general.copyright')}` : (authorError ? `${safeT('general.error')} — ${safeT('general.copyright')}` : (author ? `${safeT('authorProfilePage.pageTitle', { name: author.name })} — ${safeT('general.copyright')}` : `${safeT('general.error')} — ${safeT('general.copyright')}`))"></title>
 
   <!-- Мета-теги встановлюються динамічно -->
-  <meta name="description" :content="author ? `${$store.i18n.t('authorProfilePage.metaDescription', { name: author.name })} ${author.bio || ''}`.substring(0, 160) : $store.i18n.t('general.loading')">
+  <meta name="description" :content="author ? `${safeT('authorProfilePage.metaDescription', { name: author.name })} ${author.bio || ''}`.substring(0, 160) : safeT('general.loading')">
   <meta property="og:title" content=""> <!-- Встановлюється в JS -->
   <meta property="og:description" content=""> <!-- Встановлюється в JS -->
   <meta property="og:image" content=""> <!-- Встановлюється в JS -->
@@ -25,17 +25,19 @@
   <!-- Internationalization -->
   <script type="module" src="js/i18n.js" defer></script> <!-- Важливо: type="module" -->
 
-  <!-- Alpine.js -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
   <!-- API Config & Utils -->
   <script src="js/api-config.js" defer></script>
   <script src="js/api-utils.js" defer></script>
 
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+
+
   <!-- CSS -->
   <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/profile_styles.css">
-  <link rel="stylesheet" href="css/author-profile.css">
+  <link rel="stylesheet" href="css/profile_styles.css"> <!-- Використовуємо спільні стилі профілю -->
+  <link rel="stylesheet" href="css/author-profile.css"> <!-- Специфічні стилі для цієї сторінки -->
 
   <style>
     /* Стилі для завантаження/помилок/порожнього стану */
@@ -56,16 +58,32 @@
     .story-card.visible { opacity: 1; transform: translateY(0); }
     /* Сповіщення */
     .notification {
-      position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%) translateY(150%);
       background-color: var(--card-color); color: var(--text-color);
       padding: 1rem 1.5rem; border-radius: var(--border-radius);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000;
-      opacity: 0; transition: opacity 0.3s ease-out, bottom 0.4s ease-out;
-      min-width: 250px; text-align: center; border: 1px solid rgba(153, 0, 0, 0.2);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1050;
+      opacity: 0; transition: opacity 0.3s ease-out, transform 0.4s ease-out;
+      min-width: 250px; max-width: 90%; text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1); border-left-width: 4px;
+      pointer-events: none;
     }
-    .notification.show { opacity: 1; bottom: 20px; }
-    .notification.success { border-left: 4px solid #4cd964; }
-    .notification.error { border-left: 4px solid #ff6b6b; }
+    .notification.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .notification.success { border-left-color: #4cd964; }
+    .notification.error { border-left-color: #ff6b6b; }
+    /* Стиль для кнопки під час обробки */
+    button.removing {
+      opacity: 0.7;
+      pointer-events: none;
+      position: relative;
+    }
+    button.removing > span { visibility: hidden; }
+    button.removing::after {
+      content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+      display: inline-block; animation: spin 1s linear infinite;
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      font-size: 1em;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     /* Стиль для кнопки "Стежу" */
     .btn-follow.following {
       background-color: rgba(255, 255, 255, 0.1);
@@ -77,23 +95,15 @@
       border-color: rgba(153, 0, 0, 0.2);
       color: var(--text-color);
     }
-    /* Індикатор для кнопки */
-    button.removing { opacity: 0.7; pointer-events: none; }
-    button.removing i:not(.fa-spinner) { display: none; }
-    button.removing::after {
-      content: '\f110'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
-      display: inline-block; animation: spin 1s linear infinite; margin-left: 5px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
   </style>
 
 </head>
 <body x-data="{
     // --- Стани UI ---
     isLoggedIn: false,
+    currentUserId: null, // ID поточного залогіненого користувача
     isLoadingAuthor: true,
-    isLoadingStories: false, // Окремо для історій
+    isLoadingStories: false,
     authorError: null,
     storiesError: null,
     currentPage: 1,
@@ -101,191 +111,226 @@
     totalStories: 0,
     notificationVisible: false,
     notificationMessage: '',
+    notificationType: 'success', // Додано для стилізації
     notificationTimeout: null,
+    isProcessingFollow: false, // Додано для кнопки Follow
 
     // --- Дані ---
     authorId: null,
-    author: null,
-    stories: [],
+    author: null, // { _id, name, bio, avatarUrl, joinedDate, stats: { storyCount, averageRating, followersCount } }
+    stories: [], // { _id, title, imageUrl, category: { name, slug }, tags, readingTime, views, averageRating, isPremium, ageRestriction }
     followed: false, // Чи стежить поточний користувач
 
-     // --- Сповіщення ---
-     showNotification(message, isSuccess = true) {
+    // --- Безпечний доступ до i18n ---
+    safeT(key, params = {}, fallback = '') {
+        try {
+            if (typeof $store !== 'undefined' && $store.i18n?.initialized) {
+                const translation = $store.i18n.t(key, params);
+                return (translation && translation !== key && translation.trim() !== '') ? translation : fallback;
+            }
+            if (Object.keys(params).length > 0 && typeof fallback === 'string') {
+                return Object.keys(params).reduce((str, pKey) => str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), params[pKey]), fallback);
+            }
+            return fallback;
+        } catch (error) { console.warn(`safeT error for key: ${key}`, error); return fallback; }
+    },
+
+    // --- Сповіщення (має бути глобальним) ---
+    showNotification(message, isSuccess = true) {
         this.notificationMessage = message;
+        this.notificationType = isSuccess ? 'success' : 'error';
         const notificationElement = document.getElementById('global-notification');
         if (notificationElement) {
-            notificationElement.classList.toggle('success', isSuccess);
-            notificationElement.classList.toggle('error', !isSuccess);
+            notificationElement.classList.remove('success', 'error');
+            notificationElement.classList.add(this.notificationType);
+            notificationElement.classList.add('show');
         }
         this.notificationVisible = true;
         if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
-        this.notificationTimeout = setTimeout(() => { this.notificationVisible = false; }, 4000); // Збільшив час показу
+        this.notificationTimeout = setTimeout(() => {
+            this.notificationVisible = false;
+            const el = document.getElementById('global-notification');
+            if (el) el.classList.remove('show');
+        }, 4000);
     },
 
     // --- Завантаження даних автора ---
     async fetchAuthorData() {
-        this.isLoadingAuthor = true;
-        this.authorError = null;
+        this.isLoadingAuthor = true; this.authorError = null;
         this.authorId = new URLSearchParams(window.location.search).get('id');
         if (!this.authorId) {
-            this.authorError = $store.i18n.t('authorProfilePage.authorIdNotFound'); // i18n
-            this.isLoadingAuthor = false;
-            // Title оновлюється автоматично через x-text
-            return;
+            this.authorError = this.safeT('authorProfilePage.authorIdNotFound', 'ID автора не знайдено в URL.');
+            this.isLoadingAuthor = false; return;
         }
-
         try {
-            this.author = await api.authors.getAuthorById(this.authorId); // Припустимо, що API повертає null або кидає помилку, якщо не знайдено
-            if (!this.author) throw new Error($store.i18n.t('authorProfilePage.authorNotFound')); // i18n
+            // --- TODO: Замінити симуляцію на реальний виклик API ---
+            console.log(`API CALL: api.authors.getAuthorById(${this.authorId})`);
+            // const response = await api.authors.getAuthorById(this.authorId);
+            // this.author = response.data;
+            // --- Симуляція ---
+            await new Promise(resolve => setTimeout(resolve, 400));
+            if (this.authorId === 'notfound') throw new Error(this.safeT('authorProfilePage.authorNotFound', 'Автор не знайдений.'));
+            this.author = {
+                _id: this.authorId,
+                name: `Автор ${this.authorId.slice(-3)}`,
+                bio: `Це біографія автора ${this.authorId.slice(-3)}. ${this.safeT('authorsPage.simulatedBioSuffix')}`,
+                avatarUrl: `https://source.unsplash.com/random/200x200/?profile,${this.authorId.slice(-1)}`,
+                joinedDate: new Date(Date.now() - Math.random() * 365 * 24 * 3600 * 1000).toISOString(),
+                stats: { storyCount: Math.floor(Math.random() * 50) + 10, averageRating: (Math.random() * 1.5 + 3.5).toFixed(1), followersCount: Math.floor(Math.random() * 1000) }
+            };
+            // --- Кінець симуляції ---
 
-            // Title оновлюється через x-text, мета-теги через функцію нижче
+            if (!this.author) throw new Error(this.safeT('authorProfilePage.authorNotFound', 'Автор не знайдений.'));
             this.updateMetaTags();
 
-            // Завантажуємо статус підписки поточного користувача на цього автора
             if (this.isLoggedIn) {
-                try {
-                    // Припускаємо, що API повертає об'єкт { isFollowing: true/false }
-                    const followStatus = await api.users.getFollowStatus(this.authorId); // Потрібно реалізувати цей метод в api-utils
-                    this.followed = followStatus.isFollowing;
-                } catch (followError) {
-                    console.warn('Could not load follow status:', followError);
-                }
+                // --- TODO: Замінити симуляцію на реальний виклик API ---
+                console.log(`API CALL: api.users.checkIfFollowing(${this.authorId})`);
+                // const followStatus = await api.users.checkIfFollowing(this.authorId);
+                // this.followed = followStatus.data.isFollowing;
+                // --- Симуляція ---
+                await new Promise(resolve => setTimeout(resolve, 150));
+                this.followed = Math.random() < 0.3; // Симулюємо стан підписки
+                // --- Кінець симуляції ---
             }
         } catch (err) {
-            this.authorError = err.message || $store.i18n.t('authorProfilePage.errorLoadingAuthorProfile'); // i18n
+            this.authorError = err.message || this.safeT('authorProfilePage.errorLoadingAuthorProfile', 'Помилка завантаження профілю автора.');
             console.error('Author fetch error:', err);
-            // Title оновлюється автоматично через x-text
-        } finally {
-            this.isLoadingAuthor = false;
-        }
+        } finally { this.isLoadingAuthor = false; }
     },
 
-     // --- Оновлення мета-тегів ---
+    // --- Оновлення мета-тегів ---
     updateMetaTags() {
         if (!this.author) return;
-        // Використовуємо існуючі querySelector, щоб не створювати нові елементи, а оновлювати атрибути
-        const ogTitleTag = document.querySelector('meta[property=\'og:title\']');
-        const ogDescriptionTag = document.querySelector('meta[property=\'og:description\']');
-        const ogImageTag = document.querySelector('meta[property=\'og:image\']');
-        const descriptionTag = document.querySelector('meta[name=\'description\']');
-
-        const title = `${$store.i18n.t('authorProfilePage.pageTitle', { name: this.author.name })} — ${$store.i18n.t('general.copyright')}`;
-        const description = `${$store.i18n.t('authorProfilePage.metaDescription', { name: this.author.name })} ${this.author.bio || ''}`.substring(0, 160);
-
-        if (ogTitleTag) ogTitleTag.setAttribute('content', title);
-        if (descriptionTag) descriptionTag.setAttribute('content', description);
-        if (ogDescriptionTag) ogDescriptionTag.setAttribute('content', description); // Зазвичай OG опис = мета опис
-        if (ogImageTag && this.author.avatarUrl) ogImageTag.setAttribute('content', this.author.avatarUrl);
-    },
+        const title = `${this.safeT('authorProfilePage.pageTitle', { name: this.author.name })} — ${this.safeT('general.copyright')}`;
+        const description = `${this.safeT('authorProfilePage.metaDescription', { name: this.author.name })} ${this.author.bio || ''}`.substring(0, 160);
+        document.title = title;
+        document.querySelector('meta[name=\'description\']')?.setAttribute('content', description);
+document.querySelector('meta[property=\'og:title\']')?.setAttribute('content', title);
+document.querySelector('meta[property=\'og:description\']')?.setAttribute('content', description);
+document.querySelector('meta[property=\'og:image\']')?.setAttribute('content', this.author.avatarUrl || 'https://source.unsplash.com/random/1200x630/?profile');
+},
 
 // --- Завантаження історій автора ---
 async fetchAuthorStoriesPage(page) {
-    if (!this.authorId || this.authorError) return;
-    // --- ВИПРАВЛЕНО логіку перевірки сторінки ---
-    if (page < 1 || (this.totalPages > 0 && page > this.totalPages)) return;
+if (!this.authorId || this.authorError || page < 1 || (this.totalPages > 0 && page > this.totalPages)) return;
+this.currentPage = page; this.isLoadingStories = true; this.storiesError = null;
+try {
+const params = { page: this.currentPage, limit: 9, lang: $store.i18n.selectedLang };
+// --- TODO: Замінити симуляцію на реальний виклик API ---
+console.log(`API CALL: api.authors.getAuthorStories(${this.authorId}, ${JSON.stringify(params)})`);
+// const response = await api.authors.getAuthorStories(this.authorId, params);
+// this.stories = response.data || [];
+// this.totalStories = response.pagination?.totalResults || 0;
+// this.totalPages = response.pagination?.totalPages || 1;
+// --- Симуляція ---
+await new Promise(resolve => setTimeout(resolve, 600));
+const totalSimulated = this.author?.stats?.storyCount || 25;
+this.totalStories = totalSimulated;
+this.totalPages = Math.ceil(totalSimulated / params.limit) || 1;
+this.stories = Array.from({ length: params.limit }, (_, i) => {
+const storyNum = (this.currentPage - 1) * params.limit + i + 1;
+if (storyNum > totalSimulated) return null;
+return {
+_id: `story_author_${this.authorId}_${storyNum}`,
+title: `Історія автора ${this.authorId.slice(-3)} №${storyNum}`,
+imageUrl: `https://source.unsplash.com/random/600x400/?writing,${storyNum}`,
+category: { name: `Категорія ${storyNum % 3 + 1}`, slug: `category-${storyNum % 3 + 1}` },
+tags: [`тег${storyNum}`, `авторський`],
+readingTime: Math.floor(Math.random() * 10) + 3,
+views: Math.floor(Math.random() * 1000) + 50,
+averageRating: (Math.random() * 1 + 4).toFixed(1),
+isPremium: Math.random() < 0.2,
+ageRestriction: '18+'
+};
+}).filter(s => s !== null);
+if (this.currentPage > this.totalPages && this.totalPages > 0) this.currentPage = this.totalPages;
+if (this.stories.length === 0 && this.currentPage > 1) { this.currentPage--; await this.fetchAuthorStoriesPage(this.currentPage); return; }
+// --- Кінець симуляції ---
 
-    this.currentPage = page;
-    this.isLoadingStories = true;
-    this.storiesError = null;
-    try {
-        const params = { page: this.currentPage, limit: 9 }; // Ліміт історій
-        const response = await api.authors.getAuthorStories(this.authorId, params);
-        this.stories = response.data || [];
-        // --- Використовуємо `response.totalCount` (або схоже поле з API) для розрахунку ---
-        this.totalStories = response.totalCount || 0;
-        this.totalPages = Math.ceil(this.totalStories / params.limit) || 1; // Або 1, якщо 0 історій
-
-        this.$nextTick(() => this.initCardAnimation());
-
-    } catch (error) {
-        this.storiesError = error.message || $store.i18n.t('authorProfilePage.errorLoadingAuthorStories'); // i18n
-        console.error('Author stories fetch error:', error);
-    } finally {
-        this.isLoadingStories = false;
-        // Плавний скрол до секції історій після завантаження
-        this.$nextTick(() => {
-            const storiesSection = document.getElementById('author-stories-section');
-            if (storiesSection) {
-                storiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-    }
+this.$nextTick(() => this.initCardAnimation());
+} catch (error) {
+this.storiesError = error.message || this.safeT('authorProfilePage.errorLoadingAuthorStories', 'Помилка завантаження історій автора.');
+console.error('Author stories fetch error:', error);
+} finally { this.isLoadingStories = false; }
 },
 nextPage() { this.fetchAuthorStoriesPage(this.currentPage + 1); },
 prevPage() { this.fetchAuthorStoriesPage(this.currentPage - 1); },
 
 // --- Підписка/Відписка ---
 async toggleFollow(event) {
-    // Перенаправлення на логін, якщо не авторизований
-    if (!this.isLoggedIn) {
-        const redirectUrl = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-        window.location.href = redirectUrl;
-        return;
-    }
-    if (!this.authorId) return;
+if (!this.isLoggedIn) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); return; }
+if (!this.authorId || this.currentUserId === this.authorId) return; // Заборона підписки на себе
 
-    const button = event?.currentTarget;
-    if (button) button.classList.add('removing'); // Показуємо спінер
+this.isProcessingFollow = true;
+const button = event?.currentTarget;
+const originalFollowed = this.followed;
+const originalFollowers = this.author.stats?.followersCount || 0;
 
-    const originalFollowed = this.followed;
-    const originalFollowers = this.author.stats?.followersCount || 0;
+this.followed = !this.followed;
+if (this.author.stats) this.author.stats.followersCount = Math.max(0, originalFollowers + (this.followed ? 1 : -1));
 
-    // Оптимістичне оновлення UI
-    this.followed = !this.followed;
-    if (this.author.stats) { // Перевіряємо чи існує stats
-        this.author.stats.followersCount = Math.max(0, (originalFollowers) + (this.followed ? 1 : -1)); // Гарантуємо, що не менше 0
-    }
+try {
+// --- TODO: Замінити симуляцію на реальний виклик API ---
+console.log(`API CALL: api.users.toggleFollow(${this.authorId})`);
+// await api.users.toggleFollow(this.authorId);
+await new Promise(resolve => setTimeout(resolve, 500));
+// --- Кінець TODO ---
 
-    try {
-        // Виклик API для зміни статусу підписки
-        await api.users.toggleFollow(this.authorId);
-        // Показуємо сповіщення про успіх
-        this.showNotification(
-            this.followed 
-                ? $store.i18n.t('notifications.followingAuthor', { name: this.author.name || '' })
-                : $store.i18n.t('notifications.unfollowingAuthor', { name: this.author.name || '' }),
-            true // isSuccess = true
-        );
-    } catch (error) {
-        // Відкат UI у разі помилки
-        this.followed = originalFollowed;
-        if (this.author.stats) this.author.stats.followersCount = originalFollowers;
-        // Показуємо сповіщення про помилку
-        this.showNotification(
-            $store.i18n.t('story.errorTogglingFollow') + ': ' + (error.message || $store.i18n.t('general.unknownError')),
-            false // isSuccess = false
-        );
-        console.error('Toggle follow error:', error);
-    } finally {
-        if (button) button.classList.remove('removing'); // Прибираємо спінер
-    }
+this.showNotification(
+this.followed ? this.safeT('notifications.followingAuthor', { name: this.author.name || '' }) : this.safeT('notifications.unfollowingAuthor', { name: this.author.name || '' }),
+true
+);
+} catch (error) {
+this.followed = originalFollowed;
+if (this.author.stats) this.author.stats.followersCount = originalFollowers;
+this.showNotification(this.safeT('story.errorTogglingFollow') + ': ' + (error.message || this.safeT('general.unknownError')), false);
+console.error('Toggle follow error:', error);
+} finally { this.isProcessingFollow = false; }
 },
 
 // --- Анімація ---
 initCardAnimation() {
-    const observer = new IntersectionObserver(
-        (entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        },
-        { threshold: 0.1 }
-    );
-    // Важливо вибрати елементи всередині поточного Alpine компонента
-    this.$el.querySelectorAll('.story-card:not(.visible)').forEach(card => {
-        observer.observe(card);
-    });
+try {
+if (!('IntersectionObserver' in window)) {
+this.$el.querySelectorAll('.story-card').forEach(card => card.classList.add('visible')); return;
+}
+const observer = new IntersectionObserver((entries) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+});
+}, { threshold: 0.1 });
+this.$el.querySelectorAll('.story-card:not(.visible)').forEach(card => observer.observe(card));
+} catch(e) {
+console.warn('Intersection Observer error:', e);
+document.querySelectorAll('.story-card').forEach(card => card.classList.add('visible'));
+}
 }
 
 }" x-init="
+// Ініціалізація після завантаження DOM та Alpine
+$nextTick(async () => {
+let waitCount = 0;
+// Чекаємо на api та i18n
+while ((typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) && waitCount < 50) {
+await new Promise(resolve => setTimeout(resolve, 100));
+waitCount++;
+}
+if (typeof api === 'undefined' || typeof $store === 'undefined' || !$store.i18n?.initialized) {
+console.error('API or i18n failed to initialize!');
+authorError = 'Помилка завантаження сторінки. Спробуйте оновити.';
+isLoadingAuthor = false;
+return;
+}
+try {
 isLoggedIn = api.utils.isAuthenticated();
-fetchAuthorData().then(() => {
-    if (!authorError) {
-        fetchAuthorStoriesPage(1);
-    }
+currentUserId = api.utils.getUserId(); // Отримуємо ID поточного користувача
+} catch(e) { console.error('Auth check error:', e); isLoggedIn = false; currentUserId = null; }
+
+await fetchAuthorData(); // Завантажуємо дані автора
+if (!authorError) {
+await fetchAuthorStoriesPage(1); // Завантажуємо першу сторінку історій
+}
 });
 ">
 
@@ -294,51 +339,31 @@ fetchAuthorData().then(() => {
   <div class="container">
     <nav class="navbar">
       <a href="index.html" class="logo" aria-label="На головну">
-        <span x-text="$store.i18n?.t('general.siteNamePart1') || 'Таємний'"></span><span style="color: var(--accent-red);" x-text="$store.i18n?.t('general.siteNamePart2') || 'Світ'"></span>
+        <span x-text="safeT('general.siteNamePart1', 'Таємний')"></span><span style="color: var(--accent-red);" x-text="safeT('general.siteNamePart2', 'Світ')"></span>
       </a>
       <!-- Навігація з i18n -->
       <ul class="nav-links">
-        <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-        <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-        <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-        <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-        <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+        <li><a href="index.html" x-text="safeT('general.home', 'Головна')"></a></li>
+        <li><a href="new-stories.html" x-text="safeT('general.newStories', 'Нові історії')"></a></li>
+        <li><a href="top-stories.html" x-text="safeT('general.topStories', 'Топ рейтинг')"></a></li>
+        <li><a href="categories.html" x-text="safeT('general.categories', 'Категорії')"></a></li>
+        <li><a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a></li>
       </ul>
       <div class="auth-buttons">
         <!-- Мовний перемикач -->
         <div class="lang-dropdown-container" x-data="{ open: false }" @click.away="open = false">
           <div class="lang-dropdown-button" @click="open = !open" role="button" aria-haspopup="true" :aria-expanded="open">
-            <!-- Безпечний доступ до selectedLang -->
             <span x-text="$store?.i18n?.selectedLang?.toUpperCase() || 'UK'"></span>
             <i class="fas fa-chevron-down" :class="{ 'rotate-180': open }" aria-hidden="true"></i>
           </div>
-          <!-- Перевіряємо наявність $store.i18n -->
           <template x-if="$store?.i18n">
             <div class="lang-dropdown-menu" x-show="open" x-transition role="menu" aria-orientation="vertical">
-              <!-- Безпечний доступ до available та ітерація -->
               <template x-for="lang in $store.i18n.available || []" :key="lang.code">
                 <div class="lang-dropdown-item"
                      :class="{ 'active': lang.code === $store.i18n.selectedLang }"
-                     @click="
-                 const newLang = lang.code;
-                 open = false;
-                 try {
-                     // Виклик setLanguage всередині try...catch
-                     $store.i18n.setLanguage(newLang);
-                     console.log('Language set to:', newLang);
-                 } catch(e) {
-                     console.error('Error setting language:', e);
-                     // Можна додати сповіщення для користувача тут
-                 }
-              "
-                     role="menuitemradio"
-                     :aria-checked="lang.code === $store.i18n.selectedLang"
-                     tabindex="0"
-                     @keydown.enter.space.prevent="
-                 const newLang = lang.code;
-                 open = false;
-                 try { $store.i18n.setLanguage(newLang); } catch(e) { console.error('Error setting language:', e); }
-              ">
+                     @click="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}"
+                     role="menuitemradio" :aria-checked="lang.code === $store.i18n.selectedLang" tabindex="0"
+                     @keydown.enter.space.prevent="const newLang=lang.code; open=false; try{await $store.i18n.setLanguage(newLang);}catch(e){console.error('Lang switch error',e);}">
                   <span x-text="lang.name"></span>
                   <i x-show="lang.code === $store.i18n.selectedLang" class="fas fa-check" aria-hidden="true"></i>
                 </div>
@@ -349,21 +374,15 @@ fetchAuthorData().then(() => {
         <!-- Кнопки авторизації -->
         <template x-if="!isLoggedIn">
           <div>
-            <a href="login.html" class="btn btn-outline">
-              <i class="fas fa-sign-in-alt"></i> <span x-text="$store.i18n.t('general.login')"></span>
-            </a>
-            <a href="register-page.html" class="btn btn-primary">
-              <i class="fas fa-user-plus"></i> <span x-text="$store.i18n.t('general.register')"></span>
-            </a>
+            <a href="login.html" class="btn btn-outline"> <i class="fas fa-sign-in-alt"></i> <span x-text="safeT('general.login', 'Увійти')"></span> </a>
+            <a href="login.html?tab=register" class="btn btn-primary"> <i class="fas fa-user-plus"></i> <span x-text="safeT('general.register', 'Реєстрація')"></span> </a>
           </div>
         </template>
         <template x-if="isLoggedIn">
           <div>
-            <a href="profile.html" class="btn btn-outline">
-              <i class="fas fa-user"></i> <span x-text="$store.i18n.t('general.profile')"></span>
-            </a>
-            <a href="#" @click.prevent="api.auth.logout(); window.location.reload();" class="btn btn-primary">
-              <i class="fas fa-sign-out-alt"></i> <span x-text="$store.i18n.t('general.logout')"></span>
+            <a href="profile.html" class="btn btn-outline"> <i class="fas fa-user"></i> <span x-text="safeT('general.profile', 'Профіль')"></span> </a>
+            <a href="#" @click.prevent="try { api.auth.logout(); window.location.reload(); } catch (e) { console.error('Logout error:', e); alert(safeT('general.logoutError'));}" class="btn btn-primary">
+              <i class="fas fa-sign-out-alt"></i> <span x-text="safeT('general.logout', 'Вийти')"></span>
             </a>
           </div>
         </template>
@@ -375,11 +394,11 @@ fetchAuthorData().then(() => {
 <!-- Основний контент -->
 <main class="container">
   <!-- Індикатор завантаження профілю -->
-  <div x-show="isLoadingAuthor" class="loading-indicator" x-text="$store.i18n.t('authorProfilePage.loadingAuthorProfile')"></div>
+  <div x-show="isLoadingAuthor" class="loading-indicator" x-text="safeT('authorProfilePage.loadingAuthorProfile', 'Завантаження профілю автора...')"></div>
   <!-- Повідомлення про помилку завантаження профілю -->
   <div x-show="authorError" class="error-message">
     <i class="fas fa-exclamation-circle"></i> <span x-text="authorError"></span>
-    <button @click="fetchAuthorData()" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+    <button @click="fetchAuthorData()" class="btn btn-outline" x-text="safeT('general.retryButton', 'Повторити')"></button>
   </div>
 
   <!-- Контент сторінки автора -->
@@ -387,9 +406,9 @@ fetchAuthorData().then(() => {
     <div>
       <!-- Хлібні крихти -->
       <div class="breadcrumbs">
-        <a href="index.html" x-text="$store.i18n.t('general.home')"></a>
+        <a href="index.html" x-text="safeT('general.home', 'Головна')"></a>
         <span class="separator">/</span>
-        <a href="authors.html" x-text="$store.i18n.t('general.authors')"></a>
+        <a href="authors.html" x-text="safeT('general.authors', 'Автори')"></a>
         <span class="separator">/</span>
         <span class="current" x-text="author.name"></span>
       </div>
@@ -398,52 +417,55 @@ fetchAuthorData().then(() => {
       <div class="author-profile-section">
         <div class="author-profile-card">
           <div class="author-profile-header">
-            <div class="author-profile-avatar" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile'}')`" role="img" :aria-label="`${$store.i18n.t('story.avatarOf') || 'Аватар'} ${author.name}`"></div>
+            <div class="author-profile-avatar" :style="`background-image: url('${author.avatarUrl || 'https://source.unsplash.com/random/200x200/?profile,placeholder'}')`" role="img" :aria-label="`${safeT('general.avatarOf')} ${author.name}`"></div>
           </div>
           <div class="author-profile-info">
             <h1 class="author-profile-name" x-text="author.name"></h1>
-            <div class="author-profile-bio" x-text="author.bio || $store.i18n.t('authorProfilePage.bioPlaceholder')"></div>
+            <div class="author-profile-bio" x-text="author.bio || safeT('authorProfilePage.bioPlaceholder', 'Автор ще не додав біографію.')"></div>
             <div class="author-profile-joined">
-              <span x-text="$store.i18n.t('profile.joined')"></span>:
-              <span x-text="author.joinedDate ? new Date(author.joinedDate).toLocaleDateString($store.i18n.selectedLang || 'uk-UA', { year: 'numeric', month: 'long' }) : $store.i18n.t('general.notSpecified')"></span>
+              <span x-text="safeT('profile.joined', 'Приєднався:')"></span>
+              <span x-text="author.joinedDate ? new Date(author.joinedDate).toLocaleDateString(safeT('localeCode', 'uk-UA'), { year: 'numeric', month: 'long' }) : safeT('general.notSpecified', 'Не вказано')"></span>
             </div>
           </div>
           <div class="author-profile-stats">
             <div class="profile-stat">
-              <div class="stat-value" x-text="totalStories || author.stats?.storyCount || 0"></div> <!-- Використовуємо totalStories для актуальності -->
-              <div class="stat-label" x-text="$store.i18n.t('profile.storiesCount')"></div>
+              <div class="stat-value" x-text="totalStories || author.stats?.storyCount || 0"></div>
+              <div class="stat-label" x-text="safeT('profile.storiesCount', 'Історій')"></div>
             </div>
             <div class="profile-stat">
               <div class="stat-value" x-text="(author.stats?.averageRating || 0).toFixed(1)"></div>
-              <div class="stat-label" x-text="$store.i18n.t('general.ratingLabel')"></div>
+              <div class="stat-label" x-text="safeT('general.ratingLabel', 'Рейтинг')"></div>
             </div>
             <div class="profile-stat">
               <div class="stat-value" x-text="author.stats?.followersCount || 0"></div>
-              <div class="stat-label" x-text="$store.i18n.t('profile.followers')"></div>
+              <div class="stat-label" x-text="safeT('profile.followers', 'Підписників')"></div>
             </div>
           </div>
           <div class="author-profile-actions">
-            <!-- Кнопка стеження -->
-            <template x-if="isLoggedIn && api.utils.getUserId() !== author._id">
-              <button
-                      type="button"
-                      @click="toggleFollow($event)"
-                      class="btn btn-follow"
-                      :class="followed ? 'btn-outline following' : 'btn-primary'"
-                      style="width: 100%;"
-                      :aria-label="followed ? $store.i18n.t('authorsPage.unfollowAction') : $store.i18n.t('authorsPage.followAction')"
-              >
-                <span x-text="followed ? $store.i18n.t('authorsPage.unfollowAction') : $store.i18n.t('authorsPage.followAction')"></span>
-              </button>
-            </template>
-            <template x-if="!isLoggedIn">
-              <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-primary" style="width: 100%;" x-text="$store.i18n.t('authorsPage.followAction')"></a>
-            </template>
-            <!-- Кнопка для переходу на сторінку редагування свого профілю -->
-            <template x-if="isLoggedIn && api.utils.getUserId() === author._id">
+            <!-- Кнопка стеження/редагування -->
+            <template x-if="isLoggedIn && currentUserId === author._id">
               <a href="profile.html" class="btn btn-outline" style="width: 100%;">
-                <i class="fas fa-edit"></i> <span x-text="$store.i18n.t('profile.editProfile')"></span>
+                <i class="fas fa-edit"></i> <span x-text="safeT('profile.editProfile', 'Редагувати профіль')"></span>
               </a>
+            </template>
+            <template x-else> <!-- Показуємо кнопку Follow/Following або логін -->
+              <template x-if="isLoggedIn">
+                <button
+                        type="button"
+                        class="btn btn-follow"
+                        :class="{ 'following': followed, 'removing': isProcessingFollow }"
+                        @click="toggleFollow($event)"
+                        style="width: 100%;"
+                        :disabled="isProcessingFollow"
+                        :aria-label="followed ? safeT('authorsPage.unfollowAction') : safeT('authorsPage.followAction')"
+                >
+                  <span x-show="!isProcessingFollow" x-text="followed ? safeT('authorsPage.unfollowAction', 'Стежу') : safeT('authorsPage.followAction', 'Стежити')"></span>
+                  <!-- Спінер додається через CSS клас .removing -->
+                </button>
+              </template>
+              <template x-if="!isLoggedIn">
+                <a :href="'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)" class="btn btn-primary" style="width: 100%;" x-text="safeT('authorsPage.followAction', 'Стежити')"></a>
+              </template>
             </template>
           </div>
         </div>
@@ -451,57 +473,55 @@ fetchAuthorData().then(() => {
 
       <!-- Секція історій автора -->
       <section id="author-stories-section" class="author-stories-section">
-        <h2 class="author-section-title" x-text="`${$store.i18n.t('authorProfilePage.storiesSectionTitle')} (${totalStories})`"></h2>
+        <h2 class="author-section-title" x-text="`${safeT('authorProfilePage.storiesSectionTitle', 'Історії автора')} (${totalStories})`"></h2>
 
         <!-- Індикатор/Помилка завантаження історій -->
-        <div x-show="isLoadingStories" class="loading-indicator" x-text="$store.i18n.t('authorProfilePage.loadingAuthorStories')"></div>
+        <div x-show="isLoadingStories" class="loading-indicator" x-text="safeT('authorProfilePage.loadingAuthorStories', 'Завантаження історій...')"></div>
         <div x-show="storiesError" class="error-message">
           <i class="fas fa-exclamation-circle"></i> <span x-text="storiesError"></span>
-          <button @click="fetchAuthorStoriesPage(currentPage)" class="btn btn-outline" x-text="$store.i18n.t('general.retryButton')"></button>
+          <button @click="fetchAuthorStoriesPage(currentPage)" class="btn btn-outline" x-text="safeT('general.retryButton', 'Повторити')"></button>
         </div>
 
         <div class="stories-grid" x-show="!isLoadingStories && stories.length > 0">
           <template x-for="story in stories" :key="story._id || story.id">
             <div class="story-card"> <!-- Анімація додається через JS -->
-              <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;">
+              <a :href="`story-detailed.html?id=${story._id || story.id}`" style="display: contents;" :aria-label="story.title">
                 <div class="story-card-image">
-                  <img :src="story.imageUrl || `https://source.unsplash.com/random/600x400/?story,${story._id || story.id}`" :alt="story.title">
+                  <img :src="story.imageUrl || `https://source.unsplash.com/random/600x400/?story,${story._id || story.id}`" :alt="safeT('storyLists.coverImageAlt', { title: story.title }, `Обкладинка історії ${story.title}`)" loading="lazy">
                   <div :class="story.isPremium ? 'story-badge premium-badge' : 'story-badge'" x-text="story.ageRestriction || (story.isPremium ? '21+' : '18+')"></div>
                 </div>
               </a>
               <div class="story-card-content">
                 <div class="story-tags">
-                  <!-- Використовуємо назву категорії з даних історії -->
-                  <a :href="`category-page.html?slug=${story.category?.slug || story.category}`" class="story-tag" x-text="story.category?.name || story.category || $store.i18n.t('general.defaultCategory')"></a>
-                  <!-- Виводимо максимум 2 теги -->
+                  <a :href="`category-page.html?slug=${story.category?.slug || 'other'}`" class="story-tag" x-text="story.category?.name || safeT('general.defaultCategory')"></a>
                   <template x-for="tag in story.tags?.slice(0, 2)" :key="tag">
                     <span class="story-tag" x-text="tag"></span>
                   </template>
                 </div>
                 <h3 class="story-title"><a :href="`story-detailed.html?id=${story._id || story.id}`" x-text="story.title"></a></h3>
                 <div class="story-meta">
-                  <div class="story-meta-item"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="$store.i18n.t('story.readingTimeSuffix')"></span></div>
-                  <div class="story-meta-item"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
-                  <div class="story-meta-item rating"><i class="fas fa-star"></i> <span x-text="(story.averageRating || 0).toFixed(1)"></span></div>
+                  <div class="story-meta-item" :aria-label="safeT('general.readingTimeLabel')"><i class="far fa-clock"></i> <span x-text="story.readingTime || '?'"></span> <span x-text="safeT('general.readingTimeSuffix')"></span></div>
+                  <div class="story-meta-item" :aria-label="safeT('general.viewsLabel')"><i class="far fa-eye"></i> <span x-text="story.views || 0"></span></div>
+                  <div class="story-meta-item rating" :aria-label="safeT('general.ratingLabel')"><i class="fas fa-star"></i> <span x-text="(story.averageRating || 0).toFixed(1)"></span></div>
                 </div>
               </div>
             </div>
           </template>
         </div>
         <div x-show="!isLoadingStories && stories.length === 0 && !storiesError" class="empty-state">
-          <span x-text="$store.i18n.t('authorProfilePage.noStoriesPublished')"></span>
+          <span x-text="safeT('authorProfilePage.noStoriesPublished', 'Цей автор ще не опублікував жодної історії.')"></span>
         </div>
       </section>
 
       <!-- Пагінація для історій автора -->
       <div class="pagination" x-show="!isLoadingStories && totalPages > 1">
-        <button @click="prevPage()" :disabled="currentPage === 1" class="pagination-button prev-button">
-          <i class="fas fa-chevron-left"></i> <span x-text="$store.i18n.t('general.previous')"></span>
+        <button @click="prevPage()" :disabled="currentPage === 1 || isLoadingStories" class="pagination-button prev-button" :aria-label="safeT('general.previous')">
+          <i class="fas fa-chevron-left"></i> <span x-text="safeT('general.previous', 'Попередня')"></span>
         </button>
-        <div class="pagination-info" x-html="$store.i18n.t('general.pageInfo', { currentPage: `<span class='current-page'>${currentPage}</span>`, totalPages: `<span class='total-pages'>${totalPages}</span>` }) || `Сторінка <span class='current-page'>${currentPage}</span> з <span class='total-pages'>${totalPages}</span>`">
+        <div class="pagination-info" x-html="safeT('storyLists.pageInfo', { currentPage: `<span class='current-page'>${currentPage}</span>`, totalPages: `<span class='total-pages'>${totalPages}</span>`, totalStories: totalStories }, `Сторінка <span class='current-page'>${currentPage}</span> з <span class='total-pages'>${totalPages}</span> (${totalStories} історій)`)">
         </div>
-        <button @click="nextPage()" :disabled="currentPage === totalPages" class="pagination-button next-button">
-          <span x-text="$store.i18n.t('general.next')"></span> <i class="fas fa-chevron-right"></i>
+        <button @click="nextPage()" :disabled="currentPage === totalPages || isLoadingStories" class="pagination-button next-button" :aria-label="safeT('general.next')">
+          <span x-text="safeT('general.next', 'Наступна')"></span> <i class="fas fa-chevron-right"></i>
         </button>
       </div>
     </div>
@@ -514,46 +534,46 @@ fetchAuthorData().then(() => {
     <!-- Код футера з i18n, як в index.html -->
     <div class="footer-content">
       <div class="footer-section footer-about">
-        <h4 x-text="$store.i18n.t('general.about')"></h4>
-        <p x-text="$store.i18n.t('general.aboutText')"></p>
+        <h4 x-text="safeT('general.about')"></h4>
+        <p x-text="safeT('general.aboutText')"></p>
         <div class="social-links">
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="social-link" :title="$store.i18n.t('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
+          <a href="#" class="social-link" :title="safeT('general.shareFacebook')"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-link" :title="safeT('general.shareTelegram')"><i class="fab fa-telegram-plane"></i></a>
           <a href="#" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
         </div>
       </div>
       <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.navigation')"></h4>
+        <h4 x-text="safeT('general.navigation')"></h4>
         <ul>
-          <li><a href="index.html" x-text="$store.i18n.t('general.home')"></a></li>
-          <li><a href="categories.html" x-text="$store.i18n.t('general.categories')"></a></li>
-          <li><a href="new-stories.html" x-text="$store.i18n.t('general.newStories')"></a></li>
-          <li><a href="top-stories.html" x-text="$store.i18n.t('general.topStories')"></a></li>
-          <li><a href="authors.html" x-text="$store.i18n.t('general.authors')"></a></li>
+          <li><a href="index.html" x-text="safeT('general.home')"></a></li>
+          <li><a href="categories.html" x-text="safeT('general.categories')"></a></li>
+          <li><a href="new-stories.html" x-text="safeT('general.newStories')"></a></li>
+          <li><a href="top-stories.html" x-text="safeT('general.topStories')"></a></li>
+          <li><a href="authors.html" x-text="safeT('general.authors')"></a></li>
         </ul>
       </div>
       <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.support')"></h4>
+        <h4 x-text="safeT('general.support')"></h4>
         <ul>
-          <li><a href="faq.html" x-text="$store.i18n.t('faq.title')"></a></li>
-          <li><a href="contact.html" x-text="$store.i18n.t('contact.title')"></a></li>
-          <li><a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a></li>
-          <li><a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a></li>
+          <li><a href="faq.html" x-text="safeT('faq.title')"></a></li>
+          <li><a href="contact.html" x-text="safeT('contact.title')"></a></li>
+          <li><a href="terms-page.html" x-text="safeT('general.terms')"></a></li>
+          <li><a href="privacy-policy.html" x-text="safeT('general.privacy')"></a></li>
         </ul>
       </div>
       <div class="footer-section">
-        <h4 x-text="$store.i18n.t('general.join')"></h4>
+        <h4 x-text="safeT('general.join')"></h4>
         <ul>
-          <li><a href="login.html" x-text="$store.i18n.t('general.login')"></a></li>
-          <li><a href="login.html?tab=register" x-text="$store.i18n.t('general.register')"></a></li>
-          <li><a href="premium.html" x-text="$store.i18n.t('general.premium')"></a></li>
-          <li><a href="create_story.html" x-text="$store.i18n.t('createStory.title')"></a></li>
+          <li><a href="login.html" x-text="safeT('general.login')"></a></li>
+          <li><a href="login.html?tab=register" x-text="safeT('general.register')"></a></li>
+          <li><a href="premium.html" x-text="safeT('general.premium')"></a></li>
+          <li><a href="create_story.html" x-text="safeT('createStory.title')"></a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      © <span x-text="new Date().getFullYear()"></span> <span x-text="$store.i18n.t('general.copyright')"></span>. <span x-text="$store.i18n.t('general.allRightsReserved')"></span>. 18+ <br>
-      <a href="terms-page.html" x-text="$store.i18n.t('general.terms')"></a> | <a href="privacy-policy.html" x-text="$store.i18n.t('general.privacy')"></a>
+      © <span x-text="new Date().getFullYear()"></span> <span x-text="safeT('general.copyright')"></span>. <span x-text="safeT('general.allRightsReserved')"></span>. 18+ <br>
+      <a href="terms-page.html" x-text="safeT('general.terms')"></a> | <a href="privacy-policy.html" x-text="safeT('general.privacy')"></a>
     </div>
   </div>
 </footer>
@@ -567,8 +587,11 @@ fetchAuthorData().then(() => {
      x-transition:leave-start="opacity-100 translate-y-0"
      x-transition:leave-end="opacity-0 -translate-y-full"
      class="notification"
+     :class="{ 'show': notificationVisible, 'success': notificationType === 'success', 'error': notificationType === 'error' }"
      style="display: none;"
-     id="global-notification">
+     id="global-notification"
+     role="alert"
+     aria-live="assertive">
   <span x-text="notificationMessage"></span>
 </div>
 
